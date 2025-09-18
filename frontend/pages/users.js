@@ -53,26 +53,28 @@ export default function Users() {
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.role.toLowerCase().includes(searchTerm.toLowerCase())
+    (u.role?.name || u.role || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getRoleColor = (role) => {
+    const roleName = role?.name || role || '';
     const colors = {
       admin: 'bg-red-100 text-red-800 border-red-200',
       manager: 'bg-blue-100 text-blue-800 border-blue-200',
       employee: 'bg-green-100 text-green-800 border-green-200',
       customer: 'bg-purple-100 text-purple-800 border-purple-200'
     };
-    return colors[role] || 'bg-gray-100 text-gray-800 border-gray-200';
+    return colors[roleName] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getStatusColor = (status) => {
+    const statusName = status?.name || status || '';
     const colors = {
       active: 'bg-green-100 text-green-800 border-green-200',
       inactive: 'bg-red-100 text-red-800 border-red-200',
       pending: 'bg-yellow-100 text-yellow-800 border-yellow-200'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+    return colors[statusName] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   return (
@@ -110,7 +112,7 @@ export default function Users() {
               Total: {users.length}
             </span>
             <span className="px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
-              Active: {users.filter(u => u.status === 'active').length}
+              Active: {users.filter(u => (u.status?.name || u.status) === 'active').length}
             </span>
           </div>
         </div>
@@ -140,10 +142,10 @@ export default function Users() {
                 
                 <div className="flex gap-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getRoleColor(userData.role)}`}>
-                    {userData.role.toUpperCase()}
+                    {(userData.role?.name || userData.role || '').toUpperCase()}
                   </span>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(userData.status)}`}>
-                    {userData.status.toUpperCase()}
+                    {(userData.status?.name || userData.status || '').toUpperCase()}
                   </span>
                 </div>
                 

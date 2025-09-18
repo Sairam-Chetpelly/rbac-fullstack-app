@@ -8,10 +8,13 @@ const getUsers = async (req, res) => {
     
     // Role-based filtering
     if (req.user.role === 'employee') {
-      query.role = 'customer';
+      const customerRole = await Role.findOne({ name: 'customer' });
+      if (customerRole) {
+        query.role = customerRole._id;
+      }
     }
     
-    const users = await User.find(query).select('-password');
+    const users = await User.find(query).select('-password').populate('role').populate('status');
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -22,24 +25,29 @@ const createUser = async (req, res) => {
   try {
     const { name, email, password, role, status } = req.body;
     
-    // Validate role exists
-    const roleExists = await Role.findOne({ name: role, isActive: true });
-    if (!roleExists) {
+    // Find role and status by ID or name
+    const roleDoc = await Role.findOne({ 
+      $or: [{ _id: role }, { name: role }], 
+      isActive: true 
+    });
+    if (!roleDoc) {
       return res.status(400).json({ message: 'Invalid role' });
     }
     
-    // Validate status exists
-    const statusExists = await Status.findOne({ name: status, isActive: true });
-    if (!statusExists) {
+    const statusDoc = await Status.findOne({ 
+      $or: [{ _id: status }, { name: status }], 
+      isActive: true 
+    });
+    if (!statusDoc) {
       return res.status(400).json({ message: 'Invalid status' });
     }
     
     // Role-based creation restrictions
-    if (req.user.role === 'employee' && role !== 'customer') {
+    if (req.user.role === 'employee' && roleDoc.name !== 'customer') {
       return res.status(403).json({ message: 'Employees can only create customers' });
     }
     
-    if (req.user.role === 'manager' && !['employee', 'customer'].includes(role)) {
+    if (req.user.role === 'manager' && !['employee', 'customer'].includes(roleDoc.name)) {
       return res.status(403).json({ message: 'Managers can only create employees and customers' });
     }
 
@@ -48,12 +56,26 @@ const createUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    const user = new User({ name, email, password, role, status });
+    const user = new User({ 
+      name, 
+      email, 
+      password, 
+      role: roleDoc._id, 
+      status: statusDoc._id 
+    });
     await user.save();
+    
+    const populatedUser = await User.findById(user._id).populate('role').populate('status');
 
     res.status(201).json({
       message: 'User created successfully',
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status }
+      user: { 
+        id: populatedUser._id, 
+        name: populatedUser.name, 
+        email: populatedUser.email, 
+        role: populatedUser.role.name, 
+        status: populatedUser.status.name 
+      }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -63,17 +85,41 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body };
+    
+    // Convert role and status names to IDs if provided
+    if (updates.role) {
+      const roleDoc = await Role.findOne({ 
+        $or: [{ _id: updates.role }, { name: updates.role }], 
+        isActive: true 
+      });
+      if (roleDoc) {
+        updates.role = roleDoc._id;
+      }
+    }
+    
+    if (updates.status) {
+      const statusDoc = await Status.findOne({ 
+        $or: [{ _id: updates.status }, { name: updates.status }], 
+        isActive: true 
+      });
+      if (statusDoc) {
+        updates.status = statusDoc._id;
+      }
+    }
     
     // Role-based update restrictions
     if (req.user.role === 'employee') {
-      const user = await User.findById(id);
-      if (!user || user.role !== 'customer') {
+      const user = await User.findById(id).populate('role');
+      if (!user || user.role.name !== 'customer') {
         return res.status(403).json({ message: 'Employees can only edit customers' });
       }
     }
 
-    const user = await User.findByIdAndUpdate(id, updates, { new: true }).select('-password');
+    const user = await User.findByIdAndUpdate(id, updates, { new: true })
+      .select('-password')
+      .populate('role')
+      .populate('status');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

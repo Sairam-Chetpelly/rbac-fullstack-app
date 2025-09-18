@@ -30,9 +30,9 @@ export default function Dashboard() {
         const users = response.data;
         setStats({
           totalUsers: users.length,
-          activeUsers: users.filter(u => u.status === 'active').length,
-          pendingUsers: users.filter(u => u.status === 'pending').length,
-          inactiveUsers: users.filter(u => u.status === 'inactive').length
+          activeUsers: users.filter(u => (u.status?.name || u.status) === 'active').length,
+          pendingUsers: users.filter(u => (u.status?.name || u.status) === 'pending').length,
+          inactiveUsers: users.filter(u => (u.status?.name || u.status) === 'inactive').length
         });
       }
     } catch (error) {

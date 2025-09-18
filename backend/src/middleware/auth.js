@@ -9,13 +9,18 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select('-password').populate('role').populate('status');
     
-    if (!user || user.status !== 'active') {
+    if (!user || user.status.name !== 'active') {
       return res.status(401).json({ message: 'Invalid token or inactive user.' });
     }
 
-    req.user = user;
+    // Add role name for easier access
+    req.user = {
+      ...user.toObject(),
+      role: user.role.name,
+      status: user.status.name
+    };
     next();
   } catch (error) {
     res.status(401).json({ message: 'Invalid token.' });

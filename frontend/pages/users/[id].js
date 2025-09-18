@@ -36,22 +36,24 @@ export default function ViewUser() {
   };
 
   const getRoleColor = (role) => {
+    const roleName = role?.name || role || '';
     const colors = {
       admin: 'bg-red-100 text-red-800 border-red-200',
       manager: 'bg-blue-100 text-blue-800 border-blue-200',
       employee: 'bg-green-100 text-green-800 border-green-200',
       customer: 'bg-purple-100 text-purple-800 border-purple-200'
     };
-    return colors[role] || 'bg-gray-100 text-gray-800 border-gray-200';
+    return colors[roleName] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getStatusColor = (status) => {
+    const statusName = status?.name || status || '';
     const colors = {
       active: 'bg-green-100 text-green-800 border-green-200',
       inactive: 'bg-red-100 text-red-800 border-red-200',
       pending: 'bg-yellow-100 text-yellow-800 border-yellow-200'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+    return colors[statusName] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   if (loading) {
@@ -111,10 +113,10 @@ export default function ViewUser() {
               <p className="text-gray-600 text-lg">{userData.email}</p>
               <div className="flex gap-3 mt-4">
                 <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getRoleColor(userData.role)}`}>
-                  🛡️ {userData.role.toUpperCase()}
+                  🛡️ {(userData.role?.name || userData.role || '').toUpperCase()}
                 </span>
                 <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(userData.status)}`}>
-                  ⚡ {userData.status.toUpperCase()}
+                  ⚡ {(userData.status?.name || userData.status || '').toUpperCase()}
                 </span>
               </div>
             </div>
@@ -160,11 +162,8 @@ export default function ViewUser() {
               <div>
                 <label className="block text-sm font-semibold text-gray-500 mb-1">Account Status</label>
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${
-                    userData.status === 'active' ? 'bg-green-500' :
-                    userData.status === 'inactive' ? 'bg-red-500' : 'bg-yellow-500'
-                  }`}></div>
-                  <span className="text-gray-900 capitalize">{userData.status}</span>
+                  <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: userData.status?.color || '#6B7280' }}></div>
+                  <span className="text-gray-900 capitalize">{userData.status?.name || userData.status}</span>
                 </div>
               </div>
             </div>

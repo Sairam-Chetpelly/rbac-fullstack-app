@@ -12,6 +12,8 @@ export default function EditUser() {
   const { id } = router.query;
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
+  const [roles, setRoles] = useState([]);
+  const [statuses, setStatuses] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -31,14 +33,22 @@ export default function EditUser() {
 
   const fetchUser = async () => {
     try {
-      const response = await api.get('/users');
-      const foundUser = response.data.find(u => u._id === id);
+      const [userRes, rolesRes, statusesRes] = await Promise.all([
+        api.get('/users'),
+        api.get('/roles'),
+        api.get('/status')
+      ]);
+      
+      setRoles(rolesRes.data);
+      setStatuses(statusesRes.data);
+      
+      const foundUser = userRes.data.find(u => u._id === id);
       if (foundUser) {
         setFormData({
           name: foundUser.name,
           email: foundUser.email,
-          role: foundUser.role,
-          status: foundUser.status
+          role: foundUser.role?._id || foundUser.role,
+          status: foundUser.status?._id || foundUser.status
         });
       }
     } catch (error) {
@@ -49,10 +59,13 @@ export default function EditUser() {
   };
 
   const getRoleOptions = () => {
-    if (user?.role === 'admin') return ['admin', 'manager', 'employee', 'customer'];
-    if (user?.role === 'manager') return ['employee', 'customer'];
-    if (user?.role === 'employee') return ['customer'];
-    return [];
+    const allowedRoles = {
+      admin: ['admin', 'manager', 'employee', 'customer'],
+      manager: ['employee', 'customer'],
+      employee: ['customer']
+    };
+    const allowed = allowedRoles[user?.role] || [];
+    return roles.filter(role => allowed.includes(role.name));
   };
 
   const handleSubmit = async (e) => {
@@ -147,11 +160,10 @@ export default function EditUser() {
                 value={formData.role}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                disabled={!getRoleOptions().includes(formData.role) && user.role !== 'admin'}
               >
                 {getRoleOptions().map(role => (
-                  <option key={role} value={role}>
-                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                  <option key={role._id} value={role._id}>
+                    {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
                   </option>
                 ))}
               </select>
@@ -162,22 +174,19 @@ export default function EditUser() {
                 ⚡ Status
               </label>
               <div className="flex flex-col gap-2">
-                {['active', 'inactive', 'pending'].map(status => (
-                  <label key={status} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
+                {statuses.map(status => (
+                  <label key={status._id} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
                     <input
                       type="radio"
                       name="status"
-                      value={status}
-                      checked={formData.status === status}
+                      value={status._id}
+                      checked={formData.status === status._id}
                       onChange={handleChange}
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                     />
                     <span className="text-sm font-medium text-gray-700 capitalize flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        status === 'active' ? 'bg-green-500' :
-                        status === 'inactive' ? 'bg-red-500' : 'bg-yellow-500'
-                      }`}></div>
-                      {status}
+                      <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: status.color }}></div>
+                      {status.name}
                     </span>
                   </label>
                 ))}
