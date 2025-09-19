@@ -1,5 +1,5 @@
 export const rolePermissions = {
-  admin: ['dashboard', 'roles', 'users', 'status', 'settings'],
+  admin: ['dashboard', 'roles', 'users', 'status', 'settings', 'continents', 'countries', 'visa-types', 'country-visa-types', 'country-terms-conditions', 'visa-terms-conditions', 'form-sections', 'form-fields'],
   manager: ['dashboard', 'roles:view', 'users', 'status'],
   employee: ['users:customers'],
   customer: ['dashboard']
@@ -23,6 +23,22 @@ export const canAccess = (userRole, page) => {
       return permissions.includes('status');
     case 'settings':
       return permissions.includes('settings');
+    case 'continents':
+      return permissions.includes('continents');
+    case 'countries':
+      return permissions.includes('countries');
+    case 'visa-types':
+      return permissions.includes('visa-types');
+    case 'country-visa-types':
+      return permissions.includes('country-visa-types');
+    case 'country-terms-conditions':
+      return permissions.includes('country-terms-conditions');
+    case 'visa-terms-conditions':
+      return permissions.includes('visa-terms-conditions');
+    case 'form-sections':
+      return permissions.includes('form-sections');
+    case 'form-fields':
+      return permissions.includes('form-fields');
     default:
       return false;
   }

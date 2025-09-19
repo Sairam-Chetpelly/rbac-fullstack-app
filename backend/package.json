@@ -1,11 +1,13 @@
 {
   "name": "rbac-backend",
   "version": "1.0.0",
+  "description": "RBAC Backend API",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "seed-visa": "node src/seed-visa-form.js"
   },
   "dependencies": {
     "express": "^4.18.2",

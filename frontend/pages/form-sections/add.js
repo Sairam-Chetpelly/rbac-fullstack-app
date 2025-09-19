@@ -1,0 +1,160 @@
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import Button from '../../components/Button';
+import Card from '../../components/Card';
+import api from '../../lib/api';
+
+export default function AddFormSection() {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    order: '',
+    status: ''
+  });
+  const [statuses, setStatuses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    fetchStatuses();
+  }, []);
+
+  const fetchStatuses = async () => {
+    try {
+      const response = await api.get('/status');
+      setStatuses(response.data);
+    } catch (error) {
+      console.error('Error fetching statuses:', error);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await api.post('/form-sections', formData);
+      router.push('/form-sections');
+    } catch (error) {
+      console.error('Error creating form section:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  return (
+      <div className="max-w-4xl mx-auto space-y-6 lg:space-y-8 p-4 sm:p-6 lg:p-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => router.push('/form-sections')}
+            icon="←"
+            className="w-full sm:w-auto"
+          >
+            Back to Form Sections
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">➕ Add Form Section</h1>
+            <p className="text-sm sm:text-base text-gray-600">Create a new form section</p>
+          </div>
+        </div>
+
+        <Card title="Form Section Information" icon="📑">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter form section name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Order *
+                </label>
+                <input
+                  type="number"
+                  name="order"
+                  value={formData.order}
+                  onChange={handleChange}
+                  required
+                  min="1"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter display order"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Status *
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select Status</option>
+                  {statuses.map((status) => (
+                    <option key={status._id} value={status._id}>
+                      {status.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter form section description"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4 pt-6">
+              <Button
+                type="submit"
+                disabled={loading}
+                icon="💾"
+                className="flex-1 sm:flex-none"
+              >
+                {loading ? 'Creating...' : 'Create Form Section'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push('/form-sections')}
+                className="flex-1 sm:flex-none"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </div>
+  );
+}

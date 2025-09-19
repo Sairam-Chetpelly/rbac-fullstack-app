@@ -5,6 +5,10 @@ require('dotenv').config();
 const User = require('./models/User');
 const Role = require('./models/Role');
 const Status = require('./models/Status');
+const Continent = require('./models/Continent');
+const Country = require('./models/Country');
+const VisaType = require('./models/VisaType');
+const CountryVisaType = require('./models/CountryVisaType');
 
 const seedDatabase = async () => {
   try {
@@ -15,12 +19,16 @@ const seedDatabase = async () => {
     await User.deleteMany({});
     await Role.deleteMany({});
     await Status.deleteMany({});
+    await Continent.deleteMany({});
+    await Country.deleteMany({});
+    await VisaType.deleteMany({});
+    await CountryVisaType.deleteMany({});
 
     // Create Roles
     const roles = await Role.insertMany([
       {
         name: 'admin',
-        permissions: ['dashboard', 'roles', 'users', 'status', 'settings'],
+        permissions: ['dashboard', 'roles', 'users', 'status', 'settings', 'continents', 'countries', 'visa-types', 'country-visa-types', 'country-terms-conditions', 'visa-terms-conditions'],
         description: 'Full system access',
         isActive: true
       },
@@ -82,9 +90,98 @@ const seedDatabase = async () => {
 
     await adminUser.save();
 
+    // Create Continents
+    const continents = await Continent.insertMany([
+      {
+        name: 'Asia',
+        slug: 'asia',
+        description: 'The largest continent',
+        status: activeStatus._id
+      },
+      {
+        name: 'Europe',
+        slug: 'europe',
+        description: 'The second smallest continent',
+        status: activeStatus._id
+      },
+      {
+        name: 'North America',
+        slug: 'north-america',
+        description: 'Third largest continent',
+        status: activeStatus._id
+      }
+    ]);
+
+    // Create Countries
+    const asiaContinent = continents.find(c => c.name === 'Asia');
+    const europeContinent = continents.find(c => c.name === 'Europe');
+    
+    const countries = await Country.insertMany([
+      {
+        name: 'India',
+        slug: 'india',
+        description: 'South Asian country',
+        code: 'IN',
+        flagEmoji: '🇮🇳',
+        status: activeStatus._id,
+        continent: asiaContinent._id,
+        processingTimeMin: '5',
+        processingTimeMax: '10'
+      },
+      {
+        name: 'Germany',
+        slug: 'germany',
+        description: 'Central European country',
+        code: 'DE',
+        flagEmoji: '🇩🇪',
+        status: activeStatus._id,
+        continent: europeContinent._id,
+        processingTimeMin: '3',
+        processingTimeMax: '7'
+      }
+    ]);
+
     console.log('✅ Database seeded successfully!');
     console.log('📊 Created:', roles.length, 'roles');
     console.log('📊 Created:', statuses.length, 'statuses');
+    // Create Visa Types
+    const visaTypes = await VisaType.insertMany([
+      {
+        name: 'Tourist Visa',
+        description: 'For tourism and leisure travel',
+        status: activeStatus._id
+      },
+      {
+        name: 'Business Visa',
+        description: 'For business meetings and conferences',
+        status: activeStatus._id
+      }
+    ]);
+
+    // Create Country Visa Types
+    const touristVisa = visaTypes.find(v => v.name === 'Tourist Visa');
+    const indiaCountry = countries.find(c => c.name === 'India');
+    
+    const countryVisaTypes = await CountryVisaType.insertMany([
+      {
+        name: 'India Tourist Visa',
+        description: 'Tourist visa for India',
+        status: activeStatus._id,
+        visaType: touristVisa._id,
+        country: indiaCountry._id,
+        processingTimeMin: '3',
+        processingTimeMax: '7',
+        vfsAmount: '50',
+        consulateAmount: '100',
+        serviceAmount: '25',
+        totalAmount: '175'
+      }
+    ]);
+
+    console.log('📊 Created:', continents.length, 'continents');
+    console.log('📊 Created:', countries.length, 'countries');
+    console.log('📊 Created:', visaTypes.length, 'visa types');
+    console.log('📊 Created:', countryVisaTypes.length, 'country visa types');
     console.log('👤 Created admin user: admin@example.com / admin123');
     
     process.exit(0);
