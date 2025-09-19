@@ -14,6 +14,11 @@ const formSectionSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  countryVisaType: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CountryVisaType',
+    required: true
+  },
   status: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Status',

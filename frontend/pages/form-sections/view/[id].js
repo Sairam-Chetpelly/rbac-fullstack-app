@@ -91,6 +91,13 @@ export default function ViewFormSection() {
               </div>
 
               <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Visa Type</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
+                  {formSection.countryVisaType?.name || 'No visa type assigned'}
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
                 <div className="px-4 py-3 bg-gray-50 rounded-xl">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${

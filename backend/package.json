@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node src/seed.js",
-    "seed-visa": "node src/seed-visa-form.js"
+    "seed": "node src/seed-realistic.js"
   },
   "dependencies": {
     "express": "^4.18.2",

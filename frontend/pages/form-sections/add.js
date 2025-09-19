@@ -9,14 +9,17 @@ export default function AddFormSection() {
     name: '',
     description: '',
     order: '',
+    countryVisaType: '',
     status: ''
   });
   const [statuses, setStatuses] = useState([]);
+  const [countryVisaTypes, setCountryVisaTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     fetchStatuses();
+    fetchCountryVisaTypes();
   }, []);
 
   const fetchStatuses = async () => {
@@ -25,6 +28,15 @@ export default function AddFormSection() {
       setStatuses(response.data);
     } catch (error) {
       console.error('Error fetching statuses:', error);
+    }
+  };
+
+  const fetchCountryVisaTypes = async () => {
+    try {
+      const response = await api.get('/country-visa-types');
+      setCountryVisaTypes(response.data);
+    } catch (error) {
+      console.error('Error fetching country visa types:', error);
     }
   };
 
@@ -98,6 +110,26 @@ export default function AddFormSection() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter display order"
                 />
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Visa Type *
+                </label>
+                <select
+                  name="countryVisaType"
+                  value={formData.countryVisaType}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select Visa Type</option>
+                  {countryVisaTypes.map((cvt) => (
+                    <option key={cvt._id} value={cvt._id}>
+                      {cvt.name} - {cvt.country?.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

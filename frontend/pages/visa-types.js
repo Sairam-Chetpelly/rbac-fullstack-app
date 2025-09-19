@@ -129,7 +129,7 @@ export default function VisaTypes() {
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      onClick={() => router.push(`/visa-types/${visaType._id}`)}
+                      onClick={() => router.push(`/visa-types/admin/${visaType._id}`)}
                       className="flex-1"
                       icon="✏️"
                     >

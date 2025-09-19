@@ -1,160 +1,173 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-
+import Link from 'next/link';
+import { Clock, DollarSign, FileText, ArrowLeft, ChevronRight } from 'lucide-react';
 import Button from '../../components/Button';
-import Card from '../../components/Card';
+import PublicLayout from '../../components/PublicLayout';
 import api from '../../lib/api';
 
-export default function EditVisaType() {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    status: ''
-  });
-  const [statuses, setStatuses] = useState([]);
-  const [loading, setLoading] = useState(false);
+const CountryVisaTypes = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id: countryId } = router.query;
+  const [country, setCountry] = useState(null);
+  const [visaTypes, setVisaTypes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (id) {
-      fetchVisaType();
-      fetchStatuses();
+    if (countryId) {
+      fetchVisaTypes();
     }
-  }, [id]);
+  }, [countryId]);
 
-  const fetchVisaType = async () => {
+  const fetchVisaTypes = async () => {
     try {
-      const response = await api.get(`/visa-types`);
-      const visaType = response.data.find(v => v._id === id);
-      if (visaType) {
-        setFormData({
-          name: visaType.name,
-          description: visaType.description || '',
-          status: visaType.status._id
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching visa type:', error);
-    }
-  };
+      setLoading(true);
+      setError(null);
 
-  const fetchStatuses = async () => {
-    try {
-      const response = await api.get('/status');
-      setStatuses(response.data);
-    } catch (error) {
-      console.error('Error fetching statuses:', error);
-    }
-  };
+      // Fetch country details and visa types
+      const [countryResponse, visaTypesResponse] = await Promise.all([
+        api.get(`/public/countries/${countryId}`),
+        api.get(`/public/countries/${countryId}/visa-types`)
+      ]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await api.put(`/visa-types/${id}`, formData);
-      router.push('/visa-types');
-    } catch (error) {
-      console.error('Error updating visa type:', error);
+      setCountry(countryResponse.data);
+      setVisaTypes(visaTypesResponse.data);
+    } catch (err) {
+      console.error('Error fetching visa types:', err);
+      setError('Failed to load visa types');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    
-      <div className="max-w-4xl mx-auto space-y-6 lg:space-y-8 p-4 sm:p-6 lg:p-0">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => router.push('/visa-types')}
-            icon="←"
-            className="w-full sm:w-auto"
-          >
-            Back to Visa Types
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">✏️ Edit Visa Type</h1>
-            <p className="text-sm sm:text-base text-gray-600">Update visa type information</p>
+  const handleVisaTypeSelect = (visaTypeId) => {
+    router.push(`/visa-application/terms/${visaTypeId}`);
+  };
+
+  if (loading) {
+    return (
+      <PublicLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading visa types...</p>
           </div>
         </div>
+      </PublicLayout>
+    );
+  }
 
-        <Card title="Visa Type Information" icon="📋">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-              <div>
-                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                  📋 Visa Type Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
-                  placeholder="Enter visa type name"
-                  required
-                />
-              </div>
+  if (error) {
+    return (
+      <PublicLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Visa Types</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={() => router.back()}>Go Back</Button>
+          </div>
+        </div>
+      </PublicLayout>
+    );
+  }
 
-              <div className="lg:col-span-2">
-                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                  📝 Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
-                  placeholder="Enter visa type description"
-                  rows="4"
-                />
-              </div>
-
-              <div className="lg:col-span-2">
-                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-3">
-                  ⚡ Status
-                </label>
-                <div className="flex flex-col sm:flex-row gap-4 lg:gap-6">
-                  {statuses.map(status => (
-                    <label key={status._id} className="flex items-center gap-3 p-3 lg:p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
-                      <input
-                        type="radio"
-                        name="status"
-                        value={status._id}
-                        checked={formData.status === status._id}
-                        onChange={(e) => setFormData({...formData, status: e.target.value})}
-                        className="w-4 h-4 lg:w-5 lg:h-5 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm lg:text-base font-medium text-gray-700 capitalize">
-                        {status.name}
-                      </span>
-                    </label>
-                  ))}
+  return (
+    <PublicLayout>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => router.back()}
+                variant="ghost"
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">{country?.flagEmoji || '🌍'}</span>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">{country?.name} Visa Types</h1>
+                  <p className="text-gray-600">Choose the visa type that best fits your travel purpose</p>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            <div className="flex gap-4 pt-6 border-t border-gray-100">
-              <Button 
-                type="submit" 
-                disabled={loading}
-                icon="💾"
-                className="flex-1"
-              >
-                {loading ? 'Updating Visa Type...' : 'Update Visa Type'}
-              </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => router.push('/visa-types')}
-                className="flex-1"
-                icon="❌"
-              >
-                Cancel
-              </Button>
+        {/* Visa Types Grid */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {visaTypes.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-6xl mb-4">📋</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Visa Types Available</h3>
+              <p className="text-gray-600">No visa types are currently available for {country?.name}.</p>
             </div>
-          </form>
-        </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visaTypes.map((visaType) => (
+                <div
+                  key={visaType._id}
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer border border-gray-200"
+                  onClick={() => handleVisaTypeSelect(visaType._id)}
+                >
+                  <div className="p-6">
+                    {/* Visa Type Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">{visaType.name}</h3>
+                        <p className="text-gray-600 text-sm line-clamp-2">{visaType.description}</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-gray-400 ml-2 flex-shrink-0" />
+                    </div>
+
+                    {/* Processing Time */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <Clock className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm text-gray-600">
+                        Processing: {visaType.processingTimeMin}-{visaType.processingTimeMax} days
+                      </span>
+                    </div>
+
+                    {/* Pricing Breakdown */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">VFS Fee:</span>
+                        <span className="font-medium">${visaType.vfsAmount}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Consulate Fee:</span>
+                        <span className="font-medium">${visaType.consulateAmount}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Service Fee:</span>
+                        <span className="font-medium">${visaType.serviceAmount}</span>
+                      </div>
+                      <div className="border-t pt-2">
+                        <div className="flex justify-between">
+                          <span className="font-semibold text-gray-900">Total Amount:</span>
+                          <span className="font-bold text-lg text-green-600">${visaType.totalAmount}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Apply Button */}
+                    <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
+                      Select This Visa Type
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    
+    </PublicLayout>
   );
-}
+};
+
+export default CountryVisaTypes;

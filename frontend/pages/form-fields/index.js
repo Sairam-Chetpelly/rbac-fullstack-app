@@ -91,7 +91,48 @@ export default function FormFields() {
                       <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
                         Order: {formField.order}
                       </span>
+                      {formField.required && (
+                        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">
+                          Required
+                        </span>
+                      )}
                     </div>
+                    {formField.options && formField.options.length > 0 && (
+                      <div className="mb-3">
+                        <span className="text-xs text-gray-500">Options: </span>
+                        <span className="text-sm text-gray-700">
+                          {formField.options.slice(0, 3).join(', ')}
+                          {formField.options.length > 3 && ` (+${formField.options.length - 3} more)`}
+                        </span>
+                      </div>
+                    )}
+                    {formField.validationRules && Object.keys(formField.validationRules).length > 0 && (
+                      <div className="mb-3">
+                        <span className="text-xs text-gray-500">Validation: </span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {formField.validationRules.minLength && (
+                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                              Min: {formField.validationRules.minLength}
+                            </span>
+                          )}
+                          {formField.validationRules.maxLength && (
+                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                              Max: {formField.validationRules.maxLength}
+                            </span>
+                          )}
+                          {formField.validationRules.min && (
+                            <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
+                              Min: {formField.validationRules.min}
+                            </span>
+                          )}
+                          {formField.validationRules.max && (
+                            <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
+                              Max: {formField.validationRules.max}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     <div className="mb-3">
                       <span className="text-xs text-gray-500">Section: </span>
                       <span className="text-sm font-medium text-gray-700">

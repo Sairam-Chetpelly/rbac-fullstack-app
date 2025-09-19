@@ -88,6 +88,12 @@ export default function FormSections() {
                         {formSection.order}
                       </span>
                     </div>
+                    <div className="mb-3">
+                      <span className="text-xs text-gray-500">Visa Type: </span>
+                      <span className="text-sm font-medium text-gray-700">
+                        {formSection.countryVisaType?.name || 'No visa type'}
+                      </span>
+                    </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       formSection.status?.name === 'active' ? 'bg-green-100 text-green-800' :
                       formSection.status?.name === 'inactive' ? 'bg-red-100 text-red-800' :

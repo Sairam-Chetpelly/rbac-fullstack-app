@@ -41,6 +41,7 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
       name: 'Form Management',
       icon: '📝',
       children: [
+        { name: 'Form Builder', href: '/form-builder', permission: 'form-sections', icon: '🏗️' },
         { name: 'Form Sections', href: '/form-sections', permission: 'form-sections', icon: '📑' },
         { name: 'Form Fields', href: '/form-fields', permission: 'form-fields', icon: '📄' }
       ]

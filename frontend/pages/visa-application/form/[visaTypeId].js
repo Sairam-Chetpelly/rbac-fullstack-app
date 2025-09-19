@@ -1,0 +1,412 @@
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { ArrowLeft, Save, CreditCard, Upload, CheckCircle } from 'lucide-react';
+import Button from '../../../components/Button';
+import PublicLayout from '../../../components/PublicLayout';
+import api from '../../../lib/api';
+
+const VisaApplicationForm = () => {
+  const router = useRouter();
+  const { visaTypeId } = router.query;
+  const [visaType, setVisaType] = useState(null);
+  const [country, setCountry] = useState(null);
+  const [formSections, setFormSections] = useState([]);
+  const [formFields, setFormFields] = useState([]);
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (visaTypeId) {
+      fetchFormData();
+    }
+  }, [visaTypeId]);
+
+  const fetchFormData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('Fetching form data for visa type:', visaTypeId);
+      
+      const [visaTypeResponse, formResponse] = await Promise.all([
+        api.get(`/public/visa-types/${visaTypeId}`),
+        api.get(`/public/visa-types/${visaTypeId}/form`)
+      ]);
+
+      console.log('Visa type response:', visaTypeResponse.data);
+      console.log('Form response:', formResponse.data);
+
+      setVisaType(visaTypeResponse.data.visaType);
+      setCountry(visaTypeResponse.data.country);
+      setFormSections(formResponse.data.sections || []);
+      setFormFields(formResponse.data.fields || []);
+    } catch (err) {
+      console.error('Error fetching form data:', err);
+      setError('Failed to load application form');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getFieldsBySection = (sectionId) => {
+    return formFields.filter(field => field.formSection === sectionId).sort((a, b) => a.order - b.order);
+  };
+
+  const handleInputChange = (fieldName, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  };
+
+  const handleFileUpload = (fieldName, file) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: file
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      // Check if there are any file uploads
+      const hasFiles = Object.values(formData).some(value => value instanceof File);
+      
+      if (hasFiles) {
+        // Use FormData for file uploads
+        const formDataToSubmit = new FormData();
+        formDataToSubmit.append('visaTypeId', visaTypeId);
+        
+        Object.keys(formData).forEach(key => {
+          if (formData[key] instanceof File) {
+            formDataToSubmit.append(key, formData[key]);
+          } else {
+            formDataToSubmit.append(key, formData[key]);
+          }
+        });
+
+        await api.post('/public/visa-applications', formDataToSubmit, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } else {
+        // Use JSON for regular form data
+        await api.post('/public/visa-applications', {
+          visaTypeId,
+          ...formData
+        });
+      }
+
+      alert('Application submitted successfully!');
+      router.push('/application-success');
+    } catch (err) {
+      console.error('Error submitting application:', err);
+      alert('Failed to submit application. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      await api.post('/public/visa-applications/draft', {
+        visaTypeId,
+        formData
+      });
+      alert('Draft saved successfully!');
+    } catch (err) {
+      console.error('Error saving draft:', err);
+      alert('Failed to save draft.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <PublicLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading application form...</p>
+          </div>
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <PublicLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Form</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={() => router.back()}>Go Back</Button>
+          </div>
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  return (
+    <PublicLayout>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => router.back()}
+                variant="ghost"
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">{country?.flagEmoji || '🌍'}</span>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Visa Application Form</h1>
+                  <p className="text-gray-600">
+                    {visaType?.name} - {country?.name}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Pricing Summary */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200 mb-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">💰 Pricing Breakdown</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-lg font-bold text-blue-600">${visaType?.vfsAmount}</div>
+                <div className="text-sm text-gray-600">VFS Fee</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-green-600">${visaType?.consulateAmount}</div>
+                <div className="text-sm text-gray-600">Consulate Fee</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-purple-600">${visaType?.serviceAmount}</div>
+                <div className="text-sm text-gray-600">Service Fee</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">${visaType?.totalAmount}</div>
+                <div className="text-sm text-gray-600">Total Amount</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Application Form */}
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {formSections.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+                <div className="text-gray-400 text-6xl mb-4">📋</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Form Available</h3>
+                <p className="text-gray-600">The application form for this visa type is not yet configured.</p>
+              </div>
+            ) : (
+              formSections
+                .sort((a, b) => a.order - b.order)
+                .map((section) => {
+                  const sectionFields = getFieldsBySection(section._id);
+                  if (sectionFields.length === 0) return null;
+
+                  return (
+                    <div key={section._id} className="bg-white rounded-xl shadow-lg p-8">
+                      <div className="flex items-center gap-3 mb-6">
+                        <span className="text-2xl">📋</span>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{section.name}</h3>
+                          <p className="text-sm text-gray-600">{section.description}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {sectionFields.map((field) => (
+                          <div key={field._id} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              {field.label}
+                              {field.required && <span className="text-red-500 ml-1">*</span>}
+                            </label>
+                            
+                            {field.type === 'textarea' ? (
+                              <textarea
+                                name={field.name}
+                                placeholder={field.placeholder}
+                                value={formData[field.name] || ''}
+                                onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                required={field.required}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                rows={3}
+                              />
+                            ) : field.type === 'select' ? (
+                              <select 
+                                name={field.name}
+                                value={formData[field.name] || ''}
+                                onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                required={field.required}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              >
+                                <option value="">Select {field.label}</option>
+                                {field.options && field.options.map((option, index) => (
+                                  <option key={index} value={option.toLowerCase().replace(/\s+/g, '-')}>
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : field.type === 'radio' ? (
+                              <div className="flex gap-4">
+                                {field.options && field.options.length > 0 ? (
+                                  field.options.map((option, index) => (
+                                    <label key={index} className="flex items-center">
+                                      <input 
+                                        type="radio" 
+                                        name={field.name} 
+                                        value={option}
+                                        checked={formData[field.name] === option}
+                                        onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                        required={field.required}
+                                        className="mr-2" 
+                                      />
+                                      {option}
+                                    </label>
+                                  ))
+                                ) : (
+                                  <>
+                                    <label className="flex items-center">
+                                      <input 
+                                        type="radio" 
+                                        name={field.name} 
+                                        value="yes"
+                                        checked={formData[field.name] === 'yes'}
+                                        onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                        required={field.required}
+                                        className="mr-2" 
+                                      />
+                                      Yes
+                                    </label>
+                                    <label className="flex items-center">
+                                      <input 
+                                        type="radio" 
+                                        name={field.name} 
+                                        value="no"
+                                        checked={formData[field.name] === 'no'}
+                                        onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                        required={field.required}
+                                        className="mr-2" 
+                                      />
+                                      No
+                                    </label>
+                                  </>
+                                )}
+                              </div>
+                            ) : field.type === 'checkbox' ? (
+                              <div className="space-y-2">
+                                {field.options && field.options.length > 0 ? (
+                                  field.options.map((option, index) => (
+                                    <label key={index} className="flex items-center">
+                                      <input 
+                                        type="checkbox" 
+                                        name={field.name} 
+                                        value={option}
+                                        checked={(formData[field.name] || []).includes(option)}
+                                        onChange={(e) => {
+                                          const currentValues = formData[field.name] || [];
+                                          const newValues = e.target.checked
+                                            ? [...currentValues, option]
+                                            : currentValues.filter(v => v !== option);
+                                          handleInputChange(field.name, newValues);
+                                        }}
+                                        className="mr-2" 
+                                      />
+                                      {option}
+                                    </label>
+                                  ))
+                                ) : (
+                                  <label className="flex items-center">
+                                    <input 
+                                      type="checkbox" 
+                                      name={field.name}
+                                      checked={formData[field.name] || false}
+                                      onChange={(e) => handleInputChange(field.name, e.target.checked)}
+                                      required={field.required}
+                                      className="mr-2" 
+                                    />
+                                    {field.label}
+                                  </label>
+                                )}
+                              </div>
+                            ) : field.type === 'file' ? (
+                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                                <input 
+                                  type="file" 
+                                  name={field.name}
+                                  onChange={(e) => handleFileUpload(field.name, e.target.files[0])}
+                                  required={field.required}
+                                  className="hidden" 
+                                  id={field.name} 
+                                />
+                                <label htmlFor={field.name} className="cursor-pointer">
+                                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                  <div className="text-sm text-gray-600">
+                                    {formData[field.name] ? formData[field.name].name : `Click to upload ${field.label}`}
+                                  </div>
+                                </label>
+                              </div>
+                            ) : (
+                              <input
+                                type={field.type}
+                                name={field.name}
+                                placeholder={field.placeholder}
+                                value={formData[field.name] || ''}
+                                onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                required={field.required}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 pt-6">
+              <Button 
+                type="submit" 
+                disabled={submitting}
+                className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700"
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                {submitting ? 'Submitting...' : `Submit Application & Pay $${visaType?.totalAmount}`}
+              </Button>
+              <Button 
+                type="button" 
+                onClick={handleSaveDraft}
+                variant="outline" 
+                className="flex-1"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save as Draft
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </PublicLayout>
+  );
+};
+
+export default VisaApplicationForm;

@@ -6,6 +6,11 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+// Public API client (no auth required)
+const publicApi = axios.create({
+  baseURL: API_BASE_URL,
+});
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
   if (token) {
@@ -37,5 +42,28 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// API client with methods
+export const apiClient = {
+  // Public methods (no auth required)
+  getCountries: async () => {
+    const response = await publicApi.get('/public/countries');
+    return response.data;
+  },
+  getContinents: async () => {
+    const response = await publicApi.get('/public/continents');
+    return response.data;
+  },
+  
+  // Authenticated methods
+  login: async (credentials) => {
+    const response = await api.post('/auth/login', credentials);
+    return response.data;
+  },
+  register: async (userData) => {
+    const response = await api.post('/auth/register', userData);
+    return response.data;
+  }
+};
 
 export default api;

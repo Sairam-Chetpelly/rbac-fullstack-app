@@ -15,6 +15,9 @@ const countryTermsConditionsRoutes = require('./routes/countryTermsConditions');
 const visaTermsConditionsRoutes = require('./routes/visaTermsConditions');
 const formSectionRoutes = require('./routes/formSections');
 const formFieldRoutes = require('./routes/formFields');
+const formBuilderRoutes = require('./routes/formBuilder');
+const visaFormRoutes = require('./routes/visaForm');
+const publicRoutes = require('./routes/public');
 
 const app = express();
 
@@ -38,6 +41,9 @@ app.use('/api/country-terms-conditions', countryTermsConditionsRoutes);
 app.use('/api/visa-terms-conditions', visaTermsConditionsRoutes);
 app.use('/api/form-sections', formSectionRoutes);
 app.use('/api/form-fields', formFieldRoutes);
+app.use('/api/form-builder', formBuilderRoutes);
+app.use('/api/visa-form', visaFormRoutes);
+app.use('/api/public', publicRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

@@ -14,8 +14,11 @@ export default function AddFormField() {
     required: false,
     order: '',
     formSection: '',
-    status: ''
+    status: '',
+    options: [],
+    validationRules: {}
   });
+  const [newOption, setNewOption] = useState('');
   const [statuses, setStatuses] = useState([]);
   const [formSections, setFormSections] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -68,6 +71,33 @@ export default function AddFormField() {
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value
+    });
+  };
+
+  const addOption = () => {
+    if (newOption.trim()) {
+      setFormData({
+        ...formData,
+        options: [...formData.options, newOption.trim()]
+      });
+      setNewOption('');
+    }
+  };
+
+  const removeOption = (index) => {
+    setFormData({
+      ...formData,
+      options: formData.options.filter((_, i) => i !== index)
+    });
+  };
+
+  const handleValidationChange = (field, value) => {
+    setFormData({
+      ...formData,
+      validationRules: {
+        ...formData.validationRules,
+        [field]: value || undefined
+      }
     });
   };
 
@@ -170,7 +200,7 @@ export default function AddFormField() {
                   <option value="">Select Form Section</option>
                   {formSections.map((section) => (
                     <option key={section._id} value={section._id}>
-                      {section.name}
+                      {section.name} - {section.countryVisaType?.name || 'No Visa'}
                     </option>
                   ))}
                 </select>
@@ -236,6 +266,140 @@ export default function AddFormField() {
                   <label className="ml-2 block text-sm font-semibold text-gray-700">
                     Required Field
                   </label>
+                </div>
+              </div>
+
+              {/* Options for select, radio, checkbox */}
+              {(formData.type === 'select' || formData.type === 'radio' || formData.type === 'checkbox') && (
+                <div className="lg:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Options
+                  </label>
+                  <div className="space-y-2">
+                    {formData.options.map((option, index) => (
+                      <div key={index} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={option}
+                          onChange={(e) => {
+                            const newOptions = [...formData.options];
+                            newOptions[index] = e.target.value;
+                            setFormData({ ...formData, options: newOptions });
+                          }}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeOption(index)}
+                          className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newOption}
+                        onChange={(e) => setNewOption(e.target.value)}
+                        placeholder="Add new option"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOption())}
+                      />
+                      <button
+                        type="button"
+                        onClick={addOption}
+                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Validation Rules */}
+              <div className="lg:col-span-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Validation Rules</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(formData.type === 'text' || formData.type === 'textarea' || formData.type === 'email') && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Minimum Length
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.validationRules.minLength || ''}
+                          onChange={(e) => handleValidationChange('minLength', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          min="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Maximum Length
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.validationRules.maxLength || ''}
+                          onChange={(e) => handleValidationChange('maxLength', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          min="0"
+                        />
+                      </div>
+                    </>
+                  )}
+                  {formData.type === 'number' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Minimum Value
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.validationRules.min || ''}
+                          onChange={(e) => handleValidationChange('min', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Maximum Value
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.validationRules.max || ''}
+                          onChange={(e) => handleValidationChange('max', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </>
+                  )}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Pattern (Regex)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.validationRules.pattern || ''}
+                      onChange={(e) => handleValidationChange('pattern', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., ^[a-zA-Z]+$"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Custom Error Message
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.validationRules.customMessage || ''}
+                      onChange={(e) => handleValidationChange('customMessage', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Custom validation error message"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';s
+import { useRouter } from 'next/router';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import api from '../lib/api';

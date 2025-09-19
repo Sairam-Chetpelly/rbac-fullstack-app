@@ -28,6 +28,18 @@ const formFieldSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  options: [{
+    type: String,
+    trim: true
+  }],
+  validationRules: {
+    minLength: { type: Number },
+    maxLength: { type: Number },
+    min: { type: Number },
+    max: { type: Number },
+    pattern: { type: String },
+    customMessage: { type: String }
+  },
   order: {
     type: Number,
     required: true
