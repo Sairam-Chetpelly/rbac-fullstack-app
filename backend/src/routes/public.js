@@ -5,6 +5,7 @@ const fs = require('fs');
 const Country = require('../models/Country');
 const Continent = require('../models/Continent');
 const CountryVisaType = require('../models/CountryVisaType');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -307,8 +308,8 @@ router.post('/verify-payment', async (req, res) => {
   }
 });
 
-// Submit visa application with payment (public)
-router.post('/visa-applications', upload.any(), async (req, res) => {
+// Submit visa application with payment (authenticated)
+router.post('/visa-applications', auth, upload.any(), async (req, res) => {
   try {
     const { visaTypeId, paymentId, orderId, signature, ...formData } = req.body;
     
@@ -331,12 +332,10 @@ router.post('/visa-applications', upload.any(), async (req, res) => {
       return res.status(400).json({ message: 'Payment verification failed' });
     }
     
-    const tempUserId = '68cd491ad94966d3fac6a818';
-    
     // Create application
     const applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     const application = new Application({
-      user: tempUserId,
+      user: req.user.id,
       countryVisaType: visaTypeId,
       applicationNumber,
       status: 'submitted',
@@ -398,14 +397,14 @@ router.post('/visa-applications', upload.any(), async (req, res) => {
       application: application._id,
       status: 'submitted',
       remarks: 'Application submitted with payment',
-      changedBy: tempUserId
+      changedBy: req.user.id
     });
     
     // Create payment record
     const visaType = await CountryVisaType.findById(visaTypeId);
     const payment = new Payment({
       application: application._id,
-      user: tempUserId,
+      user: req.user.id,
       amount: visaType.totalAmount,
       currency: 'INR',
       status: 'success',
@@ -431,8 +430,8 @@ router.post('/visa-applications', upload.any(), async (req, res) => {
   }
 });
 
-// Save visa application draft (public)
-router.post('/visa-applications/draft', async (req, res) => {
+// Save visa application draft (authenticated)
+router.post('/visa-applications/draft', auth, async (req, res) => {
   try {
     const { visaTypeId, formData } = req.body;
     
@@ -440,13 +439,10 @@ router.post('/visa-applications/draft', async (req, res) => {
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const FormField = require('../models/FormField');
     
-    // Create a temporary user for public submissions
-    const tempUserId = '68cd491ad94966d3fac6a818';
-    
     // Create draft application
     const applicationNumber = `DRAFT-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     const application = new Application({
-      user: tempUserId,
+      user: req.user.id,
       countryVisaType: visaTypeId,
       applicationNumber,
       status: 'draft'

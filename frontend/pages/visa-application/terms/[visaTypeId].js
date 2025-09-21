@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { ArrowLeft, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import Button from '../../../components/Button';
-import PublicLayout from '../../../components/PublicLayout';
+
 import api from '../../../lib/api';
 
 const VisaTermsAndConditions = () => {
@@ -53,47 +53,42 @@ const VisaTermsAndConditions = () => {
 
   if (loading) {
     return (
-      <PublicLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading terms and conditions...</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading terms and conditions...</p>
         </div>
-      </PublicLayout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <PublicLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Terms</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <Button onClick={() => router.back()}>Go Back</Button>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Terms</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => router.back()}>Go Back</Button>
         </div>
-      </PublicLayout>
+      </div>
     );
   }
 
   return (
-    <PublicLayout>
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white shadow-sm">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center gap-4">
-              <Button
+              {/* <Button
                 onClick={() => router.back()}
                 variant="ghost"
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back
-              </Button>
+              </Button> */}
               <div className="flex items-center gap-3">
                 <FileText className="h-8 w-8 text-blue-600" />
                 <div>
@@ -226,8 +221,7 @@ const VisaTermsAndConditions = () => {
             </Button>
           </div>
         </div>
-      </div>
-    </PublicLayout>
+    </div>
   );
 };
 

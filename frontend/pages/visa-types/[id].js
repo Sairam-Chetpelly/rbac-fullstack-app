@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Clock, DollarSign, FileText, ArrowLeft, ChevronRight } from 'lucide-react';
 import Button from '../../components/Button';
-import PublicLayout from '../../components/PublicLayout';
+
 import api from '../../lib/api';
 
 const CountryVisaTypes = () => {
@@ -47,47 +47,42 @@ const CountryVisaTypes = () => {
 
   if (loading) {
     return (
-      <PublicLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading visa types...</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading visa types...</p>
         </div>
-      </PublicLayout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <PublicLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Visa Types</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <Button onClick={() => router.back()}>Go Back</Button>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Visa Types</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => router.back()}>Go Back</Button>
         </div>
-      </PublicLayout>
+      </div>
     );
   }
 
   return (
-    <PublicLayout>
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center gap-4">
-              <Button
+              {/* <Button
                 onClick={() => router.back()}
                 variant="ghost"
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back
-              </Button>
+              </Button> */}
               <div className="flex items-center gap-3">
                 <span className="text-4xl">{country?.flagEmoji || '🌍'}</span>
                 <div>
@@ -165,8 +160,7 @@ const CountryVisaTypes = () => {
             </div>
           )}
         </div>
-      </div>
-    </PublicLayout>
+    </div>
   );
 };
 

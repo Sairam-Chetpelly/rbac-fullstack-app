@@ -61,8 +61,9 @@ const CustomerLayout = ({ children }) => {
               </button>
             </div>
             <div className="flex-1 flex justify-center">
-              <Link href="/customer/dashboard">
-                <h1 className="text-xl font-bold text-gray-900 hover:text-blue-600 cursor-pointer">Customer Portal</h1>
+              <Link href="/customer/dashboard" className="flex items-center gap-2">
+                <img src="/optionslogo.png" alt="Logo" className="w-100" />
+                {/* <h1 className="text-xl font-bold text-gray-900 hover:text-blue-600 cursor-pointer">Customer Portal</h1> */}
               </Link>
             </div>
             <Link href="/customer/profile">

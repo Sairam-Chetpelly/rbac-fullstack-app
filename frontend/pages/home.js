@@ -3,7 +3,7 @@ import { Globe, Shield, Users, Clock, MapPin, Plane, Star, Mail, Phone, External
 import Link from "next/link"
 import { useRouter } from "next/router"
 import Button from "../components/Button"
-import PublicLayout from "../components/PublicLayout"
+
 import { apiClient } from "../lib/api"
 import { useAuth } from "../context/AuthContext"
 
@@ -62,7 +62,7 @@ const VisaFlowHomepage = () => {
 
   const handleGetStarted = () => {
     if (user) {
-      switch (user.userType) {
+      switch (user.role) {
         case "admin":
           router.push("/dashboard")
           break
@@ -70,7 +70,7 @@ const VisaFlowHomepage = () => {
           router.push("/dashboard")
           break
         default:
-          router.push("/dashboard")
+          router.push("/customer/dashboard")
       }
     } else {
       router.push("/register")
@@ -78,16 +78,13 @@ const VisaFlowHomepage = () => {
   }
 
   return (
-    <PublicLayout>
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white/10 backdrop-blur-md sticky top-0 z-50" style={{ boxShadow: "0 2px 2px 2px rgba(255, 255, 255, 0.3)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-2">
-              <div className="h-10 sm:h-12 w-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                V
-              </div>
-              <span className="text-xl font-bold text-gray-900">VisaFlow</span>
+              <img src="/optionslogo.png" alt="VisaFlow Logo" className="" />
             </div>
             
             {/* Mobile menu button */}
@@ -124,7 +121,7 @@ const VisaFlowHomepage = () => {
                     Dashboard
                   </Button>
                   <Button 
-                    onClick={() => router.push("/dashboard")}
+                    onClick={() => router.push("/customer/profile")}
                     className="px-4 py-2 bg-gradient-to-r from-orange-400 to-red-500 text-white rounded-lg hover:from-orange-500 hover:to-red-600 transition-all"
                   >
                     Profile
@@ -166,7 +163,7 @@ const VisaFlowHomepage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative pt-20 -mt-20 bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500">
+      <section className="relative pt-20 -mt-28 bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500">
         <div className="absolute inset-0 bg-black opacity-20"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex lg:grid-cols-2 gap-12 items-center py-20">
@@ -389,10 +386,7 @@ const VisaFlowHomepage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="h-8 sm:h-10 w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                  V
-                </div>
-                <span className="text-lg font-bold">VisaFlow</span>
+                <img src="/optionslogo.png" alt="VisaFlow Logo" className="w-100" />
               </div>
               <p className="text-black-400 mb-4 text-sm sm:text-base">
                 Travel helps companies manage payments easily.
@@ -453,7 +447,7 @@ const VisaFlowHomepage = () => {
           </svg>
         </a>
       </div>
-    </PublicLayout>
+    </div>
   )
 }
 

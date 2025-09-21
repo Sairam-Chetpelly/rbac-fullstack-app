@@ -2,28 +2,33 @@ import '../styles/globals.css';
 import { AuthProvider } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import PublicLayout from '../components/PublicLayout';
+import ProtectedRoute from '../components/ProtectedRoute';
+import VisaLayout from '../components/VisaLayout';
 import { useRouter } from 'next/router';
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
   
-  // Pages that should use public layout (no admin sidebar/header)
-  const publicPages = [
-    '/', '/home', '/login', '/register', '/forgot-password', '/reset-password',
-    '/application-success'
-  ];
+  // Pages that don't require authentication
+  const publicPages = ['/login', '/register', '/forgot-password', '/reset-password'];
   
-  // Check if current page is a visa-related public page
+  // Pages that don't use Layout (home, customer, and 404 pages)
+  const noLayoutPages = ['/', '/home', '/404'];
   const isVisaPage = router.pathname.startsWith('/visa-types/') || 
-                    router.pathname.startsWith('/visa-application/');
+                    router.pathname.startsWith('/visa-application/') ||
+                    router.pathname === '/application-success';
+  const isCustomerPage = router.pathname.startsWith('/customer/');
+  const isNoLayoutPage = noLayoutPages.includes(router.pathname) || isCustomerPage;
   
-  const isPublicPage = publicPages.includes(router.pathname) || isVisaPage;
+  const isPublicPage = publicPages.includes(router.pathname);
   
   // Use custom layout if component has one, otherwise use default layouts
   if (Component.getLayout) {
     return (
       <AuthProvider>
-        {Component.getLayout(<Component {...pageProps} />)}
+        <ProtectedRoute>
+          {Component.getLayout(<Component {...pageProps} />)}
+        </ProtectedRoute>
       </AuthProvider>
     );
   }
@@ -33,9 +38,19 @@ export default function App({ Component, pageProps }) {
       {isPublicPage ? (
         <Component {...pageProps} />
       ) : (
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
+        <ProtectedRoute>
+          {isNoLayoutPage ? (
+            <Component {...pageProps} />
+          ) : isVisaPage ? (
+            <VisaLayout>
+              <Component {...pageProps} />
+            </VisaLayout>
+          ) : (
+            <Layout>
+              <Component {...pageProps} />
+            </Layout>
+          )}
+        </ProtectedRoute>
       )}
     </AuthProvider>
   );

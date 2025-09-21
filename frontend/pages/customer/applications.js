@@ -100,7 +100,7 @@ export default function CustomerApplications() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">My Applications</h1>
-          <Link href="/visa-application-demo">
+          <Link href="/">
             <Button className="bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600">
               <Plus className="h-4 w-4 mr-2" />
               New Application
@@ -163,9 +163,9 @@ export default function CustomerApplications() {
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No applications yet</h3>
               <p className="text-gray-600">Start your visa application process today</p>
-              <Link href="/visa-application-demo">
+              {/* <Link href="/">
                 <Button className="mt-4">Apply for Visa</Button>
-              </Link>
+              </Link> */}
             </div>
           )}
         </div>

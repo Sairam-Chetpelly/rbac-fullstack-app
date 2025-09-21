@@ -187,9 +187,9 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
         {!isCollapsed && (
           <div className="mt-8 lg:mt-12 p-4 lg:p-6 bg-white/5 rounded-2xl backdrop-blur-sm border border-white/10">
             <div className="text-center">
-              <div className="text-2xl lg:text-3xl mb-2">🛡️</div>
-              <p className="text-white font-semibold text-sm lg:text-base">RBAC System</p>
-              <p className="text-gray-400 text-xs lg:text-sm">Secure Access Control</p>
+              <img src="/optionslogo.png" alt="Logo" className="w-100 lg:w-100  mx-auto mb-2" />
+              {/* <p className="text-white font-semibold text-sm lg:text-base">RBAC System</p>
+              <p className="text-gray-400 text-xs lg:text-sm">Secure Access Control</p> */}
             </div>
           </div>
         )}

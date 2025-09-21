@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { CheckCircle, Download, Home } from 'lucide-react';
 import Button from '../components/Button';
-import PublicLayout from '../components/PublicLayout';
+
 
 export default function ApplicationSuccess() {
   const router = useRouter();
@@ -17,17 +17,14 @@ export default function ApplicationSuccess() {
 
   if (loading) {
     return (
-      <PublicLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </PublicLayout>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
     );
   }
 
   return (
-    <PublicLayout>
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="mb-6">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
@@ -74,7 +71,6 @@ export default function ApplicationSuccess() {
             </Button>
           </div>
         </div>
-      </div>
-    </PublicLayout>
+    </div>
   );
 }
