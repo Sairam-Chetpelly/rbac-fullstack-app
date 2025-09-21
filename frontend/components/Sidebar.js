@@ -46,6 +46,8 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
         { name: 'Form Fields', href: '/form-fields', permission: 'form-fields', icon: '📄' }
       ]
     },
+    { name: 'Applications', href: '/applications', permission: 'applications', icon: '📋' },
+    { name: 'Payments', href: '/payments', permission: 'payments', icon: '💳' },
     { name: 'Status', href: '/status', permission: 'status', icon: '⚡' },
     { name: 'Settings', href: '/settings', permission: 'settings', icon: '⚙️' }
   ];

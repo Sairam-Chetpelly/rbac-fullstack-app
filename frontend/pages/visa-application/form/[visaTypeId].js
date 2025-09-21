@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Head from 'next/head';
 import { ArrowLeft, Save, CreditCard, Upload, CheckCircle } from 'lucide-react';
 import Button from '../../../components/Button';
 import PublicLayout from '../../../components/PublicLayout';
@@ -73,40 +74,82 @@ const VisaApplicationForm = () => {
     setSubmitting(true);
 
     try {
-      // Check if there are any file uploads
-      const hasFiles = Object.values(formData).some(value => value instanceof File);
-      
-      if (hasFiles) {
-        // Use FormData for file uploads
-        const formDataToSubmit = new FormData();
-        formDataToSubmit.append('visaTypeId', visaTypeId);
-        
-        Object.keys(formData).forEach(key => {
-          if (formData[key] instanceof File) {
-            formDataToSubmit.append(key, formData[key]);
-          } else {
-            formDataToSubmit.append(key, formData[key]);
-          }
-        });
+      // Create Razorpay order
+      const orderResponse = await api.post('/public/create-payment-order', {
+        visaTypeId,
+        amount: visaType.totalAmount
+      });
 
-        await api.post('/public/visa-applications', formDataToSubmit, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-      } else {
-        // Use JSON for regular form data
-        await api.post('/public/visa-applications', {
-          visaTypeId,
-          ...formData
-        });
-      }
+      const { orderId, amount, currency } = orderResponse.data;
 
-      alert('Application submitted successfully!');
-      router.push('/application-success');
+      // Initialize Razorpay
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: amount,
+        currency: currency,
+        name: 'Visa Application',
+        description: `${visaType.name} - ${country.name}`,
+        order_id: orderId,
+        handler: async function (response) {
+          try {
+            // Check if there are any file uploads
+            const hasFiles = Object.values(formData).some(value => value instanceof File);
+            
+            let submitResponse;
+            if (hasFiles) {
+              // Use FormData for file uploads
+              const formDataToSubmit = new FormData();
+              formDataToSubmit.append('visaTypeId', visaTypeId);
+              formDataToSubmit.append('paymentId', response.razorpay_payment_id);
+              formDataToSubmit.append('orderId', response.razorpay_order_id);
+              formDataToSubmit.append('signature', response.razorpay_signature);
+              
+              Object.keys(formData).forEach(key => {
+                if (formData[key] instanceof File) {
+                  formDataToSubmit.append(key, formData[key]);
+                } else {
+                  formDataToSubmit.append(key, formData[key]);
+                }
+              });
+
+              submitResponse = await api.post('/public/visa-applications', formDataToSubmit, {
+                headers: {
+                  'Content-Type': 'multipart/form-data'
+                }
+              });
+            } else {
+              // Use JSON for regular form data
+              submitResponse = await api.post('/public/visa-applications', {
+                visaTypeId,
+                paymentId: response.razorpay_payment_id,
+                orderId: response.razorpay_order_id,
+                signature: response.razorpay_signature,
+                ...formData
+              });
+            }
+
+            alert('Application submitted successfully with payment!');
+            router.push(`/application-success?applicationNumber=${submitResponse.data.applicationNumber}`);
+          } catch (err) {
+            console.error('Error submitting application:', err);
+            alert('Payment successful but application submission failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: (formData.firstName || '') + ' ' + (formData.lastName || ''),
+          email: formData.email || '',
+          contact: formData.phone || ''
+        },
+        theme: {
+          color: '#3B82F6'
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (err) {
-      console.error('Error submitting application:', err);
-      alert('Failed to submit application. Please try again.');
+      console.error('Error creating payment order:', err);
+      alert('Failed to initiate payment. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -154,7 +197,11 @@ const VisaApplicationForm = () => {
   }
 
   return (
-    <PublicLayout>
+    <>
+      <Head>
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+      </Head>
+      <PublicLayout>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white shadow-sm">
@@ -200,7 +247,7 @@ const VisaApplicationForm = () => {
                 <div className="text-sm text-gray-600">Service Fee</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">${visaType?.totalAmount}</div>
+                <div className="text-2xl font-bold text-red-600">₹{visaType?.totalAmount}</div>
                 <div className="text-sm text-gray-600">Total Amount</div>
               </div>
             </div>
@@ -390,7 +437,7 @@ const VisaApplicationForm = () => {
                 className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700"
               >
                 <CreditCard className="h-4 w-4 mr-2" />
-                {submitting ? 'Submitting...' : `Submit Application & Pay $${visaType?.totalAmount}`}
+                {submitting ? 'Processing...' : `Submit Application & Pay ₹${visaType?.totalAmount}`}
               </Button>
               <Button 
                 type="button" 
@@ -406,6 +453,7 @@ const VisaApplicationForm = () => {
         </div>
       </div>
     </PublicLayout>
+    </>
   );
 };
 

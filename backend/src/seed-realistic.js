@@ -39,7 +39,7 @@ const seedDatabase = async () => {
      const roles = await Role.insertMany([
       {
         name: 'admin',
-        permissions: ['dashboard', 'roles', 'users', 'status', 'settings', 'continents', 'countries', 'visa-types', 'country-visa-types', 'country-terms-conditions', 'visa-terms-conditions'],
+        permissions: ['dashboard', 'roles', 'users', 'status', 'settings', 'continents', 'countries', 'visa-types', 'country-visa-types', 'country-terms-conditions', 'visa-terms-conditions', 'applications'],
         description: 'Full system access',
         isActive: true
       },

@@ -18,6 +18,9 @@ const formFieldRoutes = require('./routes/formFields');
 const formBuilderRoutes = require('./routes/formBuilder');
 const visaFormRoutes = require('./routes/visaForm');
 const publicRoutes = require('./routes/public');
+const applicationRoutes = require('./routes/applications');
+const paymentRoutes = require('./routes/payments');
+const customerRoutes = require('./routes/customer');
 
 const app = express();
 
@@ -44,6 +47,9 @@ app.use('/api/form-fields', formFieldRoutes);
 app.use('/api/form-builder', formBuilderRoutes);
 app.use('/api/visa-form', visaFormRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/customer', customerRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
