@@ -17,6 +17,8 @@ const VisaApplicationForm = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [draftId, setDraftId] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     if (visaTypeId) {
@@ -74,8 +76,24 @@ const VisaApplicationForm = () => {
     setSubmitting(true);
 
     try {
+      // First save as draft
+      const draftResponse = await handleSaveDraft();
+      if (draftResponse) {
+        setDraftId(draftResponse.draftId);
+        setShowPaymentModal(true);
+      }
+    } catch (err) {
+      console.error('Error saving draft:', err);
+      alert('Failed to save application. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePayment = async () => {
+    try {
       // Create Razorpay order
-      const orderResponse = await api.post('/public/create-payment-order', {
+      const orderResponse = await api.post('/create-payment-order', {
         visaTypeId,
         amount: visaType.totalAmount
       });
@@ -92,14 +110,14 @@ const VisaApplicationForm = () => {
         order_id: orderId,
         handler: async function (response) {
           try {
-            // Check if there are any file uploads
+            // Submit application with payment
             const hasFiles = Object.values(formData).some(value => value instanceof File);
             
             let submitResponse;
             if (hasFiles) {
-              // Use FormData for file uploads
               const formDataToSubmit = new FormData();
               formDataToSubmit.append('visaTypeId', visaTypeId);
+              formDataToSubmit.append('draftId', draftId);
               formDataToSubmit.append('paymentId', response.razorpay_payment_id);
               formDataToSubmit.append('orderId', response.razorpay_order_id);
               formDataToSubmit.append('signature', response.razorpay_signature);
@@ -112,15 +130,15 @@ const VisaApplicationForm = () => {
                 }
               });
 
-              submitResponse = await api.post('/public/visa-applications', formDataToSubmit, {
+              submitResponse = await api.post('/visa-applications', formDataToSubmit, {
                 headers: {
                   'Content-Type': 'multipart/form-data'
                 }
               });
             } else {
-              // Use JSON for regular form data
-              submitResponse = await api.post('/public/visa-applications', {
+              submitResponse = await api.post('/visa-applications', {
                 visaTypeId,
+                draftId,
                 paymentId: response.razorpay_payment_id,
                 orderId: response.razorpay_order_id,
                 signature: response.razorpay_signature,
@@ -128,7 +146,7 @@ const VisaApplicationForm = () => {
               });
             }
 
-            alert('Application submitted successfully with payment!');
+            setShowPaymentModal(false);
             router.push(`/application-success?applicationNumber=${submitResponse.data.applicationNumber}`);
           } catch (err) {
             console.error('Error submitting application:', err);
@@ -150,21 +168,25 @@ const VisaApplicationForm = () => {
     } catch (err) {
       console.error('Error creating payment order:', err);
       alert('Failed to initiate payment. Please try again.');
-    } finally {
-      setSubmitting(false);
     }
   };
 
   const handleSaveDraft = async () => {
     try {
-      await api.post('/public/visa-applications/draft', {
+      const response = await api.post('/visa-applications/draft', {
         visaTypeId,
         formData
       });
-      alert('Draft saved successfully!');
+      if (!showPaymentModal) {
+        alert('Draft saved successfully!');
+      }
+      return response.data;
     } catch (err) {
       console.error('Error saving draft:', err);
-      alert('Failed to save draft.');
+      if (!showPaymentModal) {
+        alert('Failed to save draft.');
+      }
+      throw err;
     }
   };
 
@@ -429,10 +451,10 @@ const VisaApplicationForm = () => {
               <Button 
                 type="submit" 
                 disabled={submitting}
-                className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
               >
-                <CreditCard className="h-4 w-4 mr-2" />
-                {submitting ? 'Processing...' : `Submit Application & Pay ₹${visaType?.totalAmount}`}
+                <Save className="h-4 w-4 mr-2" />
+                {submitting ? 'Saving...' : 'Submit Application'}
               </Button>
               <Button 
                 type="button" 
@@ -446,6 +468,40 @@ const VisaApplicationForm = () => {
             </div>
           </form>
         </div>
+
+        {/* Payment Modal */}
+        {showPaymentModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-md w-full p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Complete Payment</h3>
+              <p className="text-gray-600 mb-6">
+                Your application has been saved. Complete the payment to submit your visa application.
+              </p>
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Total Amount:</span>
+                  <span className="text-xl font-bold text-green-600">₹{visaType?.totalAmount}</span>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  onClick={() => setShowPaymentModal(false)}
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handlePayment}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Pay Now
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

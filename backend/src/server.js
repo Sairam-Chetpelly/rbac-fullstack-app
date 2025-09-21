@@ -21,6 +21,7 @@ const publicRoutes = require('./routes/public');
 const applicationRoutes = require('./routes/applications');
 const paymentRoutes = require('./routes/payments');
 const customerRoutes = require('./routes/customer');
+const visaApplicationRoutes = require('./routes/visaApplications');
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use('/api/public', publicRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/customer', customerRoutes);
+app.use('/api', visaApplicationRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

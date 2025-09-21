@@ -311,7 +311,7 @@ router.post('/verify-payment', async (req, res) => {
 // Submit visa application with payment (authenticated)
 router.post('/visa-applications', auth, upload.any(), async (req, res) => {
   try {
-    const { visaTypeId, paymentId, orderId, signature, ...formData } = req.body;
+    const { visaTypeId, draftId, paymentId, orderId, signature, ...formData } = req.body;
     
     const Application = require('../models/Application');
     const ApplicationAnswer = require('../models/ApplicationAnswer');
@@ -332,16 +332,28 @@ router.post('/visa-applications', auth, upload.any(), async (req, res) => {
       return res.status(400).json({ message: 'Payment verification failed' });
     }
     
-    // Create application
-    const applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-    const application = new Application({
-      user: req.user.id,
-      countryVisaType: visaTypeId,
-      applicationNumber,
-      status: 'submitted',
-      submittedAt: new Date()
-    });
-    await application.save();
+    let application;
+    if (draftId) {
+      // Update existing draft
+      application = await Application.findById(draftId);
+      if (!application || application.user.toString() !== req.user.id) {
+        return res.status(404).json({ message: 'Draft not found' });
+      }
+      application.status = 'submitted';
+      application.submittedAt = new Date();
+      await application.save();
+    } else {
+      // Create new application
+      const applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+      application = new Application({
+        user: req.user.id,
+        countryVisaType: visaTypeId,
+        applicationNumber,
+        status: 'submitted',
+        submittedAt: new Date()
+      });
+      await application.save();
+    }
     
     // Save form answers
     const fields = await FormField.find().lean();
@@ -435,9 +447,16 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
   try {
     const { visaTypeId, formData } = req.body;
     
+    // Check if user is authenticated
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    
     const Application = require('../models/Application');
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const FormField = require('../models/FormField');
+    
+    console.log('Creating draft for user:', req.user.id);
     
     // Create draft application
     const applicationNumber = `DRAFT-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;

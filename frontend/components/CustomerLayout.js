@@ -37,7 +37,7 @@ const CustomerLayout = ({ children }) => {
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    router.push('/');
+    router.push('/login');
   };
 
   const isActive = (href) => {
