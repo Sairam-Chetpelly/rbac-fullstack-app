@@ -14,7 +14,7 @@ export default function App({ Component, pageProps }) {
   
   // Pages that don't use Layout (home, customer, and 404 pages)
   const noLayoutPages = ['/', '/home', '/404'];
-  const isVisaPage = router.pathname.startsWith('/visa-types/') || 
+  const isVisaPage = router.pathname.startsWith('/visatypes/') || 
                     router.pathname.startsWith('/visa-application/') ||
                     router.pathname === '/application-success';
   const isCustomerPage = router.pathname.startsWith('/customer/');

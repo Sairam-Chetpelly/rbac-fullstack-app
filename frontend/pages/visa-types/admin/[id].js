@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
-import Button from '../../components/Button';
-import Card from '../../components/Card';
-import api from '../../lib/api';
+import Button from '../../../components/Button';
+import Card from '../../../components/Card';
+import api from '../../../lib/api';
 
 export default function EditVisaType() {
   const [formData, setFormData] = useState({

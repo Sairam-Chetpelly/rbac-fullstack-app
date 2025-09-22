@@ -219,7 +219,7 @@ const VisaFlowHomepage = () => {
                               </div>
                             </div>
                           )}
-                          <Link href={`/visa-types/${destination.id}`}>
+                          <Link href={`/visatypes/${destination.id}`}>
                             <Button className="w-full bg-gradient-to-r from-blue-400 to-purple-500 text-white hover:from-blue-500 hover:to-purple-600 transition-all text-sm font-semibold">
                               Apply Now
                             </Button>
