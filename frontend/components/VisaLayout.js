@@ -8,6 +8,7 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
   const router = useRouter();
   const { user } = useAuth();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const isHomePage = router.pathname === '/' || router.pathname === '/home';
 
   const handleGetStarted = () => {
     if (user) {
@@ -28,7 +29,8 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
       {/* Header */}
       <header className="bg-white/10 backdrop-blur-md sticky top-0 z-50" style={{ boxShadow: "0 2px 2px 2px rgba(255, 255, 255, 0.3)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex items-center py-4 relative">
+            {/* Left section */}
             <div className="flex items-center space-x-4">
               {showBackButton && (
                 <button
@@ -39,10 +41,21 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
                   Back
                 </button>
               )}
+            </div>
+            
+            {/* Logo - left on homepage, center on other pages */}
+            {isHomePage ? (
               <div className="flex items-center space-x-2">
                 <img src="/optionslogo.png" alt="VisaFlow Logo" className="" />
               </div>
-            </div>
+            ) : (
+              <div className="absolute left-1/2 transform -translate-x-1/2">
+                <img src="/optionslogo.png" alt="VisaFlow Logo" className="" />
+              </div>
+            )}
+            
+            {/* Right section - spacer to balance layout */}
+            <div className="flex-1"></div>
             
             {/* Mobile menu button */}
             <button 
