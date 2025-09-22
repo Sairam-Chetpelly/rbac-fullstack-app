@@ -3,11 +3,13 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { ArrowLeft, Save, CreditCard, Upload, CheckCircle } from 'lucide-react';
 import Button from '../../../components/Button';
+import { useAuth } from '../../../context/AuthContext';
 
 import api from '../../../lib/api';
 
 const VisaApplicationForm = () => {
   const router = useRouter();
+  const { user } = useAuth();
   const { visaTypeId } = router.query;
   const [visaType, setVisaType] = useState(null);
   const [country, setCountry] = useState(null);
@@ -25,6 +27,12 @@ const VisaApplicationForm = () => {
       fetchFormData();
     }
   }, [visaTypeId]);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
 
   const fetchFormData = async () => {
     try {
@@ -111,40 +119,14 @@ const VisaApplicationForm = () => {
         handler: async function (response) {
           try {
             // Submit application with payment
-            const hasFiles = Object.values(formData).some(value => value instanceof File);
-            
-            let submitResponse;
-            if (hasFiles) {
-              const formDataToSubmit = new FormData();
-              formDataToSubmit.append('visaTypeId', visaTypeId);
-              formDataToSubmit.append('draftId', draftId);
-              formDataToSubmit.append('paymentId', response.razorpay_payment_id);
-              formDataToSubmit.append('orderId', response.razorpay_order_id);
-              formDataToSubmit.append('signature', response.razorpay_signature);
-              
-              Object.keys(formData).forEach(key => {
-                if (formData[key] instanceof File) {
-                  formDataToSubmit.append(key, formData[key]);
-                } else {
-                  formDataToSubmit.append(key, formData[key]);
-                }
-              });
-
-              submitResponse = await api.post('/visa-applications', formDataToSubmit, {
-                headers: {
-                  'Content-Type': 'multipart/form-data'
-                }
-              });
-            } else {
-              submitResponse = await api.post('/visa-applications', {
-                visaTypeId,
-                draftId,
-                paymentId: response.razorpay_payment_id,
-                orderId: response.razorpay_order_id,
-                signature: response.razorpay_signature,
-                ...formData
-              });
-            }
+            const submitResponse = await api.post('/visa-applications/submit', {
+              visaTypeId,
+              draftId,
+              paymentId: response.razorpay_payment_id,
+              orderId: response.razorpay_order_id,
+              signature: response.razorpay_signature,
+              ...formData
+            });
 
             setShowPaymentModal(false);
             router.push(`/application-success?applicationNumber=${submitResponse.data.applicationNumber}`);
@@ -173,6 +155,12 @@ const VisaApplicationForm = () => {
 
   const handleSaveDraft = async () => {
     try {
+      if (!user) {
+        alert('Please log in to save your application.');
+        router.push('/login');
+        return;
+      }
+      
       const response = await api.post('/visa-applications/draft', {
         visaTypeId,
         formData
@@ -183,19 +171,22 @@ const VisaApplicationForm = () => {
       return response.data;
     } catch (err) {
       console.error('Error saving draft:', err);
-      if (!showPaymentModal) {
+      if (err.response?.status === 401) {
+        alert('Please log in to save your application.');
+        router.push('/login');
+      } else if (!showPaymentModal) {
         alert('Failed to save draft.');
       }
       throw err;
     }
   };
 
-  if (loading) {
+  if (!user || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading application form...</p>
+          <p className="text-gray-600">{!user ? 'Redirecting to login...' : 'Loading application form...'}</p>
         </div>
       </div>
     );

@@ -30,6 +30,7 @@ export default function CustomerPayments() {
       setPayments(response.data || []);
     } catch (error) {
       console.error('Error fetching payments:', error);
+      setPayments([]);
     } finally {
       setLoading(false);
     }

@@ -50,11 +50,8 @@ const Header = ({ sidebarWidth, isMobile, onToggleSidebar }) => {
               </button>
             )}
             
-            <img src="/optionslogo.png" alt="Logo" className="w-8 h-8 lg:w-10 lg:h-10" />
-            {/* <div className="hidden sm:block">
-              <h1 className="text-lg lg:text-2xl font-bold text-white">RBAC Admin</h1>
-              <p className="text-indigo-100 text-xs lg:text-sm">Role-Based Access Control</p>
-            </div> */}
+            <img src="/optionslogo.png" alt="Logo" className="" />
+
           </div>
           
           <div className="relative" ref={profileRef}>

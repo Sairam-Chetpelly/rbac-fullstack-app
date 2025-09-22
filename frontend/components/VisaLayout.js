@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { ArrowLeft, Mail, Phone } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Shield, Plane } from 'lucide-react';
 import Button from './Button';
 import { useAuth } from '../context/AuthContext';
 
-const VisaLayout = ({ children }) => {
+const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
   const router = useRouter();
   const { user } = useAuth();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -12,17 +12,14 @@ const VisaLayout = ({ children }) => {
   const handleGetStarted = () => {
     if (user) {
       switch (user.role) {
-        case "admin":
-          router.push("/dashboard");
-          break;
-        case "employee":
-          router.push("/dashboard");
+        case "customer":
+          router.push("/customer/dashboard");
           break;
         default:
-          router.push("/customer/dashboard");
+          router.push("/dashboard");
       }
     } else {
-      router.push("/register");
+      router.push("/login");
     }
   };
 
@@ -33,13 +30,15 @@ const VisaLayout = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.back()}
-                className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-lg hover:from-blue-500 hover:to-purple-600 transition-all text-sm"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
+              {showBackButton && (
+                <button
+                  onClick={() => router.back()}
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-lg hover:from-blue-500 hover:to-purple-600 transition-all text-sm"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back
+                </button>
+              )}
               <div className="flex items-center space-x-2">
                 <img src="/optionslogo.png" alt="VisaFlow Logo" className="" />
               </div>
@@ -76,12 +75,6 @@ const VisaLayout = ({ children }) => {
                   >
                     Dashboard
                   </Button>
-                  <Button 
-                    onClick={() => router.push("/customer/profile")}
-                    className="px-4 py-2 bg-gradient-to-r from-orange-400 to-red-500 text-white rounded-lg hover:from-orange-500 hover:to-red-600 transition-all"
-                  >
-                    Profile
-                  </Button>
                 </>
               )}
             </div>
@@ -117,6 +110,49 @@ const VisaLayout = ({ children }) => {
           </div>
         )}
       </header>
+
+      {/* Hero Section */}
+      {showHero && (
+        <section className="relative pt-20 -mt-28 bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500">
+          <div className="absolute inset-0 bg-black opacity-20"></div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex lg:grid-cols-2 gap-12 items-center py-20">
+              <div className="text-white">
+                <h2 className="text-5xl font-bold mb-6 leading-tight">
+                  Explore global destinations with confidence
+                </h2>
+                <p className="text-xl mb-8 opacity-90">
+                  Our visa guides and travel tips help you plan better and travel smarter.
+                </p>
+                <div className="space-y-2 mb-8">
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="h-5 w-5" />
+                    <span>Visa-free countries</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Shield className="h-5 w-5" />
+                    <span>COVID-19 travel rules</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Phone className="h-5 w-5" />
+                    <span>Embassy contact info</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Plane className="h-5 w-5" />
+                    <span>Travel insurance recommendations</span>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleGetStarted}
+                  className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-8 py-3 rounded-lg font-semibold hover:from-orange-500 hover:to-red-600 transition-all"
+                >
+                  {user ? 'Go to Dashboard' : 'Start Your Journey'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Main Content */}
       <main className="flex-1">

@@ -28,7 +28,7 @@ export default function CustomerDashboard() {
 
   const fetchStats = async () => {
     try {
-      const response = await api.get('/customer/dashboard-stats');
+      const response = await api.get('/customer/stats');
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -148,18 +148,22 @@ export default function CustomerDashboard() {
           </Link>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-4 gap-4">
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600">Total Applications</p>
-            <p className="text-2xl font-bold text-blue-600">{stats.total_applications || 0}</p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Approved</p>
-            <p className="text-2xl font-bold text-green-600">{stats.approved || 0}</p>
+            <p className="text-2xl font-bold text-blue-600">{stats.totalApplications || 0}</p>
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Under Review</p>
-            <p className="text-2xl font-bold text-yellow-600">{stats.under_review || 0}</p>
+            <p className="text-sm text-gray-600">Draft Applications</p>
+            <p className="text-2xl font-bold text-yellow-600">{stats.draftApplications || 0}</p>
+          </div>
+          <div className="bg-green-50 p-4 rounded-lg">
+            <p className="text-sm text-gray-600">Submitted</p>
+            <p className="text-2xl font-bold text-green-600">{stats.submittedApplications || 0}</p>
+          </div>
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <p className="text-sm text-gray-600">Total Payments</p>
+            <p className="text-2xl font-bold text-purple-600">₹{stats.totalPayments || 0}</p>
           </div>
         </div>
       </div>

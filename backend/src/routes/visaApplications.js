@@ -72,7 +72,10 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
   try {
     const { visaTypeId, formData } = req.body;
     
-    if (!req.user || !req.user.id) {
+    console.log('Draft request - User:', req.user);
+    console.log('Draft request - Body:', { visaTypeId, formData });
+    
+    if (!req.user || !req.user._id) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
     
@@ -83,7 +86,7 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
     // Create draft application
     const applicationNumber = `DRAFT-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     const application = new Application({
-      user: req.user.id,
+      user: req.user._id,
       countryVisaType: visaTypeId,
       applicationNumber,
       status: 'draft'
@@ -124,16 +127,51 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
   }
 });
 
-// Submit visa application with payment
-router.post('/visa-applications', auth, upload.any(), async (req, res) => {
+// Test route
+router.get('/test', (req, res) => {
+  res.json({ message: 'Visa applications router is working' });
+});
+
+// Health check for visa applications
+router.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Debug route to check all applications
+router.get('/debug/applications', async (req, res) => {
   try {
+    const Application = require('../models/Application');
+    const applications = await Application.find({}).limit(10);
+    res.json({
+      count: applications.length,
+      applications: applications.map(app => ({
+        id: app._id,
+        user: app.user,
+        applicationNumber: app.applicationNumber,
+        status: app.status
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Submit visa application with payment
+router.post('/visa-applications/submit', auth, upload.any(), async (req, res) => {
+  try {
+    console.log('Submit request body:', req.body);
+    console.log('Submit request files:', req.files);
+    console.log('Submit request user:', req.user);
+    
     const { visaTypeId, draftId, paymentId, orderId, signature, ...formData } = req.body;
     
+    if (!visaTypeId || !paymentId || !orderId || !signature) {
+      return res.status(400).json({ message: 'Missing required payment information' });
+    }
+    
     const Application = require('../models/Application');
-    const ApplicationAnswer = require('../models/ApplicationAnswer');
     const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
     const Payment = require('../models/Payment');
-    const FormField = require('../models/FormField');
     const CountryVisaType = require('../models/CountryVisaType');
     const crypto = require('crypto');
     
@@ -152,9 +190,11 @@ router.post('/visa-applications', auth, upload.any(), async (req, res) => {
     if (draftId) {
       // Update existing draft
       application = await Application.findById(draftId);
-      if (!application || application.user.toString() !== req.user.id) {
+      if (!application || application.user.toString() !== req.user._id.toString()) {
         return res.status(404).json({ message: 'Draft not found' });
       }
+      // Change application number from DRAFT to APP
+      application.applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       application.status = 'submitted';
       application.submittedAt = new Date();
       await application.save();
@@ -162,7 +202,7 @@ router.post('/visa-applications', auth, upload.any(), async (req, res) => {
       // Create new application
       const applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       application = new Application({
-        user: req.user.id,
+        user: req.user._id,
         countryVisaType: visaTypeId,
         applicationNumber,
         status: 'submitted',
@@ -171,71 +211,24 @@ router.post('/visa-applications', auth, upload.any(), async (req, res) => {
       await application.save();
     }
     
-    // Save form answers if not from draft
-    if (!draftId) {
-      const fields = await FormField.find().lean();
-      const fieldMap = fields.reduce((acc, field) => {
-        acc[field.name] = field._id;
-        return acc;
-      }, {});
-      
-      const answers = [];
-      
-      // Handle regular form fields
-      for (const [fieldName, value] of Object.entries(formData)) {
-        if (fieldMap[fieldName] && value) {
-          answers.push({
-            application: application._id,
-            field: fieldMap[fieldName],
-            answerText: typeof value === 'string' ? value : JSON.stringify(value)
-          });
-        }
-      }
-      
-      // Handle file uploads
-      if (req.files && req.files.length > 0) {
-        const ApplicationDocument = require('../models/ApplicationDocument');
-        
-        for (const file of req.files) {
-          await ApplicationDocument.create({
-            application: application._id,
-            fieldName: file.fieldname,
-            originalName: file.originalname,
-            filename: file.filename,
-            path: file.path,
-            mimetype: file.mimetype,
-            size: file.size
-          });
-          
-          if (fieldMap[file.fieldname]) {
-            answers.push({
-              application: application._id,
-              field: fieldMap[file.fieldname],
-              answerText: file.filename
-            });
-          }
-        }
-      }
-      
-      if (answers.length > 0) {
-        await ApplicationAnswer.insertMany(answers);
-      }
-    }
-    
     // Create status history
     await ApplicationStatusHistory.create({
       application: application._id,
       status: 'submitted',
       remarks: 'Application submitted with payment',
-      changedBy: req.user.id
+      changedBy: req.user._id
     });
     
     // Create payment record
     const visaType = await CountryVisaType.findById(visaTypeId);
+    if (!visaType) {
+      return res.status(404).json({ message: 'Visa type not found' });
+    }
+    
     const payment = new Payment({
       application: application._id,
-      user: req.user.id,
-      amount: visaType.totalAmount,
+      user: req.user._id,
+      amount: visaType.totalAmount || '0',
       currency: 'INR',
       status: 'success',
       transactionId: paymentId,
@@ -255,6 +248,105 @@ router.post('/visa-applications', auth, upload.any(), async (req, res) => {
   } catch (error) {
     console.error('Error submitting visa application:', error);
     res.status(500).json({ message: 'Error submitting application', error: error.message });
+  }
+});
+
+// Get customer's applications
+router.get('/customer/applications', auth, async (req, res) => {
+  try {
+    console.log('Customer applications request - User ID:', req.user._id);
+    
+    const Application = require('../models/Application');
+    
+    // First, let's see all applications for debugging
+    const allApps = await Application.find({ deletedAt: null });
+    console.log('All applications:', allApps.map(app => ({ id: app._id, user: app.user, appNumber: app.applicationNumber })));
+    
+    const applications = await Application.find({ 
+      user: req.user._id,
+      deletedAt: null 
+    })
+    .populate({
+      path: 'countryVisaType',
+      populate: {
+        path: 'country',
+        select: 'name flagEmoji'
+      }
+    })
+    .sort({ createdAt: -1 });
+    
+    console.log('Found applications for user:', applications.length);
+    res.json(applications);
+  } catch (error) {
+    console.error('Error fetching customer applications:', error);
+    res.status(500).json({ message: 'Error fetching applications', error: error.message });
+  }
+});
+
+// Get customer's payments
+router.get('/customer/payments', auth, async (req, res) => {
+  try {
+    console.log('Customer payments request - User ID:', req.user._id);
+    
+    const Payment = require('../models/Payment');
+    
+    // First, let's see all payments for debugging
+    const allPayments = await Payment.find({ deletedAt: null });
+    console.log('All payments:', allPayments.map(p => ({ id: p._id, user: p.user, amount: p.amount })));
+    
+    const payments = await Payment.find({ 
+      user: req.user._id,
+      deletedAt: null 
+    })
+    .populate({
+      path: 'application',
+      populate: {
+        path: 'countryVisaType',
+        populate: {
+          path: 'country',
+          select: 'name flagEmoji'
+        }
+      }
+    })
+    .sort({ createdAt: -1 });
+    
+    console.log('Found payments for user:', payments.length);
+    res.json(payments);
+  } catch (error) {
+    console.error('Error fetching customer payments:', error);
+    res.status(500).json({ message: 'Error fetching payments', error: error.message });
+  }
+});
+
+// Get customer dashboard stats
+router.get('/customer/stats', auth, async (req, res) => {
+  try {
+    console.log('Customer stats request - User ID:', req.user._id);
+    
+    const Application = require('../models/Application');
+    const Payment = require('../models/Payment');
+    
+    const [totalApplications, draftApplications, submittedApplications, totalPayments] = await Promise.all([
+      Application.countDocuments({ user: req.user._id, deletedAt: null }),
+      Application.countDocuments({ user: req.user._id, status: 'draft', deletedAt: null }),
+      Application.countDocuments({ user: req.user._id, status: { $ne: 'draft' }, deletedAt: null }),
+      Payment.aggregate([
+        { $match: { user: req.user._id, status: 'success', deletedAt: null } },
+        { $group: { _id: null, total: { $sum: { $toDouble: '$amount' } } } }
+      ])
+    ]);
+    
+    console.log('Stats:', { totalApplications, draftApplications, submittedApplications, totalPayments: totalPayments[0]?.total || 0 });
+    
+    res.json({
+      totalApplications,
+      draftApplications,
+      submittedApplications,
+      totalPayments: totalPayments[0]?.total || 0
+    });
+  } catch (error) {
+    console.error('Error fetching customer stats:', error);
+    res.status(500).json({ message: 'Error fetching stats', error: error.message });
   }
 });
 

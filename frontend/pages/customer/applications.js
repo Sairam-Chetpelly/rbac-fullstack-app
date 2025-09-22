@@ -31,6 +31,7 @@ export default function CustomerApplications() {
       setApplications(response.data || []);
     } catch (error) {
       console.error('Error fetching applications:', error);
+      setApplications([]);
     } finally {
       setLoading(false);
     }
