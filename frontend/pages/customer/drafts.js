@@ -77,7 +77,10 @@ export default function CustomerDrafts() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => router.push(`/visa-application/form/${draft.countryVisaType}`)}
+                    onClick={() => {
+                      const visaTypeId = typeof draft.countryVisaType === 'object' ? draft.countryVisaType._id : draft.countryVisaType;
+                      router.push(`/visa-application/form/${visaTypeId}?draftId=${draft._id}`);
+                    }}
                   >
                     <Edit className="w-4 h-4 mr-1" />
                     Continue

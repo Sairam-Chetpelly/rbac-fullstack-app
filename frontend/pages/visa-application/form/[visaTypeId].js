@@ -10,7 +10,7 @@ import api from '../../../lib/api';
 const VisaApplicationForm = () => {
   const router = useRouter();
   const { user } = useAuth();
-  const { visaTypeId } = router.query;
+  const { visaTypeId, draftId } = router.query;
   const [visaType, setVisaType] = useState(null);
   const [country, setCountry] = useState(null);
   const [formSections, setFormSections] = useState([]);
@@ -19,7 +19,7 @@ const VisaApplicationForm = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [draftId, setDraftId] = useState(null);
+  const [currentDraftId, setCurrentDraftId] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
@@ -27,6 +27,12 @@ const VisaApplicationForm = () => {
       fetchFormData();
     }
   }, [visaTypeId]);
+
+  useEffect(() => {
+    if (draftId && user) {
+      loadDraftData();
+    }
+  }, [draftId, user]);
 
   useEffect(() => {
     if (!user) {
@@ -61,6 +67,21 @@ const VisaApplicationForm = () => {
     }
   };
 
+  const loadDraftData = async () => {
+    try {
+      const response = await api.get(`/customer/draft/${draftId}`);
+      const { application, formData: draftFormData } = response.data;
+      
+      setFormData(draftFormData || {});
+      setCurrentDraftId(application._id);
+      
+      console.log('Loaded draft data:', draftFormData);
+    } catch (err) {
+      console.error('Error loading draft data:', err);
+      setError('Failed to load draft data');
+    }
+  };
+
   const getFieldsBySection = (sectionId) => {
     return formFields.filter(field => field.formSection === sectionId).sort((a, b) => a.order - b.order);
   };
@@ -72,11 +93,28 @@ const VisaApplicationForm = () => {
     }));
   };
 
-  const handleFileUpload = (fieldName, file) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: file
-    }));
+  const handleFileUpload = async (fieldName, file) => {
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fieldName', fieldName);
+    
+    try {
+      const response = await api.post('/visa-applications/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: response.data.filePath
+      }));
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Failed to upload file');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -84,15 +122,26 @@ const VisaApplicationForm = () => {
     setSubmitting(true);
 
     try {
-      // First save as draft
-      const draftResponse = await handleSaveDraft();
-      if (draftResponse) {
-        setDraftId(draftResponse.draftId);
-        setShowPaymentModal(true);
+      if (draftId) {
+        // Update existing draft and show payment modal
+        const updateResponse = await api.put(`/customer/draft/${currentDraftId || draftId}`, {
+          formData
+        });
+        if (updateResponse) {
+          setCurrentDraftId(currentDraftId || draftId);
+          setShowPaymentModal(true);
+        }
+      } else {
+        // First save as draft
+        const draftResponse = await handleSaveDraft();
+        if (draftResponse) {
+          setCurrentDraftId(draftResponse.draftId);
+          setShowPaymentModal(true);
+        }
       }
     } catch (err) {
-      console.error('Error saving draft:', err);
-      alert('Failed to save application. Please try again.');
+      console.error('Error submitting application:', err);
+      alert('Failed to submit application. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -118,15 +167,28 @@ const VisaApplicationForm = () => {
         order_id: orderId,
         handler: async function (response) {
           try {
-            // Submit application with payment
-            const submitResponse = await api.post('/visa-applications/submit', {
-              visaTypeId,
-              draftId,
-              paymentId: response.razorpay_payment_id,
-              orderId: response.razorpay_order_id,
-              signature: response.razorpay_signature,
-              ...formData
-            });
+            let submitResponse;
+            if (draftId || currentDraftId) {
+              // Submit draft with payment
+              submitResponse = await api.post('/visa-applications/submit', {
+                visaTypeId,
+                draftId: currentDraftId || draftId,
+                paymentId: response.razorpay_payment_id,
+                orderId: response.razorpay_order_id,
+                signature: response.razorpay_signature,
+                ...formData
+              });
+            } else {
+              // Submit new application with payment
+              submitResponse = await api.post('/visa-applications/submit', {
+                visaTypeId,
+                draftId: currentDraftId,
+                paymentId: response.razorpay_payment_id,
+                orderId: response.razorpay_order_id,
+                signature: response.razorpay_signature,
+                ...formData
+              });
+            }
 
             setShowPaymentModal(false);
             router.push(`/application-success?applicationNumber=${submitResponse.data.applicationNumber}`);
@@ -161,10 +223,20 @@ const VisaApplicationForm = () => {
         return;
       }
       
-      const response = await api.post('/visa-applications/draft', {
-        visaTypeId,
-        formData
-      });
+      let response;
+      if (currentDraftId || draftId) {
+        // Update existing draft
+        response = await api.put(`/customer/draft/${currentDraftId || draftId}`, {
+          formData
+        });
+        response.data = { ...response.data, draftId: currentDraftId || draftId };
+      } else {
+        // Create new draft
+        response = await api.post('/visa-applications/draft', {
+          visaTypeId,
+          formData
+        });
+      }
       if (!showPaymentModal) {
         alert('Draft saved successfully!');
       }
@@ -445,17 +517,19 @@ const VisaApplicationForm = () => {
                 className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
               >
                 <Save className="h-4 w-4 mr-2" />
-                {submitting ? 'Saving...' : 'Submit Application'}
+                {submitting ? 'Submitting...' : (draftId ? 'Submit Application' : 'Submit Application')}
               </Button>
-              <Button 
-                type="button" 
-                onClick={handleSaveDraft}
-                variant="outline" 
-                className="flex-1"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save as Draft
-              </Button>
+              {!draftId && (
+                <Button 
+                  type="button" 
+                  onClick={handleSaveDraft}
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save as Draft
+                </Button>
+              )}
             </div>
           </form>
         </div>

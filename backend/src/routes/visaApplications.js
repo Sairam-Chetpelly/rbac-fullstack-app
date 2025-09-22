@@ -67,6 +67,24 @@ router.post('/create-payment-order', auth, async (req, res) => {
   }
 });
 
+// File upload endpoint
+router.post('/visa-applications/upload', auth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    
+    res.json({ 
+      success: true, 
+      filePath: req.file.filename,
+      originalName: req.file.originalname
+    });
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    res.status(500).json({ message: 'Error uploading file', error: error.message });
+  }
+});
+
 // Save visa application draft
 router.post('/visa-applications/draft', auth, async (req, res) => {
   try {
@@ -153,6 +171,94 @@ router.get('/debug/applications', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Submit draft application (change status from draft to submitted)
+router.post('/visa-applications/submit-draft', auth, async (req, res) => {
+  try {
+    const { draftId, formData } = req.body;
+    
+    if (!draftId) {
+      return res.status(400).json({ message: 'Draft ID is required' });
+    }
+    
+    const Application = require('../models/Application');
+    const ApplicationAnswer = require('../models/ApplicationAnswer');
+    const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
+    const FormField = require('../models/FormField');
+    
+    // Find and verify draft belongs to user
+    const application = await Application.findOne({
+      _id: draftId,
+      user: req.user._id,
+      status: 'draft',
+      deletedAt: null
+    });
+    
+    if (!application) {
+      return res.status(404).json({ message: 'Draft not found' });
+    }
+    
+    // Update form answers
+    if (formData) {
+      const fields = await FormField.find().lean();
+      const fieldMap = fields.reduce((acc, field) => {
+        acc[field.name] = field._id;
+        return acc;
+      }, {});
+      
+      // Delete existing answers
+      await ApplicationAnswer.deleteMany({ application: application._id });
+      
+      // Save new answers
+      const answers = [];
+      for (const [fieldName, value] of Object.entries(formData)) {
+        if (fieldMap[fieldName] && value !== '' && value !== null && value !== undefined) {
+          const field = fields.find(f => f.name === fieldName);
+          const answer = {
+            application: application._id,
+            field: fieldMap[fieldName]
+          };
+          
+          if (field && field.type === 'file' && typeof value === 'string') {
+            answer.answerFile = value;
+          } else {
+            answer.answerText = typeof value === 'string' ? value : JSON.stringify(value);
+          }
+          
+          answers.push(answer);
+        }
+      }
+      
+      if (answers.length > 0) {
+        await ApplicationAnswer.insertMany(answers);
+      }
+    }
+    
+    // Update application status
+    application.applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    application.status = 'submitted';
+    application.submittedAt = new Date();
+    await application.save();
+    
+    // Create status history
+    await ApplicationStatusHistory.create({
+      application: application._id,
+      status: 'submitted',
+      remarks: 'Application submitted from draft',
+      changedBy: req.user._id
+    });
+    
+    res.json({ 
+      success: true, 
+      applicationId: application._id,
+      applicationNumber: application.applicationNumber,
+      message: 'Application submitted successfully' 
+    });
+  } catch (error) {
+    console.error('Error submitting draft application:', error);
+    res.status(500).json({ message: 'Error submitting application', error: error.message });
   }
 });
 

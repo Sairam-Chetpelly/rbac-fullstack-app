@@ -46,7 +46,7 @@ const upload = multer({
 });
 
 // Get all applications (admin only)
-router.get('/', auth, role(['admin']), async (req, res) => {
+router.get('/', auth, role(['admin', 'manager']), async (req, res) => {
   try {
     const applications = await Application.find({ deletedAt: null })
       .populate('user', 'name email')
@@ -68,7 +68,7 @@ router.get('/', auth, role(['admin']), async (req, res) => {
 });
 
 // Get single application details (admin only)
-router.get('/:id', auth, role(['admin']), async (req, res) => {
+router.get('/:id', auth, role(['admin', 'manager']), async (req, res) => {
   try {
     const application = await Application.findById(req.params.id)
       .populate('user', 'name email mobile')

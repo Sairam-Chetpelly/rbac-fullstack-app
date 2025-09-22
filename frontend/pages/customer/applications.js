@@ -153,7 +153,13 @@ export default function CustomerApplications() {
                     {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Button variant="outline" size="sm">View</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => router.push(`/customer/applications/view/${app._id}`)}
+                    >
+                      View
+                    </Button>
                   </td>
                 </tr>
               ))}

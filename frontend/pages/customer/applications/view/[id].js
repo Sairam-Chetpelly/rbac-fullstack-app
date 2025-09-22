@@ -1,23 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { ArrowLeft, FileText, Calendar, User, CreditCard, Clock, Edit, Download, Eye } from 'lucide-react';
-import api from '../../../lib/api';
-import Button from '../../../components/Button';
-import Layout from '../../../components/Layout';
-import { useAuth } from '../../../context/AuthContext';
+import { ArrowLeft, FileText, Calendar, User, CreditCard, Clock, Download, Eye } from 'lucide-react';
+import api from '../../../../lib/api';
+import Button from '../../../../components/Button';
+import CustomerLayout from '../../../../components/CustomerLayout';
 
-export default function AdminViewApplication() {
+export default function ViewApplication() {
   const router = useRouter();
-  const { user } = useAuth();
   const { id } = router.query;
   const [application, setApplication] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [statusHistory, setStatusHistory] = useState([]);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [newStatus, setNewStatus] = useState('');
-  const [remarks, setRemarks] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -27,37 +22,15 @@ export default function AdminViewApplication() {
 
   const fetchApplicationDetails = async () => {
     try {
-      const response = await api.get(`/applications/${id}`);
+      const response = await api.get(`/customer/application/${id}`);
       setApplication(response.data.application);
       setAnswers(response.data.answers);
       setStatusHistory(response.data.statusHistory);
       setPayment(response.data.payment);
-      setNewStatus(response.data.application.status);
     } catch (error) {
       console.error('Error fetching application details:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStatusUpdate = async () => {
-    if (!newStatus) return;
-    
-    setUpdating(true);
-    try {
-      await api.put(`/applications/${id}/status`, {
-        status: newStatus,
-        remarks
-      });
-      
-      alert('Status updated successfully');
-      setRemarks('');
-      fetchApplicationDetails();
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Failed to update status');
-    } finally {
-      setUpdating(false);
     }
   };
 
@@ -74,32 +47,33 @@ export default function AdminViewApplication() {
 
   if (loading) {
     return (
-      <Layout>
+      <CustomerLayout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
-      </Layout>
+      </CustomerLayout>
     );
   }
 
   if (!application) {
     return (
-      <Layout>
+      <CustomerLayout>
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Application Not Found</h2>
-          <Button onClick={() => router.push('/applications')}>
+          <Button onClick={() => router.push('/customer/applications')}>
             Back to Applications
           </Button>
         </div>
-      </Layout>
+      </CustomerLayout>
     );
   }
 
   return (
+    <CustomerLayout>
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button
-            onClick={() => router.push('/applications')}
+            onClick={() => router.push('/customer/applications')}
             variant="ghost"
             className="flex items-center gap-2"
           >
@@ -119,9 +93,6 @@ export default function AdminViewApplication() {
                   {application.countryVisaType?.country?.name} - {application.countryVisaType?.visaType?.name}
                 </h2>
                 <p className="text-gray-600">Application #{application.applicationNumber}</p>
-                <p className="text-sm text-gray-500">
-                  Customer: {application.user?.name} ({application.user?.email})
-                </p>
               </div>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
@@ -146,45 +117,6 @@ export default function AdminViewApplication() {
                 <span>Paid: ₹{payment.amount}</span>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Status Update */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Update Status</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="submitted">Submitted</option>
-                <option value="under_review">Under Review</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
-              <input
-                type="text"
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                placeholder="Optional remarks"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button
-                onClick={handleStatusUpdate}
-                disabled={updating || newStatus === application.status}
-                className="w-full"
-              >
-                {updating ? 'Updating...' : 'Update Status'}
-              </Button>
-            </div>
           </div>
         </div>
 
@@ -351,19 +283,11 @@ export default function AdminViewApplication() {
                 <dd className="text-sm font-mono text-gray-900">{payment.transactionId}</dd>
               </div>
             </div>
-            {payment.razorpayOrderId && (
+            {payment.paidAt && (
               <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <dt className="font-medium text-gray-700">Razorpay Order ID</dt>
-                    <dd className="font-mono text-gray-900">{payment.razorpayOrderId}</dd>
-                  </div>
-                  {payment.paidAt && (
-                    <div>
-                      <dt className="font-medium text-gray-700">Payment Date</dt>
-                      <dd className="text-gray-900">{new Date(payment.paidAt).toLocaleDateString()} at {new Date(payment.paidAt).toLocaleTimeString()}</dd>
-                    </div>
-                  )}
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Calendar className="h-4 w-4" />
+                  <span>Payment Date: {new Date(payment.paidAt).toLocaleDateString()} at {new Date(payment.paidAt).toLocaleTimeString()}</span>
                 </div>
               </div>
             )}
@@ -377,5 +301,6 @@ export default function AdminViewApplication() {
           </div>
         )}
       </div>
+    </CustomerLayout>
   );
 }
