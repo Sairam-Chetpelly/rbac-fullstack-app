@@ -35,7 +35,7 @@ router.get('/dashboard-stats', auth, role(['customer']), async (req, res) => {
 router.get('/applications', auth, role(['customer']), async (req, res) => {
   try {
     const applications = await Application.find({ 
-      user: req.user.id, 
+      user: req.user._id, 
       deletedAt: null 
     })
     .populate({
@@ -59,7 +59,7 @@ router.get('/applications', auth, role(['customer']), async (req, res) => {
 router.get('/payments', auth, role(['customer']), async (req, res) => {
   try {
     const payments = await Payment.find({ 
-      user: req.user.id, 
+      user: req.user._id, 
       deletedAt: null 
     })
     .populate('application', 'applicationNumber')
@@ -79,7 +79,7 @@ router.put('/profile', auth, role(['customer']), async (req, res) => {
     const { name } = req.body;
     
     const user = await User.findByIdAndUpdate(
-      req.user.id,
+      req.user._id,
       { name },
       { new: true }
     ).select('-password');

@@ -15,7 +15,6 @@ const CustomerLayout = ({ children }) => {
     { id: 'profile', label: 'My Profile', href: '/customer/profile', icon: User },
     { id: 'payments', label: 'Payment History', href: '/customer/payments', icon: CreditCard },
     { id: 'drafts', label: 'Draft Applications', href: '/customer/drafts', icon: List },
-    { id: 'notifications', label: 'Notifications', href: '/customer/notifications', icon: Bell },
     { id: 'help', label: 'Help Center', href: '/customer/help', icon: HelpCircle },
   ];
 
