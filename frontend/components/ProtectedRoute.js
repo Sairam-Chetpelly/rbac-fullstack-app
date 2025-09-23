@@ -5,12 +5,16 @@ import { useEffect } from 'react';
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const router = useRouter();
+  
+  // Public pages that don't require authentication
+  const publicPages = ['/', '/home', '/login', '/register', '/forgot-password', '/reset-password'];
+  const isPublicPage = publicPages.includes(router.pathname);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !isPublicPage) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isPublicPage]);
 
   if (loading) {
     return (
@@ -20,7 +24,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  if (!user) {
+  if (!user && !isPublicPage) {
     return null;
   }
 

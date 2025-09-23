@@ -11,6 +11,9 @@ import { useAuth } from "../context/AuthContext"
 const VisaFlowHomepage = () => {
   const router = useRouter()
   const { user } = useAuth()
+  
+  // Allow access to home page without authentication
+  const isPublicPage = router.pathname === '/' || router.pathname === '/home'
   const [destinations, setDestinations] = useState([])
   const [continents, setContinents] = useState(['All'])
   const [loading, setLoading] = useState(true)
