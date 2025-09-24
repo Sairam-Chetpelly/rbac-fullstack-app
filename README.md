@@ -1,11 +1,12 @@
-# RBAC Full-Stack Application
+# Options Travel Services
 
-A complete Role-Based Access Control (RBAC) web application with React/Next.js frontend and Node.js/Express backend.
+A complete visa application management system with React/Next.js frontend and Node.js/Express backend.
 
 ## Features
 
 - **Authentication**: JWT-based auth with access & refresh tokens
 - **Role-Based Access Control**: Admin, Manager, Employee, Customer roles
+- **Visa Management**: Complete visa application processing system
 - **Responsive UI**: Built with TailwindCSS
 - **Protected Routes**: Frontend and backend route protection
 - **User Management**: CRUD operations with role-based permissions
@@ -31,7 +32,7 @@ project-root/
 ├── backend/           # Node.js + Express API
 │   ├── src/
 │   │   ├── config/    # Database configuration
-│   │   ├── middleware/# Auth & RBAC middleware
+│   │   ├── middleware/# Auth & role-based middleware
 │   │   ├── models/    # MongoDB models
 │   │   ├── routes/    # API routes
 │   │   ├── controllers/# Route controllers
@@ -146,4 +147,7 @@ npm start
 2. Create a feature branch
 3. Make your changes
 4. Test thoroughly
-5. Submit a pull request# rbac-fullstack-app
+5. Submit a pull request
+
+## Options Travel Services
+Trusted Visa Assistance for Global Travel Needs

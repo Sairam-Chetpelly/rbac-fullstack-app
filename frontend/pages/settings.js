@@ -8,7 +8,7 @@ export default function Settings() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('system');
   const [settings, setSettings] = useState({
-    appName: 'RBAC Admin Panel',
+    appName: 'Options Travel Services',
     sessionTimeout: 30,
     twoFactorAuth: false,
     passwordComplexity: true,

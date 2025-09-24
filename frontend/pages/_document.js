@@ -4,6 +4,8 @@ export default function Document() {
   return (
     <Html>
       <Head>
+        <title>Options Travel Services</title>
+        <meta name="description" content="Trusted Visa Assistance for Global Travel Needs" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <body>

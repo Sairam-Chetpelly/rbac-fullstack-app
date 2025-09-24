@@ -32,14 +32,15 @@ const sendPasswordResetEmail = async (email, resetToken) => {
   }
   
   const mailOptions = {
-    from: process.env.EMAIL_FROM || `"RBAC Admin" <${process.env.EMAIL_USER}>`,
+    from: process.env.EMAIL_FROM || `"Options Travel Services" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: 'Password Reset Request - RBAC Admin',
+    subject: 'Password Reset Request - Options Travel Services',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">🔐 RBAC Admin</h1>
-          <p style="color: white; margin: 10px 0 0 0; opacity: 0.9;">Password Reset Request</p>
+        <div style="padding: 30px; text-align: center; background: white;">
+          <img src="${process.env.FRONTEND_URL}/optionslogo.png" alt="Options Travel Services" style="height: 80px; margin-bottom: 20px;" />
+          <h1 style="color: #333; margin: 0; font-size: 28px;">Password Reset Request</h1>
+          <p style="color: #666; margin: 10px 0 0 0;">Options Travel Services</p>
         </div>
         
         <div style="padding: 40px 30px; background: white;">
@@ -49,7 +50,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
           </p>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            <a href="${resetUrl}" style="background: #4f46e5; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
               Reset Password
             </a>
           </div>
@@ -57,7 +58,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
           <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
             Or copy and paste this link in your browser:
           </p>
-          <p style="color: #667eea; word-break: break-all; background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace;">
+          <p style="color: #4f46e5; word-break: break-all; background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace;">
             ${resetUrl}
           </p>
           
@@ -69,7 +70,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
         </div>
         
         <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px;">
-          <p style="margin: 0;">© 2024 RBAC Admin. All rights reserved.</p>
+          <p style="margin: 0;">© 2025 Options Travel Services. All rights reserved.</p>
         </div>
       </div>
     `
