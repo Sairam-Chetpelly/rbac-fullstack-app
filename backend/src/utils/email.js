@@ -36,43 +36,79 @@ const sendPasswordResetEmail = async (email, resetToken) => {
     to: email,
     subject: 'Password Reset Request - Options Travel Services',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="padding: 30px; text-align: center; background: white;">
-          <img src="${process.env.FRONTEND_URL}/optionslogo.png" alt="Options Travel Services" style="height: 80px; margin-bottom: 20px;" />
-          <h1 style="color: #333; margin: 0; font-size: 28px;">Password Reset Request</h1>
-          <p style="color: #666; margin: 10px 0 0 0;">Options Travel Services</p>
-        </div>
-        
-        <div style="padding: 40px 30px; background: white;">
-          <h2 style="color: #333; margin-bottom: 20px;">Reset Your Password</h2>
-          <p style="color: #666; line-height: 1.6; margin-bottom: 30px;">
-            We received a request to reset your password. Click the button below to create a new password:
-          </p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" style="background: #4f46e5; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-              Reset Password
-            </a>
-          </div>
-          
-          <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-            Or copy and paste this link in your browser:
-          </p>
-          <p style="color: #4f46e5; word-break: break-all; background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace;">
-            ${resetUrl}
-          </p>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <p style="color: #999; font-size: 14px; margin: 0;">
-              This link will expire in 1 hour. If you didn't request this reset, please ignore this email.
-            </p>
-          </div>
-        </div>
-        
-        <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px;">
-          <p style="margin: 0;">© 2025 Options Travel Services. All rights reserved.</p>
-        </div>
-      </div>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset - Options Travel Services</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;">
+                <!-- Header -->
+                <tr>
+                  <td style="padding: 40px 30px; text-align: center; background: rgba(59, 130, 246, 0.1); border-bottom: 1px solid rgba(59, 130, 246, 0.2);">
+                    <img src="${process.env.FRONTEND_URL}/optionslogo.png" alt="Options Travel Services" style="height: 60px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;" />
+                    <h1 style="color: #1e40af; margin: 0; font-size: 28px; font-weight: 600;">Password Reset</h1>
+                    <p style="color: #3b82f6; margin: 8px 0 0 0; font-size: 16px;">Secure your account access</p>
+                  </td>
+                </tr>
+                
+                <!-- Content -->
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Hello!</h2>
+                    <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+                      We received a request to reset your password for your Options Travel Services account. Click the button below to create a new password:
+                    </p>
+                    
+                    <!-- Button -->
+                    <table role="presentation" style="margin: 30px 0;">
+                      <tr>
+                        <td style="text-align: center;">
+                          <a href="${resetUrl}" style="display: inline-block; background: rgba(59, 130, 246, 0.9); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);">
+                            Reset My Password
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <p style="color: #6b7280; line-height: 1.6; margin: 25px 0 20px 0; font-size: 14px;">
+                      If the button doesn't work, copy and paste this link into your browser:
+                    </p>
+                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;">
+                      <a href="${resetUrl}" style="color: #3b82f6; word-break: break-all; font-family: monospace; font-size: 14px; text-decoration: none;">${resetUrl}</a>
+                    </div>
+                    
+                    <!-- Security Notice -->
+                    <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+                      <p style="color: #1e40af; margin: 0; font-size: 14px; font-weight: 500;">
+                        🔒 Security Notice: This link will expire in 1 hour for your security. If you didn't request this reset, please ignore this email.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="background: rgba(59, 130, 246, 0.02); padding: 30px; text-align: center; border-top: 1px solid rgba(59, 130, 246, 0.1);">
+                    <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 14px;">
+                      Options Travel Services
+                    </p>
+                    <p style="color: #9ca3af; margin: 0; font-size: 12px;">
+                      © 2025 Options Travel Services. All rights reserved.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
     `
   };
 
