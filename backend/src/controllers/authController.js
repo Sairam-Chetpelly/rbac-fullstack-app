@@ -9,7 +9,26 @@ const { sendPasswordResetEmail } = require('../utils/email');
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
   const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRE });
-  return { accessToken, refreshToken };
+  
+  // Calculate expiration time in milliseconds
+  const expiresIn = process.env.JWT_EXPIRE;
+  let expirationTime;
+  
+  if (expiresIn.includes('m')) {
+    const minutes = parseInt(expiresIn.replace('m', ''));
+    expirationTime = Date.now() + (minutes * 60 * 1000);
+  } else if (expiresIn.includes('h')) {
+    const hours = parseInt(expiresIn.replace('h', ''));
+    expirationTime = Date.now() + (hours * 60 * 60 * 1000);
+  } else if (expiresIn.includes('d')) {
+    const days = parseInt(expiresIn.replace('d', ''));
+    expirationTime = Date.now() + (days * 24 * 60 * 60 * 1000);
+  } else {
+    // Default to 15 minutes if format is unclear
+    expirationTime = Date.now() + (15 * 60 * 1000);
+  }
+  
+  return { accessToken, refreshToken, expirationTime };
 };
 
 const register = async (req, res) => {
@@ -70,7 +89,7 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Account is not active' });
     }
 
-    const { accessToken, refreshToken } = generateTokens(user._id);
+    const { accessToken, refreshToken, expirationTime } = generateTokens(user._id);
     
     res.json({
       message: 'Login successful',
@@ -82,7 +101,8 @@ const login = async (req, res) => {
         status: user.status.name 
       },
       accessToken,
-      refreshToken
+      refreshToken,
+      expirationTime
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -104,9 +124,9 @@ const refresh = async (req, res) => {
       return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user._id);
+    const { accessToken, refreshToken: newRefreshToken, expirationTime } = generateTokens(user._id);
     
-    res.json({ accessToken, refreshToken: newRefreshToken });
+    res.json({ accessToken, refreshToken: newRefreshToken, expirationTime });
   } catch (error) {
     res.status(401).json({ message: 'Invalid refresh token' });
   }

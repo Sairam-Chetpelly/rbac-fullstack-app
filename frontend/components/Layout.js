@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
+import TokenExpirationWarning from './TokenExpirationWarning';
 
 const Layout = ({ children }) => {
   const { user, loading } = useAuth();
@@ -58,6 +59,7 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <TokenExpirationWarning />
       {/* Mobile overlay for sidebar */}
       {!sidebarCollapsed && isMobile && (
         <div 

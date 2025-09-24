@@ -28,7 +28,8 @@ export default function Login() {
       const response = await loginApi(email, password);
       login(response.user, {
         accessToken: response.accessToken,
-        refreshToken: response.refreshToken
+        refreshToken: response.refreshToken,
+        expirationTime: response.expirationTime
       });
     } catch (error) {
       setError(error.response?.data?.message || 'Login failed');

@@ -4,7 +4,9 @@ let emailTransporter;
 
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   emailTransporter = nodemailer.createTransport({
-    service: "gmail",
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -24,11 +26,13 @@ const sendPasswordResetEmail = async (email, resetToken) => {
   console.log(`Reset URL: ${resetUrl}`);
   console.log('============================\n');
   
-  // Use console-only mode for development
-  return
+  if (!emailTransporter) {
+    console.log('Email service not configured, only showing reset URL');
+    return;
+  }
   
   const mailOptions = {
-    from: `"RBAC Admin" <${process.env.EMAIL_USER}>`,
+    from: process.env.EMAIL_FROM || `"RBAC Admin" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Password Reset Request - RBAC Admin',
     html: `
