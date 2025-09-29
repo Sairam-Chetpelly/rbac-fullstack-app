@@ -5,6 +5,7 @@ const Payment = require('../models/Payment');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
+const { sendEmail } = require('../services/emailService');
 
 // Get customer dashboard stats
 router.get('/dashboard-stats', auth, role(['customer']), async (req, res) => {
@@ -78,6 +79,7 @@ router.get('/draft/:id', auth, role(['customer']), async (req, res) => {
   try {
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const FormField = require('../models/FormField');
+    const Applicant = require('../models/Applicant');
     
     const application = await Application.findOne({
       _id: req.params.id,
@@ -102,23 +104,57 @@ router.get('/draft/:id', auth, role(['customer']), async (req, res) => {
       deletedAt: null
     }).populate('field', 'name');
     
-    // Convert answers to form data object
-    const formData = {};
-    answers.forEach(answer => {
-      if (answer.field && answer.field.name) {
-        if (answer.answerFile) {
-          formData[answer.field.name] = answer.answerFile;
-        } else if (answer.answerText) {
-          try {
-            formData[answer.field.name] = JSON.parse(answer.answerText);
-          } catch {
-            formData[answer.field.name] = answer.answerText;
+    // Get applicants
+    const applicants = await Applicant.find({
+      application: application._id,
+      deletedAt: null
+    }).sort({ applicantIndex: 1 });
+    
+    // Convert answers to form data structure
+    let formData;
+    
+    if (application.applicationType === 'individual') {
+      // Single applicant format
+      formData = {};
+      answers.forEach(answer => {
+        if (answer.field && answer.field.name) {
+          if (answer.answerFile) {
+            formData[answer.field.name] = answer.answerFile;
+          } else if (answer.answerText) {
+            try {
+              formData[answer.field.name] = JSON.parse(answer.answerText);
+            } catch {
+              formData[answer.field.name] = answer.answerText;
+            }
           }
         }
+      });
+    } else {
+      // Multi-applicant format
+      formData = [];
+      for (let i = 0; i < application.numberOfApplicants; i++) {
+        const applicantData = {};
+        const applicantAnswers = answers.filter(answer => answer.applicantIndex === i);
+        
+        applicantAnswers.forEach(answer => {
+          if (answer.field && answer.field.name) {
+            if (answer.answerFile) {
+              applicantData[answer.field.name] = answer.answerFile;
+            } else if (answer.answerText) {
+              try {
+                applicantData[answer.field.name] = JSON.parse(answer.answerText);
+              } catch {
+                applicantData[answer.field.name] = answer.answerText;
+              }
+            }
+          }
+        });
+        
+        formData.push(applicantData);
       }
-    });
+    }
     
-    res.json({ application, formData });
+    res.json({ application, formData, applicants });
   } catch (error) {
     console.error('Error fetching draft details:', error);
     res.status(500).json({ message: 'Error fetching draft details', error: error.message });
@@ -128,9 +164,10 @@ router.get('/draft/:id', auth, role(['customer']), async (req, res) => {
 // Update draft application (save changes without changing status)
 router.put('/draft/:id', auth, role(['customer']), async (req, res) => {
   try {
-    const { formData } = req.body;
+    const { formData, applicationType, numberOfApplicants, relationships } = req.body;
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const FormField = require('../models/FormField');
+    const Applicant = require('../models/Applicant');
     
     const application = await Application.findOne({
       _id: req.params.id,
@@ -141,6 +178,22 @@ router.put('/draft/:id', auth, role(['customer']), async (req, res) => {
     
     if (!application) {
       return res.status(404).json({ message: 'Draft not found' });
+    }
+    
+    // Update application type and number of applicants if provided
+    if (applicationType) application.applicationType = applicationType;
+    if (numberOfApplicants) application.numberOfApplicants = numberOfApplicants;
+    await application.save();
+    
+    // Update applicant relationships if provided
+    if (relationships && Array.isArray(relationships)) {
+      const applicants = await Applicant.find({ application: application._id }).sort({ applicantIndex: 1 });
+      for (let i = 0; i < Math.min(relationships.length, applicants.length); i++) {
+        if (applicants[i] && relationships[i]) {
+          applicants[i].relationship = relationships[i];
+          await applicants[i].save();
+        }
+      }
     }
     
     if (formData) {
@@ -155,21 +208,48 @@ router.put('/draft/:id', auth, role(['customer']), async (req, res) => {
       
       // Save new answers
       const answers = [];
-      for (const [fieldName, value] of Object.entries(formData)) {
-        if (fieldMap[fieldName] && value !== '' && value !== null && value !== undefined) {
-          const field = fields.find(f => f.name === fieldName);
-          const answer = {
-            application: application._id,
-            field: fieldMap[fieldName]
-          };
-          
-          if (field && field.type === 'file' && typeof value === 'string') {
-            answer.answerFile = value;
-          } else {
-            answer.answerText = typeof value === 'string' ? value : JSON.stringify(value);
+      
+      if (Array.isArray(formData)) {
+        // Multi-applicant format
+        formData.forEach((applicantData, index) => {
+          for (const [fieldName, value] of Object.entries(applicantData)) {
+            if (fieldMap[fieldName] && value !== '' && value !== null && value !== undefined) {
+              const field = fields.find(f => f.name === fieldName);
+              const answer = {
+                application: application._id,
+                applicantIndex: index,
+                field: fieldMap[fieldName]
+              };
+              
+              if (field && field.type === 'file' && typeof value === 'string') {
+                answer.answerFile = value;
+              } else {
+                answer.answerText = typeof value === 'string' ? value : JSON.stringify(value);
+              }
+              
+              answers.push(answer);
+            }
           }
-          
-          answers.push(answer);
+        });
+      } else {
+        // Single applicant format
+        for (const [fieldName, value] of Object.entries(formData)) {
+          if (fieldMap[fieldName] && value !== '' && value !== null && value !== undefined) {
+            const field = fields.find(f => f.name === fieldName);
+            const answer = {
+              application: application._id,
+              applicantIndex: 0,
+              field: fieldMap[fieldName]
+            };
+            
+            if (field && field.type === 'file' && typeof value === 'string') {
+              answer.answerFile = value;
+            } else {
+              answer.answerText = typeof value === 'string' ? value : JSON.stringify(value);
+            }
+            
+            answers.push(answer);
+          }
         }
       }
       
@@ -194,6 +274,7 @@ router.get('/application/:id', auth, role(['customer']), async (req, res) => {
   try {
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
+    const Applicant = require('../models/Applicant');
     
     const application = await Application.findOne({
       _id: req.params.id,
@@ -213,6 +294,12 @@ router.get('/application/:id', auth, role(['customer']), async (req, res) => {
       return res.status(404).json({ message: 'Application not found' });
     }
     
+    // Get applicants
+    const applicants = await Applicant.find({
+      application: application._id,
+      deletedAt: null
+    }).sort({ applicantIndex: 1 });
+    
     // Get form answers
     const answers = await ApplicationAnswer.find({
       application: application._id,
@@ -230,7 +317,7 @@ router.get('/application/:id', auth, role(['customer']), async (req, res) => {
       deletedAt: null
     });
     
-    res.json({ application, answers, statusHistory, payment });
+    res.json({ application, applicants, answers, statusHistory, payment });
   } catch (error) {
     console.error('Error fetching application details:', error);
     res.status(500).json({ message: 'Error fetching application details', error: error.message });

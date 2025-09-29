@@ -9,6 +9,7 @@ const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
 const Payment = require('../models/Payment');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
+const { sendEmail, sendAdminNotification } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -70,6 +71,8 @@ router.get('/', auth, role(['admin', 'manager']), async (req, res) => {
 // Get single application details (admin only)
 router.get('/:id', auth, role(['admin', 'manager']), async (req, res) => {
   try {
+    const Applicant = require('../models/Applicant');
+    
     const application = await Application.findById(req.params.id)
       .populate('user', 'name email mobile')
       .populate({
@@ -84,6 +87,11 @@ router.get('/:id', auth, role(['admin', 'manager']), async (req, res) => {
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }
+
+    // Get applicants
+    const applicants = await Applicant.find({ application: req.params.id, deletedAt: null })
+      .sort({ applicantIndex: 1 })
+      .lean();
 
     // Get application answers
     const answers = await ApplicationAnswer.find({ application: req.params.id })
@@ -106,6 +114,7 @@ router.get('/:id', auth, role(['admin', 'manager']), async (req, res) => {
 
     res.json({
       application,
+      applicants,
       answers,
       documents,
       statusHistory,
@@ -122,11 +131,13 @@ router.put('/:id/status', auth, role(['admin']), async (req, res) => {
   try {
     const { status, remarks } = req.body;
     
-    const application = await Application.findById(req.params.id);
+    const application = await Application.findById(req.params.id).populate('user', 'name email');
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }
 
+    const oldStatus = application.status;
+    
     // Update application status
     application.status = status;
     await application.save();
@@ -137,6 +148,27 @@ router.put('/:id/status', auth, role(['admin']), async (req, res) => {
       status,
       remarks: remarks || '',
       changedBy: req.user.id
+    });
+
+    // Send status update emails
+    const User = require('../models/User');
+    const updatedBy = await User.findById(req.user.id);
+    
+    // Email to customer
+    await sendEmail(application.user.email, 'statusUpdate', {
+      userName: application.user.name,
+      applicationId: application.applicationNumber,
+      status: status,
+      remarks: remarks
+    });
+    
+    // Email to admin
+    await sendAdminNotification('adminStatusUpdate', {
+      applicationId: application.applicationNumber,
+      userName: application.user.name,
+      oldStatus: oldStatus,
+      newStatus: status,
+      updatedBy: updatedBy.name
     });
 
     res.json({ message: 'Application status updated successfully' });

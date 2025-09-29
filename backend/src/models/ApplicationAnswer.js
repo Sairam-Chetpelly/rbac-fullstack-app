@@ -6,6 +6,15 @@ const applicationAnswerSchema = new mongoose.Schema({
     ref: 'Application',
     required: true
   },
+  applicant: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Applicant',
+    default: null
+  },
+  applicantIndex: {
+    type: Number,
+    default: 0
+  },
   field: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'FormField',

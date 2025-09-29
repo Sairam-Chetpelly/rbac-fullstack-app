@@ -5,6 +5,7 @@ const Role = require('../models/Role');
 const Status = require('../models/Status');
 const PasswordReset = require('../models/PasswordReset');
 const { sendPasswordResetEmail } = require('../utils/email');
+const { sendEmail } = require('../services/emailService');
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
@@ -60,6 +61,9 @@ const register = async (req, res) => {
     await user.save();
     
     const populatedUser = await User.findById(user._id).populate('role').populate('status');
+    
+    // Send welcome email
+    await sendEmail(email, 'welcome', { userName: name });
     
     res.status(201).json({
       message: 'Registration successful',
@@ -155,8 +159,8 @@ const forgotPassword = async (req, res) => {
     });
     await passwordReset.save();
 
-    // Send email
-    await sendPasswordResetEmail(email, resetToken);
+    // Send email using new service
+    await sendEmail(email, 'forgotPassword', { userName: user.name, resetToken });
     
     res.json({ message: 'Password reset email sent successfully' });
   } catch (error) {

@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const auth = require('../middleware/auth');
+const { sendEmail, sendAdminNotification } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -88,10 +89,10 @@ router.post('/visa-applications/upload', auth, upload.single('file'), async (req
 // Save visa application draft
 router.post('/visa-applications/draft', auth, async (req, res) => {
   try {
-    const { visaTypeId, formData } = req.body;
+    const { visaTypeId, formData, applicationType = 'individual', numberOfApplicants = 1 } = req.body;
     
     console.log('Draft request - User:', req.user);
-    console.log('Draft request - Body:', { visaTypeId, formData });
+    console.log('Draft request - Body:', { visaTypeId, formData, applicationType, numberOfApplicants });
     
     if (!req.user || !req.user._id) {
       return res.status(401).json({ message: 'User not authenticated' });
@@ -99,6 +100,7 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
     
     const Application = require('../models/Application');
     const ApplicationAnswer = require('../models/ApplicationAnswer');
+    const Applicant = require('../models/Applicant');
     const FormField = require('../models/FormField');
     
     // Create draft application
@@ -107,9 +109,22 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
       user: req.user._id,
       countryVisaType: visaTypeId,
       applicationNumber,
+      applicationType,
+      numberOfApplicants,
       status: 'draft'
     });
     await application.save();
+    
+    // Create applicant records
+    const applicants = [];
+    for (let i = 0; i < numberOfApplicants; i++) {
+      applicants.push({
+        application: application._id,
+        applicantIndex: i,
+        relationship: 'self'
+      });
+    }
+    await Applicant.insertMany(applicants);
     
     // Save form answers
     const fields = await FormField.find().lean();
@@ -119,19 +134,47 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
     }, {});
     
     const answers = [];
-    for (const [fieldName, value] of Object.entries(formData)) {
-      if (fieldMap[fieldName] && value) {
-        answers.push({
-          application: application._id,
-          field: fieldMap[fieldName],
-          answerText: typeof value === 'string' ? value : JSON.stringify(value)
-        });
+    
+    // Handle multi-applicant form data
+    if (Array.isArray(formData)) {
+      // Array format: each element is data for one applicant
+      formData.forEach((applicantData, index) => {
+        for (const [fieldName, value] of Object.entries(applicantData)) {
+          if (fieldMap[fieldName] && value !== '' && value !== null && value !== undefined) {
+            answers.push({
+              application: application._id,
+              applicantIndex: index,
+              field: fieldMap[fieldName],
+              answerText: typeof value === 'string' ? value : JSON.stringify(value)
+            });
+          }
+        }
+      });
+    } else {
+      // Single applicant format
+      for (const [fieldName, value] of Object.entries(formData)) {
+        if (fieldMap[fieldName] && value) {
+          answers.push({
+            application: application._id,
+            applicantIndex: 0,
+            field: fieldMap[fieldName],
+            answerText: typeof value === 'string' ? value : JSON.stringify(value)
+          });
+        }
       }
     }
     
     if (answers.length > 0) {
       await ApplicationAnswer.insertMany(answers);
     }
+    
+    // Send draft creation email
+    const User = require('../models/User');
+    const user = await User.findById(req.user._id);
+    await sendEmail(user.email, 'draftCreated', { 
+      userName: user.name, 
+      applicationId: application.applicationNumber 
+    });
     
     res.json({ 
       success: true, 
@@ -269,7 +312,7 @@ router.post('/visa-applications/submit', auth, upload.any(), async (req, res) =>
     console.log('Submit request files:', req.files);
     console.log('Submit request user:', req.user);
     
-    const { visaTypeId, draftId, paymentId, orderId, signature, ...formData } = req.body;
+    const { visaTypeId, draftId, paymentId, orderId, signature, formData, applicationType = 'individual', numberOfApplicants = 1, relationships = [] } = req.body;
     
     if (!visaTypeId || !paymentId || !orderId || !signature) {
       return res.status(400).json({ message: 'Missing required payment information' });
@@ -331,10 +374,11 @@ router.post('/visa-applications/submit', auth, upload.any(), async (req, res) =>
       return res.status(404).json({ message: 'Visa type not found' });
     }
     
+    const totalAmount = (visaType.totalAmount || 0) * numberOfApplicants;
     const payment = new Payment({
       application: application._id,
       user: req.user._id,
-      amount: visaType.totalAmount || '0',
+      amount: totalAmount.toString(),
       currency: 'INR',
       status: 'success',
       transactionId: paymentId,
@@ -344,6 +388,23 @@ router.post('/visa-applications/submit', auth, upload.any(), async (req, res) =>
       paidAt: new Date()
     });
     await payment.save();
+    
+    // Send application submission emails
+    const User = require('../models/User');
+    const user = await User.findById(req.user._id);
+    
+    // Email to customer
+    await sendEmail(user.email, 'applicationSubmitted', { 
+      userName: user.name, 
+      applicationId: application.applicationNumber 
+    });
+    
+    // Email to admin
+    await sendAdminNotification('adminNewApplication', {
+      applicationId: application.applicationNumber,
+      userName: user.name,
+      userEmail: user.email
+    });
     
     res.json({ 
       success: true, 

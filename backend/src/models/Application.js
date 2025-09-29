@@ -15,6 +15,16 @@ const applicationSchema = new mongoose.Schema({
     type: String,
     unique: true
   },
+  applicationType: {
+    type: String,
+    enum: ['individual', 'family', 'group'],
+    default: 'individual'
+  },
+  numberOfApplicants: {
+    type: Number,
+    default: 1,
+    min: 1
+  },
   status: {
     type: String,
     enum: ['draft', 'submitted', 'under_review', 'approved', 'rejected'],
