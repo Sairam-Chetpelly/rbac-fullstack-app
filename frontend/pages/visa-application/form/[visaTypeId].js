@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { ArrowLeft, Save, CreditCard, Upload, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, CreditCard, Upload, CheckCircle, Eye, Edit } from 'lucide-react';
 import Button from '../../../components/Button';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -20,7 +20,10 @@ const VisaApplicationForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [currentDraftId, setCurrentDraftId] = useState(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [applicationNumber, setApplicationNumber] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [fileModal, setFileModal] = useState({ show: false, url: '', fileName: '', type: '' });
 
   useEffect(() => {
     if (visaTypeId) {
@@ -109,7 +112,12 @@ const VisaApplicationForm = () => {
       
       setFormData(prev => ({
         ...prev,
-        [fieldName]: response.data.filePath
+        [fieldName]: {
+          filePath: response.data.filePath,
+          fileName: file.name,
+          fileType: file.type,
+          fileUrl: URL.createObjectURL(file)
+        }
       }));
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -117,26 +125,151 @@ const VisaApplicationForm = () => {
     }
   };
 
+  const handleFileView = (fileData) => {
+    if (typeof fileData === 'string') {
+      try {
+        fileData = JSON.parse(fileData);
+      } catch (e) {
+        return;
+      }
+    }
+    
+    const { fileName, fileType, fileUrl, filePath } = fileData;
+    const url = fileUrl || `http://localhost:5000/uploads/applications/${filePath}`;
+    
+    setFileModal({
+      show: true,
+      url,
+      fileName,
+      type: fileType
+    });
+  };
+
+  const handleFileDownload = async (fileData) => {
+    if (typeof fileData === 'string') {
+      try {
+        fileData = JSON.parse(fileData);
+      } catch (e) {
+        return;
+      }
+    }
+    
+    const { fileName, filePath } = fileData;
+    const url = `http://localhost:5000/uploads/applications/${filePath}`;
+    
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
+
+  const renderFilePreview = (fileData) => {
+    if (!fileData) return null;
+    
+    // Handle string format (legacy)
+    if (typeof fileData === 'string') {
+      try {
+        fileData = JSON.parse(fileData);
+      } catch (e) {
+        return <span className="text-sm text-gray-600">{fileData}</span>;
+      }
+    }
+    
+    const { fileName, fileType, fileUrl, filePath } = fileData;
+    const isImage = fileType?.startsWith('image/');
+    const isPDF = fileType === 'application/pdf';
+    
+    if (isImage) {
+      return (
+        <div className="mt-4">
+          <img 
+            src={fileUrl || `http://localhost:5000/uploads/applications/${filePath}`}
+            alt={fileName}
+            className="w-full max-w-xs h-32 object-cover rounded-lg border border-gray-200 cursor-pointer"
+            onClick={() => handleFileView(fileData)}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+          <p className="text-xs text-gray-500 mt-2">{fileName}</p>
+        </div>
+      );
+    }
+    
+    if (isPDF) {
+      return (
+        <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+          <div className="flex items-center gap-2">
+            <span className="text-red-600 text-2xl">📄</span>
+            <div>
+              <p className="text-sm font-medium text-red-800">{fileName}</p>
+              <p className="text-xs text-red-600">PDF Document</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <p className="text-sm text-gray-700">{fileName}</p>
+      </div>
+    );
+  };
+
+  const validateForm = () => {
+    const requiredFields = formFields.filter(field => field.required);
+    const missingFields = [];
+    
+    requiredFields.forEach(field => {
+      const value = formData[field.name];
+      if (!value || (Array.isArray(value) && value.length === 0)) {
+        missingFields.push(field.label);
+      }
+    });
+    
+    return missingFields;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    const missingFields = validateForm();
+    if (missingFields.length > 0) {
+      alert(`Please fill in the following required fields:\n\n${missingFields.join('\n')}`);
+      return;
+    }
+    
+    setCurrentStep(2);
+  };
+
+  const handleConfirmSubmit = async () => {
     setSubmitting(true);
 
     try {
       if (draftId) {
-        // Update existing draft and show payment modal
         const updateResponse = await api.put(`/customer/draft/${currentDraftId || draftId}`, {
           formData
         });
         if (updateResponse) {
           setCurrentDraftId(currentDraftId || draftId);
-          setShowPaymentModal(true);
+          setCurrentStep(3);
         }
       } else {
-        // First save as draft
         const draftResponse = await handleSaveDraft();
         if (draftResponse) {
           setCurrentDraftId(draftResponse.draftId);
-          setShowPaymentModal(true);
+          setCurrentStep(3);
         }
       }
     } catch (err) {
@@ -190,8 +323,9 @@ const VisaApplicationForm = () => {
               });
             }
 
-            setShowPaymentModal(false);
-            router.push(`/application-success?applicationNumber=${submitResponse.data.applicationNumber}`);
+            setApplicationNumber(submitResponse.data.applicationNumber);
+            setPaymentStatus('success');
+            setCurrentStep(4);
           } catch (err) {
             console.error('Error submitting application:', err);
             alert('Payment successful but application submission failed. Please contact support.');
@@ -237,19 +371,535 @@ const VisaApplicationForm = () => {
           formData
         });
       }
-      if (!showPaymentModal) {
-        alert('Draft saved successfully!');
-      }
+      alert('Draft saved successfully!');
       return response.data;
     } catch (err) {
       console.error('Error saving draft:', err);
       if (err.response?.status === 401) {
         alert('Please log in to save your application.');
         router.push('/login');
-      } else if (!showPaymentModal) {
+      } else {
         alert('Failed to save draft.');
       }
       throw err;
+    }
+  };
+
+  const renderTabs = () => {
+    const tabs = [
+      { id: 1, name: 'Application Form', icon: '📝', description: 'Fill out your details' },
+      { id: 2, name: 'Review', icon: '👁️', description: 'Verify information' },
+      { id: 3, name: 'Payment', icon: '💳', description: 'Complete payment' },
+      { id: 4, name: 'Tracking', icon: '📍', description: 'Application status' }
+    ];
+
+    return (
+      <div className="mb-12">
+        <div className="flex justify-between items-center relative">
+          {/* Progress Line */}
+          <div className="absolute top-8 left-0 right-0 h-0.5 bg-gray-200 z-0">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500 ease-out"
+              style={{ width: `${((currentStep - 1) / (tabs.length - 1)) * 100}%` }}
+            />
+          </div>
+          
+          {tabs.map((tab, index) => {
+            const isActive = currentStep === tab.id;
+            const isCompleted = currentStep > tab.id;
+            const isAccessible = tab.id <= Math.max(currentStep, 1);
+            
+            return (
+              <div key={tab.id} className="flex flex-col items-center relative z-10">
+                <button
+                  onClick={() => isAccessible && setCurrentStep(tab.id)}
+                  disabled={!isAccessible}
+                  className={`w-16 h-16 rounded-full border-4 flex items-center justify-center text-2xl transition-all duration-300 transform hover:scale-105 ${
+                    isActive
+                      ? 'bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-500/30'
+                      : isCompleted
+                      ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-500/30'
+                      : isAccessible
+                      ? 'bg-white border-gray-300 text-gray-600 hover:border-blue-300 hover:shadow-md'
+                      : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isCompleted ? (
+                    <CheckCircle className="h-8 w-8" />
+                  ) : (
+                    <span className="text-xl">{tab.icon}</span>
+                  )}
+                </button>
+                <div className="mt-3 text-center">
+                  <div className={`font-semibold text-sm ${
+                    isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-500'
+                  }`}>
+                    {tab.name}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">{tab.description}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderForm = () => {
+    return (
+      <div className="animate-fadeIn">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {formSections.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-xl p-12 text-center border border-gray-100">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-4xl">📋</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">No Form Available</h3>
+              <p className="text-gray-600 text-lg">The application form for this visa type is not yet configured.</p>
+            </div>
+          ) : (
+            formSections
+              .sort((a, b) => a.order - b.order)
+              .map((section, index) => {
+                const sectionFields = getFieldsBySection(section._id);
+                if (sectionFields.length === 0) return null;
+
+                return (
+                  <div 
+                    key={section._id} 
+                    className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 hover:shadow-2xl transition-all duration-300"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="flex items-center gap-4 mb-8 pb-4 border-b border-gray-100">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <span className="text-white text-xl">📋</span>
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">{section.name}</h3>
+                        <p className="text-gray-600 mt-1">{section.description}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {sectionFields.map((field) => (
+                        <div key={field._id} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+                          <label className="block text-sm font-bold text-gray-800 mb-3">
+                            {field.label}
+                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                          </label>
+                          
+                          {field.type === 'textarea' ? (
+                            <textarea
+                              name={field.name}
+                              placeholder={field.placeholder}
+                              value={formData[field.name] || ''}
+                              onChange={(e) => handleInputChange(field.name, e.target.value)}
+                              required={field.required}
+                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                              rows={4}
+                            />
+                          ) : field.type === 'select' ? (
+                            <select 
+                              name={field.name}
+                              value={formData[field.name] || ''}
+                              onChange={(e) => handleInputChange(field.name, e.target.value)}
+                              required={field.required}
+                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white"
+                            >
+                              <option value="">Select {field.label}</option>
+                              {field.options && field.options.map((option, index) => (
+                                <option key={index} value={option.toLowerCase().replace(/\s+/g, '-')}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          ) : field.type === 'file' ? (
+                            <div>
+                              <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-300 group">
+                                <input 
+                                  type="file" 
+                                  name={field.name}
+                                  onChange={(e) => handleFileUpload(field.name, e.target.files[0])}
+                                  required={field.required}
+                                  className="hidden" 
+                                  id={field.name}
+                                  accept="image/*,.pdf"
+                                />
+                                <label htmlFor={field.name} className="cursor-pointer">
+                                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 transition-colors">
+                                    <Upload className="h-8 w-8 text-gray-400 group-hover:text-blue-500" />
+                                  </div>
+                                  <div className="text-gray-600 font-medium">
+                                    {formData[field.name] ? (
+                                      <span className="text-green-600 flex items-center justify-center gap-2">
+                                        <CheckCircle className="h-5 w-5" />
+                                        File uploaded successfully
+                                      </span>
+                                    ) : (
+                                      `Click to upload ${field.label}`
+                                    )}
+                                  </div>
+                                </label>
+                              </div>
+                              {formData[field.name] && renderFilePreview(formData[field.name])}
+                            </div>
+                          ) : (
+                            <input
+                              type={field.type}
+                              name={field.name}
+                              placeholder={field.placeholder}
+                              value={formData[field.name] || ''}
+                              onChange={(e) => handleInputChange(field.name, e.target.value)}
+                              required={field.required}
+                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+          )}
+
+          <div className="flex gap-6 pt-8">
+            <Button 
+              type="submit" 
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
+            >
+              <Eye className="h-5 w-5 mr-3" />
+              Continue to Review
+            </Button>
+            {!draftId && (
+              <Button 
+                type="button" 
+                onClick={handleSaveDraft}
+                variant="outline" 
+                className="flex-1 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 py-4 text-lg font-semibold transition-all duration-200"
+              >
+                <Save className="h-5 w-5 mr-3" />
+                Save as Draft
+              </Button>
+            )}
+          </div>
+        </form>
+      </div>
+    );
+  };
+
+  const renderReview = () => {
+    return (
+      <div className="animate-fadeIn">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <div className="flex items-center gap-4 mb-8 pb-6 border-b border-gray-100">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <Eye className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Review Your Application</h3>
+              <p className="text-gray-600 mt-1">Please verify all information before proceeding to payment.</p>
+            </div>
+          </div>
+          
+          {formSections
+            .sort((a, b) => a.order - b.order)
+            .map((section, index) => {
+              const sectionFields = getFieldsBySection(section._id);
+              const hasData = sectionFields.some(field => formData[field.name] || field.required);
+              
+              if (!hasData) return null;
+
+              return (
+                <div 
+                  key={section._id} 
+                  className="mb-8 pb-8 border-b border-gray-100 last:border-b-0 last:pb-0"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <h4 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                    <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold text-sm">
+                      {index + 1}
+                    </span>
+                    {section.name}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {sectionFields.map((field) => {
+                      const value = formData[field.name];
+                      if (!value && !field.required) return null;
+
+                      return (
+                        <div key={field._id} className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200">
+                          <div className="text-sm font-bold text-gray-800 mb-2">
+                            {field.label}
+                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                          </div>
+                          <div className="text-gray-900 font-medium">
+                            {!value && field.required ? (
+                              <span className="italic text-red-600 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                Required field - not filled
+                              </span>
+                            ) : field.type === 'file' ? (
+                              <div>
+                                <span className="text-green-600 flex items-center gap-2 mb-2">
+                                  <CheckCircle className="h-4 w-4" />
+                                  File uploaded successfully
+                                </span>
+                                {(() => {
+                                  // Handle both object and string formats
+                                  let fileData = value;
+                                  if (typeof value === 'string') {
+                                    try {
+                                      fileData = JSON.parse(value);
+                                    } catch (e) {
+                                      return <span className="text-sm text-gray-600">File: {value}</span>;
+                                    }
+                                  }
+                                  
+                                  if (!fileData || !fileData.fileName) {
+                                    return <span className="text-sm text-gray-600">File uploaded</span>;
+                                  }
+                                  
+                                  return (
+                                    <div>
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-sm font-medium text-gray-700">{fileData.fileName}</span>
+                                        <div className="flex gap-1">
+                                          <button 
+                                            onClick={() => handleFileView(fileData)}
+                                            className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 transition-colors"
+                                          >
+                                            <Eye className="h-3 w-3 mr-1 inline" />
+                                            View
+                                          </button>
+                                          <button 
+                                            onClick={() => handleFileDownload(fileData)}
+                                            className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200 transition-colors"
+                                          >
+                                            Download
+                                          </button>
+                                        </div>
+                                      </div>
+                                      {renderFilePreview(fileData)}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            ) : (
+                              (() => {
+                                // Handle file data that might be JSON string
+                                if (field.type === 'file' && typeof value === 'string') {
+                                  try {
+                                    const fileData = JSON.parse(value);
+                                    return <span className="text-gray-900">{fileData.fileName || 'File uploaded'}</span>;
+                                  } catch (e) {
+                                    return <span className="text-gray-900">{value}</span>;
+                                  }
+                                }
+                                return <span className="text-gray-900">{value}</span>;
+                              })()
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6 mb-8">
+            <div className="flex items-center gap-3 text-amber-800">
+              <div className="w-8 h-8 bg-amber-200 rounded-full flex items-center justify-center">
+                <CheckCircle className="h-5 w-5" />
+              </div>
+              <span className="font-bold text-lg">Final Verification</span>
+            </div>
+            <p className="text-amber-700 mt-2 ml-11">
+              Please ensure all information is accurate. Once you proceed to payment, modifications will not be possible.
+            </p>
+          </div>
+          
+          <div className="flex gap-6 pt-6">
+            <Button 
+              onClick={() => setCurrentStep(1)}
+              variant="outline" 
+              className="flex-1 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 py-4 text-lg font-semibold transition-all duration-200"
+            >
+              <Edit className="h-5 w-5 mr-3" />
+              Edit Application
+            </Button>
+            <Button 
+              onClick={handleConfirmSubmit}
+              disabled={submitting}
+              className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
+            >
+              <CheckCircle className="h-5 w-5 mr-3" />
+              {submitting ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Processing...
+                </span>
+              ) : (
+                'Proceed to Payment'
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPayment = () => {
+    return (
+      <div className="animate-fadeIn">
+        {/* Pricing Summary - Show only in payment tab */}
+        <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-green-50 rounded-2xl p-8 border-2 border-blue-200 mb-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full -mr-20 -mt-20"></div>
+          <div className="relative">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+              <span className="text-3xl">💰</span>
+              Pricing Breakdown
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+                <div className="text-2xl font-bold text-blue-600">${visaType?.vfsAmount}</div>
+                <div className="text-sm font-semibold text-gray-600 mt-1">VFS Fee</div>
+              </div>
+              <div className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+                <div className="text-2xl font-bold text-green-600">${visaType?.consulateAmount}</div>
+                <div className="text-sm font-semibold text-gray-600 mt-1">Consulate Fee</div>
+              </div>
+              <div className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+                <div className="text-2xl font-bold text-purple-600">${visaType?.serviceAmount}</div>
+                <div className="text-sm font-semibold text-gray-600 mt-1">Service Fee</div>
+              </div>
+              <div className="text-center bg-white/80 backdrop-blur-sm rounded-xl p-4 border-2 border-blue-300">
+                <div className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">₹{visaType?.totalAmount}</div>
+                <div className="text-sm font-bold text-gray-700 mt-1">Total Amount</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <CreditCard className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-3xl font-bold text-gray-900 mb-3">Complete Payment</h3>
+            <p className="text-gray-600 text-lg">
+              Your application is ready. Complete the payment to submit your visa application.
+            </p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-green-50 rounded-2xl p-8 mb-8 border-2 border-blue-200 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full -mr-16 -mt-16"></div>
+            <div className="relative text-center">
+              <div className="text-sm font-semibold text-gray-600 mb-2">Total Amount</div>
+              <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                ₹{visaType?.totalAmount}
+              </div>
+              <div className="text-gray-600 font-medium">
+                {visaType?.name} - {country?.name}
+              </div>
+              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                Secure payment powered by Razorpay
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex gap-6">
+            <Button 
+              onClick={() => setCurrentStep(2)}
+              variant="outline" 
+              className="flex-1 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 py-4 text-lg font-semibold transition-all duration-200"
+            >
+              <ArrowLeft className="h-5 w-5 mr-3" />
+              Back to Review
+            </Button>
+            <Button 
+              onClick={handlePayment}
+              className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
+            >
+              <CreditCard className="h-5 w-5 mr-3" />
+              Pay Now
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTracking = () => {
+    return (
+      <div className="animate-fadeIn">
+        <div className="bg-white rounded-2xl shadow-xl p-12 text-center border border-gray-100">
+          <div className="mb-8">
+            <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-pulse">
+              <CheckCircle className="h-12 w-12 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Application Submitted Successfully! 🎉
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Your visa application has been submitted and payment processed successfully.
+            </p>
+          </div>
+
+          {applicationNumber && (
+            <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl p-8 mb-8 border-2 border-blue-200">
+              <p className="text-sm font-semibold text-gray-600 mb-2">Application Number</p>
+              <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+                {applicationNumber}
+              </p>
+              <p className="text-sm text-gray-500 mt-2">Keep this number for tracking your application</p>
+            </div>
+          )}
+
+          <div className="space-y-4 mb-8">
+            <Button 
+              onClick={() => router.push('/customer/dashboard')}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
+            >
+              Go to Dashboard
+            </Button>
+            <Button 
+              onClick={() => router.push('/')}
+              variant="outline"
+              className="w-full border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 py-4 text-lg font-semibold transition-all duration-200"
+            >
+              Back to Home
+            </Button>
+          </div>
+
+          <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+            <div className="flex items-center justify-center gap-2 text-blue-800 mb-2">
+              <CheckCircle className="h-5 w-5" />
+              <span className="font-semibold">What's Next?</span>
+            </div>
+            <p className="text-blue-700">
+              You will receive email updates about your application status. Processing typically takes 5-15 business days.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 1:
+        return renderForm();
+      case 2:
+        return renderReview();
+      case 3:
+        return renderPayment();
+      case 4:
+        return renderTracking();
+      default:
+        return renderForm();
     }
   };
 
@@ -282,24 +932,20 @@ const VisaApplicationForm = () => {
       <Head>
         <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
       </Head>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
         {/* Header */}
-        <div className="bg-white shadow-sm">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center gap-4">
-              {/* <Button
-                onClick={() => router.back()}
-                variant="ghost"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </Button> */}
-              <div className="flex items-center gap-3">
-                <span className="text-4xl">{country?.flagEmoji || '🌍'}</span>
+        <div className="bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="text-3xl">{country?.flagEmoji || '🌍'}</span>
+                </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Visa Application Form</h1>
-                  <p className="text-gray-600">
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                    Visa Application Form
+                  </h1>
+                  <p className="text-gray-600 text-lg font-medium mt-1">
                     {visaType?.name} - {country?.name}
                   </p>
                 </div>
@@ -309,260 +955,55 @@ const VisaApplicationForm = () => {
         </div>
 
         {/* Content */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Pricing Summary */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200 mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">💰 Pricing Breakdown</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-lg font-bold text-blue-600">${visaType?.vfsAmount}</div>
-                <div className="text-sm text-gray-600">VFS Fee</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-green-600">${visaType?.consulateAmount}</div>
-                <div className="text-sm text-gray-600">Consulate Fee</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-purple-600">${visaType?.serviceAmount}</div>
-                <div className="text-sm text-gray-600">Service Fee</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">₹{visaType?.totalAmount}</div>
-                <div className="text-sm text-gray-600">Total Amount</div>
-              </div>
-            </div>
-          </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Tab Navigation */}
+          {renderTabs()}
+          
 
-          {/* Application Form */}
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {formSections.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-                <div className="text-gray-400 text-6xl mb-4">📋</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Form Available</h3>
-                <p className="text-gray-600">The application form for this visa type is not yet configured.</p>
-              </div>
-            ) : (
-              formSections
-                .sort((a, b) => a.order - b.order)
-                .map((section) => {
-                  const sectionFields = getFieldsBySection(section._id);
-                  if (sectionFields.length === 0) return null;
 
-                  return (
-                    <div key={section._id} className="bg-white rounded-xl shadow-lg p-8">
-                      <div className="flex items-center gap-3 mb-6">
-                        <span className="text-2xl">📋</span>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900">{section.name}</h3>
-                          <p className="text-sm text-gray-600">{section.description}</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {sectionFields.map((field) => (
-                          <div key={field._id} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              {field.label}
-                              {field.required && <span className="text-red-500 ml-1">*</span>}
-                            </label>
-                            
-                            {field.type === 'textarea' ? (
-                              <textarea
-                                name={field.name}
-                                placeholder={field.placeholder}
-                                value={formData[field.name] || ''}
-                                onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                required={field.required}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                rows={3}
-                              />
-                            ) : field.type === 'select' ? (
-                              <select 
-                                name={field.name}
-                                value={formData[field.name] || ''}
-                                onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                required={field.required}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              >
-                                <option value="">Select {field.label}</option>
-                                {field.options && field.options.map((option, index) => (
-                                  <option key={index} value={option.toLowerCase().replace(/\s+/g, '-')}>
-                                    {option}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : field.type === 'radio' ? (
-                              <div className="flex gap-4">
-                                {field.options && field.options.length > 0 ? (
-                                  field.options.map((option, index) => (
-                                    <label key={index} className="flex items-center">
-                                      <input 
-                                        type="radio" 
-                                        name={field.name} 
-                                        value={option}
-                                        checked={formData[field.name] === option}
-                                        onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                        required={field.required}
-                                        className="mr-2" 
-                                      />
-                                      {option}
-                                    </label>
-                                  ))
-                                ) : (
-                                  <>
-                                    <label className="flex items-center">
-                                      <input 
-                                        type="radio" 
-                                        name={field.name} 
-                                        value="yes"
-                                        checked={formData[field.name] === 'yes'}
-                                        onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                        required={field.required}
-                                        className="mr-2" 
-                                      />
-                                      Yes
-                                    </label>
-                                    <label className="flex items-center">
-                                      <input 
-                                        type="radio" 
-                                        name={field.name} 
-                                        value="no"
-                                        checked={formData[field.name] === 'no'}
-                                        onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                        required={field.required}
-                                        className="mr-2" 
-                                      />
-                                      No
-                                    </label>
-                                  </>
-                                )}
-                              </div>
-                            ) : field.type === 'checkbox' ? (
-                              <div className="space-y-2">
-                                {field.options && field.options.length > 0 ? (
-                                  field.options.map((option, index) => (
-                                    <label key={index} className="flex items-center">
-                                      <input 
-                                        type="checkbox" 
-                                        name={field.name} 
-                                        value={option}
-                                        checked={(formData[field.name] || []).includes(option)}
-                                        onChange={(e) => {
-                                          const currentValues = formData[field.name] || [];
-                                          const newValues = e.target.checked
-                                            ? [...currentValues, option]
-                                            : currentValues.filter(v => v !== option);
-                                          handleInputChange(field.name, newValues);
-                                        }}
-                                        className="mr-2" 
-                                      />
-                                      {option}
-                                    </label>
-                                  ))
-                                ) : (
-                                  <label className="flex items-center">
-                                    <input 
-                                      type="checkbox" 
-                                      name={field.name}
-                                      checked={formData[field.name] || false}
-                                      onChange={(e) => handleInputChange(field.name, e.target.checked)}
-                                      required={field.required}
-                                      className="mr-2" 
-                                    />
-                                    {field.label}
-                                  </label>
-                                )}
-                              </div>
-                            ) : field.type === 'file' ? (
-                              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                                <input 
-                                  type="file" 
-                                  name={field.name}
-                                  onChange={(e) => handleFileUpload(field.name, e.target.files[0])}
-                                  required={field.required}
-                                  className="hidden" 
-                                  id={field.name} 
-                                />
-                                <label htmlFor={field.name} className="cursor-pointer">
-                                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                  <div className="text-sm text-gray-600">
-                                    {formData[field.name] ? formData[field.name].name : `Click to upload ${field.label}`}
-                                  </div>
-                                </label>
-                              </div>
-                            ) : (
-                              <input
-                                type={field.type}
-                                name={field.name}
-                                placeholder={field.placeholder}
-                                value={formData[field.name] || ''}
-                                onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                required={field.required}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-6">
-              <Button 
-                type="submit" 
-                disabled={submitting}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {submitting ? 'Submitting...' : (draftId ? 'Submit Application' : 'Submit Application')}
-              </Button>
-              {!draftId && (
-                <Button 
-                  type="button" 
-                  onClick={handleSaveDraft}
-                  variant="outline" 
-                  className="flex-1"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save as Draft
-                </Button>
-              )}
-            </div>
-          </form>
+          {/* Current Step Content */}
+          {renderCurrentStep()}
         </div>
 
-        {/* Payment Modal */}
-        {showPaymentModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-md w-full p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Complete Payment</h3>
-              <p className="text-gray-600 mb-6">
-                Your application has been saved. Complete the payment to submit your visa application.
-              </p>
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">Total Amount:</span>
-                  <span className="text-xl font-bold text-green-600">₹{visaType?.totalAmount}</span>
+        {/* File Modal */}
+        {fileModal.show && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-4xl max-h-[90vh] w-full overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="text-lg font-semibold text-gray-900">{fileModal.fileName}</h3>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleFileDownload({ fileName: fileModal.fileName, filePath: fileModal.url.split('/').pop() })}
+                    className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 transition-colors"
+                  >
+                    Download
+                  </button>
+                  <button 
+                    onClick={() => setFileModal({ show: false, url: '', fileName: '', type: '' })}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
-              <div className="flex gap-3">
-                <Button 
-                  onClick={() => setShowPaymentModal(false)}
-                  variant="outline" 
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handlePayment}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700"
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Pay Now
-                </Button>
+              <div className="p-4 max-h-[calc(90vh-80px)] overflow-auto">
+                {fileModal.type?.startsWith('image/') ? (
+                  <img 
+                    src={fileModal.url} 
+                    alt={fileModal.fileName}
+                    className="w-full h-auto max-h-full object-contain"
+                  />
+                ) : fileModal.type === 'application/pdf' ? (
+                  <iframe 
+                    src={fileModal.url} 
+                    className="w-full h-[70vh]"
+                    title={fileModal.fileName}
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-600">Preview not available for this file type</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

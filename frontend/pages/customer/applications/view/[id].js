@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { ArrowLeft, FileText, Calendar, User, CreditCard, Clock, Download, Eye } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, User, CreditCard, Clock, Edit, Download, Eye, X } from 'lucide-react';
 import api from '../../../../lib/api';
 import Button from '../../../../components/Button';
 import CustomerLayout from '../../../../components/CustomerLayout';
+import { useAuth } from '../../../../context/AuthContext';
 
 export default function ViewApplication() {
   const router = useRouter();
+  const { user } = useAuth();
   const { id } = router.query;
   const [application, setApplication] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [statusHistory, setStatusHistory] = useState([]);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fileModal, setFileModal] = useState({ show: false, url: '', fileName: '', type: '' });
 
   useEffect(() => {
     if (id) {
@@ -31,6 +34,29 @@ export default function ViewApplication() {
       console.error('Error fetching application details:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileView = (fileName, filePath, fileType) => {
+    const url = `http://localhost:5000/uploads/applications/${filePath}`;
+    setFileModal({ show: true, url, fileName, type: fileType });
+  };
+
+  const handleFileDownload = async (fileName, filePath) => {
+    const url = `http://localhost:5000/uploads/applications/${filePath}`;
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
     }
   };
 
@@ -93,6 +119,9 @@ export default function ViewApplication() {
                   {application.countryVisaType?.country?.name} - {application.countryVisaType?.visaType?.name}
                 </h2>
                 <p className="text-gray-600">Application #{application.applicationNumber}</p>
+                <p className="text-sm text-gray-500">
+                  Customer: {application.user?.name} ({application.user?.email})
+                </p>
               </div>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
@@ -132,35 +161,86 @@ export default function ViewApplication() {
                   }
                   
                   // Handle file fields
-                  if (answer.field?.type === 'file' && answer.answerFile) {
-                    const fileName = answer.answerFile.split('/').pop();
-                    const fileExt = fileName.split('.').pop().toLowerCase();
-                    const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
+                  if (answer.field?.type === 'file' && (answer.answerFile || answer.answerText)) {
+                    let fileData = null;
+                    let fileName = '';
+                    let filePath = '';
+                    
+                    // Handle both old format (answerFile) and new format (answerText with JSON)
+                    if (answer.answerFile) {
+                      fileName = answer.answerFile.split('/').pop();
+                      filePath = answer.answerFile;
+                    } else if (answer.answerText) {
+                      try {
+                        fileData = JSON.parse(answer.answerText);
+                        fileName = fileData.fileName || 'Unknown file';
+                        filePath = fileData.filePath || '';
+                      } catch (e) {
+                        // If it's not JSON, treat as filename
+                        fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
+                        filePath = answer.answerText;
+                      }
+                    }
+                    
+                    if (!fileName || !filePath) {
+                      return <span className="text-gray-500 italic">File data unavailable</span>;
+                    }
+                    
+                    const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
+                    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+                    const isPDF = fileExt === 'pdf';
                     
                     return (
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg">
-                          <FileText className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-800">{fileName}</span>
-                        </div>
-                        <div className="flex gap-1">
-                          {isImage && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg">
+                            <FileText className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-800">{fileName}</span>
+                          </div>
+                          <div className="flex gap-1">
                             <button 
-                              onClick={() => window.open(`/api/uploads/${answer.answerFile}`, '_blank')}
-                              className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+                              onClick={() => handleFileView(fileName, filePath, fileData?.fileType || (isImage ? 'image/jpeg' : 'application/pdf'))}
+                              className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                               title="View"
                             >
                               <Eye className="h-4 w-4" />
                             </button>
-                          )}
-                          <button 
-                            onClick={() => window.open(`/api/uploads/${answer.answerFile}`, '_blank')}
-                            className="p-1 text-green-600 hover:bg-green-100 rounded"
-                            title="Download"
-                          >
-                            <Download className="h-4 w-4" />
-                          </button>
+                            <button 
+                              onClick={() => handleFileDownload(fileName, filePath)}
+                              className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
+                              title="Download"
+                            >
+                              <Download className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
+                        
+                        {/* File Preview */}
+                        {isImage && (
+                          <div className="mt-3">
+                            <img 
+                              src={`http://localhost:5000/uploads/applications/${filePath}`}
+                              alt={fileName}
+                              className="w-full max-w-sm h-48 object-cover rounded-lg border border-gray-200 shadow-sm cursor-pointer"
+                              onClick={() => handleFileView(fileName, filePath, 'image/jpeg')}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        
+                        {isPDF && (
+                          <div className="mt-3 p-4 bg-red-50 rounded-lg border border-red-200">
+                            <div className="flex items-center gap-3">
+                              <span className="text-red-600 text-3xl">📄</span>
+                              <div>
+                                <p className="text-sm font-medium text-red-800">{fileName}</p>
+                                <p className="text-xs text-red-600">PDF Document - Click view to open</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   }
@@ -205,7 +285,15 @@ export default function ViewApplication() {
                     );
                   }
                   
-                  // Default text display
+                  // Default text display - avoid showing raw JSON
+                  if (answer.answerText && answer.answerText.startsWith('{') && answer.answerText.includes('fileName')) {
+                    try {
+                      const parsed = JSON.parse(answer.answerText);
+                      return <span className="text-sm text-gray-900">{parsed.fileName || 'File uploaded'}</span>;
+                    } catch (e) {
+                      return <span className="text-sm text-gray-900">{answer.answerText}</span>;
+                    }
+                  }
                   return <span className="text-sm text-gray-900">{answer.answerText}</span>;
                 };
                 
@@ -283,11 +371,19 @@ export default function ViewApplication() {
                 <dd className="text-sm font-mono text-gray-900">{payment.transactionId}</dd>
               </div>
             </div>
-            {payment.paidAt && (
+            {payment.razorpayOrderId && (
               <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="h-4 w-4" />
-                  <span>Payment Date: {new Date(payment.paidAt).toLocaleDateString()} at {new Date(payment.paidAt).toLocaleTimeString()}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <dt className="font-medium text-gray-700">Razorpay Order ID</dt>
+                    <dd className="font-mono text-gray-900">{payment.razorpayOrderId}</dd>
+                  </div>
+                  {payment.paidAt && (
+                    <div>
+                      <dt className="font-medium text-gray-700">Payment Date</dt>
+                      <dd className="text-gray-900">{new Date(payment.paidAt).toLocaleDateString()} at {new Date(payment.paidAt).toLocaleTimeString()}</dd>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -298,6 +394,52 @@ export default function ViewApplication() {
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
             <h3 className="text-lg font-bold text-yellow-800 mb-2">⚠️ Payment Pending</h3>
             <p className="text-yellow-700">No payment information found for this application.</p>
+          </div>
+        )}
+
+        {/* File Modal */}
+        {fileModal.show && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-4xl max-h-[90vh] w-full overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="text-lg font-semibold text-gray-900">{fileModal.fileName}</h3>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleFileDownload(fileModal.fileName, fileModal.url.split('/').pop())}
+                    className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 transition-colors"
+                  >
+                    <Download className="h-4 w-4 mr-1 inline" />
+                    Download
+                  </button>
+                  <button 
+                    onClick={() => setFileModal({ show: false, url: '', fileName: '', type: '' })}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                  >
+                    <X className="h-4 w-4 mr-1 inline" />
+                    Close
+                  </button>
+                </div>
+              </div>
+              <div className="p-4 max-h-[calc(90vh-80px)] overflow-auto">
+                {fileModal.type?.startsWith('image/') ? (
+                  <img 
+                    src={fileModal.url} 
+                    alt={fileModal.fileName}
+                    className="w-full h-auto max-h-full object-contain"
+                  />
+                ) : fileModal.type === 'application/pdf' ? (
+                  <iframe 
+                    src={fileModal.url} 
+                    className="w-full h-[70vh]"
+                    title={fileModal.fileName}
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-600">Preview not available for this file type</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

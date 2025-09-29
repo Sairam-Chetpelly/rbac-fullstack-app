@@ -217,7 +217,7 @@ router.get('/application/:id', auth, role(['customer']), async (req, res) => {
     const answers = await ApplicationAnswer.find({
       application: application._id,
       deletedAt: null
-    }).populate('field', 'name label');
+    }).populate('field', 'name label type');
     
     // Get status history
     const statusHistory = await ApplicationStatusHistory.find({
