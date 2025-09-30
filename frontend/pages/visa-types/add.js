@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import api from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export default function AddVisaType() {
   const [formData, setFormData] = useState({
@@ -24,7 +25,7 @@ export default function AddVisaType() {
       const response = await api.get('/status');
       setStatuses(response.data);
     } catch (error) {
-      console.error('Error fetching statuses:', error);
+      toast.error('Failed to fetch statuses');
     }
   };
 
@@ -33,9 +34,10 @@ export default function AddVisaType() {
     setLoading(true);
     try {
       await api.post('/visa-types', formData);
-      router.push('/visa-types');
+      toast.success('Visa type created successfully!');
+      setTimeout(() => router.push('/visa-types'), 1000);
     } catch (error) {
-      console.error('Error creating visa type:', error);
+      toast.error('Failed to create visa type');
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function Countries() {
   const [countries, setCountries] = useState([]);
@@ -21,7 +22,7 @@ export default function Countries() {
       const response = await api.get('/countries');
       setCountries(response.data);
     } catch (error) {
-      console.error('Error fetching countries:', error);
+      toast.error('Failed to fetch countries');
     } finally {
       setLoading(false);
     }
@@ -31,9 +32,10 @@ export default function Countries() {
     if (confirm('Are you sure you want to delete this country?')) {
       try {
         await api.delete(`/countries/${id}`);
+        toast.success('Country deleted successfully!');
         fetchCountries();
       } catch (error) {
-        console.error('Error deleting country:', error);
+        toast.error('Failed to delete country');
       }
     }
   };

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Link from 'next/link';
 import api from '../lib/api';
+import toast from 'react-hot-toast';
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -28,8 +29,10 @@ export default function ForgotPassword() {
     try {
       await api.post('/auth/forgot-password', { email });
       setSuccess('Password reset link has been sent to your email address.');
+      toast.success('Password reset link has been sent to your email address.');
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to send reset email');
+      toast.error(error.response?.data?.message || 'Failed to send reset email');
     } finally {
       setLoading(false);
     }

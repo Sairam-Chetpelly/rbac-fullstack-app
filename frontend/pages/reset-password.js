@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Link from 'next/link';
 import api from '../lib/api';
+import toast from 'react-hot-toast';
 
 export default function ResetPassword() {
   const router = useRouter();
@@ -31,12 +32,14 @@ export default function ResetPassword() {
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      toast.error('Passwords do not match');
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters long');
+      toast.error('Password must be at least 6 characters long');
       setLoading(false);
       return;
     }
@@ -47,9 +50,11 @@ export default function ResetPassword() {
         password: formData.password
       });
       setSuccess('Password reset successful! Redirecting to login...');
+      toast.success('Password reset successful! Redirecting to login...');
       setTimeout(() => router.push('/login'), 2000);
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to reset password');
+      toast.error(error.response?.data?.message || 'Failed to reset password');
     } finally {
       setLoading(false);
     }

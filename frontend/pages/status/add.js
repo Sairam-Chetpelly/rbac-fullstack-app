@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../lib/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import toast from 'react-hot-toast';
 
 export default function AddStatus() {
   const { user } = useAuth();
@@ -12,16 +13,8 @@ export default function AddStatus() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    color: 'blue'
+    color: '#3b82f6'
   });
-
-  const colorOptions = [
-    { name: 'Green', value: 'green' },
-    { name: 'Red', value: 'red' },
-    { name: 'Yellow', value: 'yellow' },
-    { name: 'Blue', value: 'blue' },
-    { name: 'Purple', value: 'purple' }
-  ];
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -35,9 +28,10 @@ export default function AddStatus() {
 
     try {
       await api.post('/status', formData);
-      router.push('/status');
+      toast.success('Status created successfully!');
+      setTimeout(() => router.push('/status'), 1000);
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to create status');
+      toast.error(error.response?.data?.message || 'Failed to create status');
     } finally {
       setLoading(false);
     }
@@ -98,26 +92,28 @@ export default function AddStatus() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               🎨 Color
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {colorOptions.map(color => (
-                <label key={color.value} className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="color"
-                    value={color.value}
-                    checked={formData.color === color.value}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                  />
-                  <div className={`w-4 h-4 rounded-full bg-${color.value}-500`}></div>
-                  <span className="text-sm font-medium text-gray-700">
-                    {color.name}
-                  </span>
-                </label>
-              ))}
+            <div className="flex items-center gap-4">
+              <input
+                type="color"
+                name="color"
+                value={formData.color}
+                onChange={handleChange}
+                className="w-16 h-12 border border-gray-200 rounded-xl cursor-pointer"
+              />
+              <div className="flex-1">
+                <input
+                  type="text"
+                  name="color"
+                  value={formData.color}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+                  placeholder="#000000"
+                  pattern="^#[0-9A-Fa-f]{6}$"
+                />
+              </div>
             </div>
           </div>
 

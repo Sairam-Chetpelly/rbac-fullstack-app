@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Link from 'next/link';
 import api from '../lib/api';
+import toast from 'react-hot-toast';
 
 export default function Register() {
   const router = useRouter();
@@ -52,10 +53,11 @@ export default function Register() {
         nationality: formData.nationality || 'Not Specified'
       });
 
-      alert('Registration successful! Please login to continue.');
-      router.push('/login');
+      toast.success('Registration successful! Please login to continue.');
+      setTimeout(() => router.push('/login'), 2000);
     } catch (error) {
       setError(error.response?.data?.message || 'Registration failed');
+      toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

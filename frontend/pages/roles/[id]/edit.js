@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import api from '../../../lib/api';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
+import toast from 'react-hot-toast';
 
 export default function EditRole() {
   const { user } = useAuth();
@@ -43,7 +44,7 @@ export default function EditRole() {
         });
       }
     } catch (error) {
-      console.error('Failed to fetch role:', error);
+      toast.error('Failed to fetch role');
     } finally {
       setFetchLoading(false);
     }
@@ -55,9 +56,10 @@ export default function EditRole() {
 
     try {
       await api.put(`/roles/${id}`, formData);
-      router.push(`/roles/${id}`);
+      toast.success('Role updated successfully!');
+      setTimeout(() => router.push(`/roles/${id}`), 1000);
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update role');
+      toast.error(error.response?.data?.message || 'Failed to update role');
     } finally {
       setLoading(false);
     }

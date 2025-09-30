@@ -5,6 +5,7 @@ import { canAccess } from '../lib/roles';
 import api from '../lib/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import toast from 'react-hot-toast';
 
 export default function Status() {
   const { user } = useAuth();
@@ -26,7 +27,7 @@ export default function Status() {
       const response = await api.get('/status');
       setStatuses(response.data);
     } catch (error) {
-      console.error('Failed to fetch statuses:', error);
+      toast.error('Failed to fetch statuses');
     } finally {
       setLoading(false);
     }
@@ -36,9 +37,10 @@ export default function Status() {
     if (confirm('Are you sure you want to delete this status?')) {
       try {
         await api.delete(`/status/${statusId}`);
+        toast.success('Status deleted successfully!');
         fetchStatuses();
       } catch (error) {
-        alert(error.response?.data?.message || 'Failed to delete status');
+        toast.error(error.response?.data?.message || 'Failed to delete status');
       }
     }
   };

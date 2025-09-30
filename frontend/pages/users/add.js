@@ -5,6 +5,7 @@ import { canAccess } from '../../lib/roles';
 import api from '../../lib/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import toast from 'react-hot-toast';
 
 export default function AddUser() {
   const { user } = useAuth();
@@ -48,7 +49,7 @@ export default function AddUser() {
         }));
       }
     } catch (error) {
-      console.error('Failed to fetch roles and statuses:', error);
+      toast.error('Failed to fetch roles and statuses');
     }
   };
 
@@ -68,9 +69,10 @@ export default function AddUser() {
 
     try {
       await api.post('/users', formData);
-      router.push('/users');
+      toast.success('User created successfully!');
+      setTimeout(() => router.push('/users'), 1000);
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to create user');
+      toast.error(error.response?.data?.message || 'Failed to create user');
     } finally {
       setLoading(false);
     }

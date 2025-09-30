@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import api from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export default function AddCountry() {
   const [formData, setFormData] = useState({
@@ -31,7 +32,7 @@ export default function AddCountry() {
       const response = await api.get('/status');
       setStatuses(response.data);
     } catch (error) {
-      console.error('Error fetching statuses:', error);
+      toast.error('Failed to fetch statuses');
     }
   };
 
@@ -40,7 +41,7 @@ export default function AddCountry() {
       const response = await api.get('/continents');
       setContinents(response.data);
     } catch (error) {
-      console.error('Error fetching continents:', error);
+      toast.error('Failed to fetch continents');
     }
   };
 
@@ -49,9 +50,10 @@ export default function AddCountry() {
     setLoading(true);
     try {
       await api.post('/countries', formData);
-      router.push('/countries');
+      toast.success('Country created successfully!');
+      setTimeout(() => router.push('/countries'), 1000);
     } catch (error) {
-      console.error('Error creating country:', error);
+      toast.error('Failed to create country');
     } finally {
       setLoading(false);
     }

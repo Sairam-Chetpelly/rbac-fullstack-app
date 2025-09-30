@@ -5,6 +5,7 @@ import { canAccess } from '../../../lib/roles';
 import api from '../../../lib/api';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
+import toast from 'react-hot-toast';
 
 export default function EditUser() {
   const { user } = useAuth();
@@ -52,7 +53,7 @@ export default function EditUser() {
         });
       }
     } catch (error) {
-      console.error('Failed to fetch user:', error);
+      toast.error('Failed to fetch user');
     } finally {
       setFetchLoading(false);
     }
@@ -74,9 +75,10 @@ export default function EditUser() {
 
     try {
       await api.put(`/users/${id}`, formData);
-      router.push(`/users/${id}`);
+      toast.success('User updated successfully!');
+      setTimeout(() => router.push(`/users/${id}`), 1000);
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update user');
+      toast.error(error.response?.data?.message || 'Failed to update user');
     } finally {
       setLoading(false);
     }

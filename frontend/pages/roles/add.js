@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../lib/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import toast from 'react-hot-toast';
 
 export default function AddRole() {
   const { user } = useAuth();
@@ -31,9 +32,10 @@ export default function AddRole() {
 
     try {
       await api.post('/roles', formData);
-      router.push('/roles');
+      toast.success('Role created successfully!');
+      setTimeout(() => router.push('/roles'), 1000);
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to create role');
+      toast.error(error.response?.data?.message || 'Failed to create role');
     } finally {
       setLoading(false);
     }

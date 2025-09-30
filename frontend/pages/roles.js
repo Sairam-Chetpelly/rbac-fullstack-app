@@ -5,6 +5,7 @@ import { canAccess } from '../lib/roles';
 import api from '../lib/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import toast from 'react-hot-toast';
 
 export default function Roles() {
   const { user } = useAuth();
@@ -26,7 +27,7 @@ export default function Roles() {
       const response = await api.get('/roles');
       setRoles(response.data);
     } catch (error) {
-      console.error('Failed to fetch roles:', error);
+      toast.error('Failed to fetch roles');
     } finally {
       setLoading(false);
     }
@@ -36,9 +37,10 @@ export default function Roles() {
     if (confirm('Are you sure you want to delete this role?')) {
       try {
         await api.delete(`/roles/${roleId}`);
+        toast.success('Role deleted successfully!');
         fetchRoles();
       } catch (error) {
-        alert(error.response?.data?.message || 'Failed to delete role');
+        toast.error(error.response?.data?.message || 'Failed to delete role');
       }
     }
   };

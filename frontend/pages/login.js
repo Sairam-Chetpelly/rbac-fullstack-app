@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { login as loginApi } from '../lib/auth';
 import Button from '../components/Button';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -31,8 +32,10 @@ export default function Login() {
         refreshToken: response.refreshToken,
         expirationTime: response.expirationTime
       });
+      toast.success('Login successful!');
     } catch (error) {
       setError(error.response?.data?.message || 'Login failed');
+      toast.error(error.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
     }

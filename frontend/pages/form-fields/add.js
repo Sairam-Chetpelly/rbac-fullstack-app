@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import api from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export default function AddFormField() {
   const [formData, setFormData] = useState({
@@ -39,7 +40,7 @@ export default function AddFormField() {
       const response = await api.get('/status');
       setStatuses(response.data);
     } catch (error) {
-      console.error('Error fetching statuses:', error);
+      toast.error('Failed to fetch statuses');
     }
   };
 
@@ -48,7 +49,7 @@ export default function AddFormField() {
       const response = await api.get('/form-sections');
       setFormSections(response.data);
     } catch (error) {
-      console.error('Error fetching form sections:', error);
+      toast.error('Failed to fetch form sections');
     }
   };
 
@@ -58,9 +59,10 @@ export default function AddFormField() {
 
     try {
       await api.post('/form-fields', formData);
-      router.push('/form-fields');
+      toast.success('Form field created successfully!');
+      setTimeout(() => router.push('/form-fields'), 1000);
     } catch (error) {
-      console.error('Error creating form field:', error);
+      toast.error('Failed to create form field');
     } finally {
       setLoading(false);
     }

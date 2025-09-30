@@ -4,6 +4,7 @@ import Layout from '../../components/Layout';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import api from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export default function AddContinent() {
   const [formData, setFormData] = useState({
@@ -25,7 +26,7 @@ export default function AddContinent() {
       const response = await api.get('/status');
       setStatuses(response.data);
     } catch (error) {
-      console.error('Error fetching statuses:', error);
+      toast.error('Failed to fetch statuses');
     }
   };
 
@@ -34,9 +35,10 @@ export default function AddContinent() {
     setLoading(true);
     try {
       await api.post('/continents', formData);
-      router.push('/continents');
+      toast.success('Continent created successfully!');
+      setTimeout(() => router.push('/continents'), 1000);
     } catch (error) {
-      console.error('Error creating continent:', error);
+      toast.error('Failed to create continent');
     } finally {
       setLoading(false);
     }

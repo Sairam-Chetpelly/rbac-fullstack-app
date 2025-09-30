@@ -5,6 +5,7 @@ import PublicLayout from '../components/PublicLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import VisaLayout from '../components/VisaLayout';
 import { useRouter } from 'next/router';
+import { Toaster } from 'react-hot-toast';
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
@@ -52,6 +53,7 @@ export default function App({ Component, pageProps }) {
           )}
         </ProtectedRoute>
       )}
+      <Toaster position="top-right" />
     </AuthProvider>
   );
 }

@@ -5,6 +5,7 @@ import { canAccess } from '../lib/roles';
 import api from '../lib/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import toast from 'react-hot-toast';
 
 export default function Users() {
   const { user } = useAuth();
@@ -26,7 +27,7 @@ export default function Users() {
       const response = await api.get('/users');
       setUsers(response.data);
     } catch (error) {
-      console.error('Failed to fetch users:', error);
+      toast.error('Failed to fetch users');
     } finally {
       setLoading(false);
     }
@@ -36,9 +37,10 @@ export default function Users() {
     if (confirm('Are you sure you want to delete this user?')) {
       try {
         await api.delete(`/users/${userId}`);
+        toast.success('User deleted successfully!');
         fetchUsers();
       } catch (error) {
-        alert(error.response?.data?.message || 'Failed to delete user');
+        toast.error(error.response?.data?.message || 'Failed to delete user');
       }
     }
   };
