@@ -57,7 +57,7 @@ export default function ViewStatus() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <Card>
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -70,7 +70,7 @@ export default function ViewStatus() {
 
   if (!statusData) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <Card>
           <div className="text-center py-12">
             <div className="text-6xl mb-4">❌</div>
@@ -86,7 +86,7 @@ export default function ViewStatus() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
         <Button 
           variant="ghost" 

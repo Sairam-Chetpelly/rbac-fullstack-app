@@ -164,15 +164,26 @@ const emailTemplates = {
   }),
 
   applicationSubmitted: (userName, applicationId) => ({
-    subject: '🎉 Application Submitted Successfully - We\'re Processing Your Visa!',
+    subject: '🎉 Application Submitted Successfully - Agent Will Contact You!',
     html: createEmailTemplate('Application Submitted', `
       <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Congratulations ${userName}! 🎉</h2>
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
-        Your visa application has been submitted successfully! We will review your application and update you on the status.
+        Your visa application has been submitted successfully! Our agent will contact you within 24 hours for payment details and further processing.
       </p>
       
       <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;">
         <p style="color: #374151; margin: 0; font-size: 15px;">Application ID: <span style="color: #3b82f6; font-weight: 600; font-family: monospace;">${applicationId}</span></p>
+      </div>
+      
+      <div style="background: rgba(249, 115, 22, 0.05); border-left: 4px solid rgba(249, 115, 22, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #ea580c; margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">📞 Agent Contact Information</p>
+        <p style="color: #ea580c; margin: 0; font-size: 14px; line-height: 1.6;">
+          Our dedicated agent will contact you within 24 hours to discuss:<br>
+          • Payment methods and processing<br>
+          • Document verification (if needed)<br>
+          • Application timeline and next steps<br>
+          • Any additional requirements
+        </p>
       </div>
       
       <table role="presentation" style="margin: 30px 0;">
@@ -187,7 +198,7 @@ const emailTemplates = {
       
       <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
         <p style="color: #1e40af; margin: 0; font-size: 14px; font-weight: 500;">
-          📧 We'll send you email notifications at each step of the process. You can also check your application status anytime in your dashboard.
+          📧 We'll send you email notifications at each step of the process. Processing begins after payment confirmation.
         </p>
       </div>
     `, '#3b82f6', '🎉')
@@ -226,17 +237,25 @@ const emailTemplates = {
   }),
 
   adminNewApplication: (applicationId, userName, userEmail) => ({
-    subject: '🚨 NEW APPLICATION ALERT - Immediate Review Required',
+    subject: '🚨 NEW APPLICATION ALERT - Agent Contact Required',
     html: createEmailTemplate('New Application Alert', `
       <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">🚨 New Application Submitted</h2>
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
-        A new visa application has been submitted and requires review.
+        A new visa application has been submitted. Agent contact required for payment processing.
       </p>
       
       <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;">
         <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Application ID: <span style="color: #dc2626; font-weight: 600; font-family: monospace;">${applicationId}</span></p>
         <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Applicant: <span style="color: #1f2937; font-weight: 600;">${userName}</span></p>
-        <p style="color: #374151; margin: 0; font-size: 15px;">Email: <span style="color: #3b82f6; font-weight: 500;">${userEmail}</span></p>
+        <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Email: <span style="color: #3b82f6; font-weight: 500;">${userEmail}</span></p>
+        <p style="color: #dc2626; margin: 0; font-size: 15px; font-weight: 600;">Status: Payment Pending - Agent Contact Required</p>
+      </div>
+      
+      <div style="background: rgba(249, 115, 22, 0.05); border-left: 4px solid rgba(249, 115, 22, 0.3); padding: 16px; margin: 20px 0; border-radius: 4px;">
+        <p style="color: #ea580c; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">📞 Action Required:</p>
+        <p style="color: #ea580c; margin: 0; font-size: 14px; line-height: 1.6;">
+          Agent must contact customer within 24 hours to discuss payment methods and processing.
+        </p>
       </div>
       
       <table role="presentation" style="margin: 30px 0;">
@@ -251,7 +270,7 @@ const emailTemplates = {
       
       <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
         <p style="color: #1e40af; margin: 0; font-size: 14px; font-weight: 500;">
-          ⏰ Please review this application within 24 hours to maintain our service quality standards.
+          ⏰ Please assign an agent and initiate customer contact within 24 hours to maintain service quality.
         </p>
       </div>
     `, '#dc2626', '🚨')
@@ -281,7 +300,115 @@ const emailTemplates = {
         </tr>
       </table>
     `, '#8b5cf6', '📊')
-  })
+  }),
+
+  embassyVisitScheduled: (userName, applicationId, visitDateTime) => ({
+    subject: '🏛️ Embassy Visit Scheduled - Important Appointment Details',
+    html: createEmailTemplate('Embassy Visit Scheduled', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">🏛️ Embassy Visit Scheduled</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        Hello ${userName}, your embassy visit has been scheduled.
+      </p>
+      
+      <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 20px; margin: 20px 0;">
+        <p style="color: #92400e; margin: 0 0 8px 0; font-size: 15px;">Application ID: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${applicationId}</span></p>
+        <p style="color: #92400e; margin: 0; font-size: 18px; font-weight: 600;">📅 Visit Date & Time: ${new Date(visitDateTime).toLocaleString()}</p>
+      </div>
+    `, '#f59e0b', '🏛️')
+  }),
+
+  embassyVisitReminder: (userName, applicationId, visitDateTime, timeUntil) => ({
+    subject: `⏰ Embassy Visit Reminder - ${timeUntil} to go!`,
+    html: createEmailTemplate('Embassy Visit Reminder', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">⏰ Embassy Visit Reminder</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        Hello ${userName}, reminder about your upcoming embassy visit.
+      </p>
+      
+      <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 20px; margin: 20px 0;">
+        <p style="color: #92400e; margin: 0 0 8px 0; font-size: 15px;">Application ID: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${applicationId}</span></p>
+        <p style="color: #92400e; margin: 0 0 8px 0; font-size: 18px; font-weight: 600;">📅 Visit Date & Time: ${new Date(visitDateTime).toLocaleString()}</p>
+        <p style="color: #dc2626; margin: 0; font-size: 20px; font-weight: 700;">⏰ Time Remaining: ${timeUntil}</p>
+      </div>
+    `, '#f59e0b', '⏰')
+  }),
+
+  applicationAssigned: (employeeName, applicationNumber, customerName, customerEmail, visaType) => ({
+    subject: '📋 New Application Assigned - Action Required',
+    html: createEmailTemplate('Application Assigned', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">📋 New Application Assigned</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        Hello ${employeeName}, a new visa application has been assigned to you for processing.
+      </p>
+      
+      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;">
+        <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Application Number: <span style="color: #3b82f6; font-weight: 600; font-family: monospace;">${applicationNumber}</span></p>
+        <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Customer: <span style="color: #1f2937; font-weight: 600;">${customerName}</span></p>
+        <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Email: <span style="color: #3b82f6; font-weight: 500;">${customerEmail}</span></p>
+        <p style="color: #374151; margin: 0; font-size: 15px;">Visa Type: <span style="color: #059669; font-weight: 600;">${visaType}</span></p>
+      </div>
+      
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">📝 Your Responsibilities:</p>
+        <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.6;">
+          • Review application details and documents<br>
+          • Contact customer for payment processing<br>
+          • Update application status as needed<br>
+          • Provide regular updates to the customer
+        </p>
+      </div>
+      
+      <table role="presentation" style="margin: 30px 0;">
+        <tr>
+          <td style="text-align: center;">
+            <a href="${process.env.FRONTEND_URL}/applications" style="display: inline-block; background: rgba(59, 130, 246, 0.9); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);">
+              View Application Details
+            </a>
+          </td>
+        </tr>
+      </table>
+      
+      <div style="background: rgba(249, 115, 22, 0.05); border-left: 4px solid rgba(249, 115, 22, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #ea580c; margin: 0; font-size: 14px; font-weight: 500;">
+          ⏰ Please begin processing this application within 24 hours to maintain our service quality standards.
+        </p>
+      </div>
+    `, '#3b82f6', '📋')
+  }),
+
+  paymentConfirmed: (userName, applicationNumber, amount, transactionId) => ({
+    subject: '💳 Payment Confirmed - Processing Started',
+    html: createEmailTemplate('Payment Confirmed', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">💳 Payment Confirmed</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        Hello ${userName}, your payment has been confirmed and your visa application processing has started.
+      </p>
+      
+      <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 6px; padding: 16px; margin: 20px 0;">
+        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Application Number: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${applicationNumber}</span></p>
+        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Amount Paid: <span style="color: #059669; font-weight: 600;">₹${amount}</span></p>
+        ${transactionId ? `<p style="color: #166534; margin: 0; font-size: 15px;">Transaction ID: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${transactionId}</span></p>` : ''}
+      </div>
+      
+      <table role="presentation" style="margin: 30px 0;">
+        <tr>
+          <td style="text-align: center;">
+            <a href="${process.env.FRONTEND_URL}/customer/applications" style="display: inline-block; background: rgba(34, 197, 94, 0.9); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);">
+              Track Application Status
+            </a>
+          </td>
+        </tr>
+      </table>
+      
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0; font-size: 14px; font-weight: 500;">
+          📧 You will receive regular updates about your application status via email.
+        </p>
+      </div>
+    `, '#22c55e', '💳')
+  }),
+
+
 };
 
 // Send email function
@@ -321,6 +448,18 @@ const sendEmail = async (to, template, data = {}) => {
         break;
       case 'adminStatusUpdate':
         emailContent = emailTemplates.adminStatusUpdate(data.applicationId, data.userName, data.oldStatus, data.newStatus, data.updatedBy);
+        break;
+      case 'embassyVisitScheduled':
+        emailContent = emailTemplates.embassyVisitScheduled(data.userName, data.applicationId, data.visitDateTime);
+        break;
+      case 'embassyVisitReminder':
+        emailContent = emailTemplates.embassyVisitReminder(data.userName, data.applicationId, data.visitDateTime, data.timeUntil);
+        break;
+      case 'applicationAssigned':
+        emailContent = emailTemplates.applicationAssigned(data.employeeName, data.applicationNumber, data.customerName, data.customerEmail, data.visaType);
+        break;
+      case 'paymentConfirmed':
+        emailContent = emailTemplates.paymentConfirmed(data.userName, data.applicationNumber, data.amount, data.transactionId);
         break;
       default:
         throw new Error(`Unknown email template: ${template}`);

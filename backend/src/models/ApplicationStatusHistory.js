@@ -7,8 +7,8 @@ const applicationStatusHistorySchema = new mongoose.Schema({
     required: true
   },
   status: {
-    type: String,
-    enum: ['draft', 'submitted', 'under_review', 'approved', 'rejected'],
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Status',
     required: true
   },
   remarks: {

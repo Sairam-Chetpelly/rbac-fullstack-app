@@ -33,21 +33,13 @@ const countryVisaTypeSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  vfsAmount: {
-    type: String,
-    required: true
-  },
-  consulateAmount: {
-    type: String,
-    required: true
-  },
-  serviceAmount: {
-    type: String,
-    required: true
-  },
   totalAmount: {
     type: String,
     required: true
+  },
+  agentDiscount: {
+    type: String,
+    default: '0'
   }
 }, {
   timestamps: true

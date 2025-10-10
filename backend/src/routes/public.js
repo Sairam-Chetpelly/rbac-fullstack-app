@@ -141,10 +141,8 @@ router.get('/countries/:id/visa-types', async (req, res) => {
       description: vt.description,
       processingTimeMin: vt.processingTimeMin,
       processingTimeMax: vt.processingTimeMax,
-      vfsAmount: vt.vfsAmount,
-      consulateAmount: vt.consulateAmount,
-      serviceAmount: vt.serviceAmount,
-      totalAmount: vt.totalAmount
+      totalAmount: vt.totalAmount,
+      agentDiscount: vt.agentDiscount
     }));
 
     res.json(formattedVisaTypes);
@@ -173,10 +171,8 @@ router.get('/visa-types/:id', async (req, res) => {
         description: visaType.description,
         processingTimeMin: visaType.processingTimeMin,
         processingTimeMax: visaType.processingTimeMax,
-        vfsAmount: visaType.vfsAmount,
-        consulateAmount: visaType.consulateAmount,
-        serviceAmount: visaType.serviceAmount,
-        totalAmount: visaType.totalAmount
+        totalAmount: visaType.totalAmount,
+        agentDiscount: visaType.agentDiscount
       },
       country: visaType.country
     });
@@ -445,6 +441,7 @@ router.post('/visa-applications', auth, upload.any(), async (req, res) => {
 // Save visa application draft (authenticated)
 router.post('/visa-applications/draft', auth, async (req, res) => {
   try {
+    console.log('Saving visa application draft...');
     const { visaTypeId, formData } = req.body;
     
     // Check if user is authenticated
@@ -455,6 +452,11 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
     const Application = require('../models/Application');
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const FormField = require('../models/FormField');
+    const Status = require('../models/Status');
+    const draftStatus = await Status.findOne({ name: 'Draft' });
+    if (!draftStatus) {
+      return res.status(500).json({ message: 'Draft status not found' });
+    }
     
     console.log('Creating draft for user:', req.user.id);
     
@@ -464,7 +466,7 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
       user: req.user.id,
       countryVisaType: visaTypeId,
       applicationNumber,
-      status: 'draft'
+      status: draftStatus._id
     });
     await application.save();
     

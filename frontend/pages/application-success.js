@@ -17,7 +17,7 @@ const ApplicationSuccess = () => {
               Application Submitted Successfully!
             </h1>
             <p className="text-gray-600">
-              Your visa application has been submitted and payment processed.
+              Your visa application has been submitted. Our agent will contact you for payment details.
             </p>
           </div>
 
@@ -45,6 +45,16 @@ const ApplicationSuccess = () => {
             </Button>
           </div>
 
+          <div className="bg-orange-50 rounded-lg p-4 mb-6 border border-orange-200">
+            <div className="flex items-center gap-2 text-orange-800 mb-2">
+              <span className="text-lg">📞</span>
+              <span className="font-semibold">Agent Contact</span>
+            </div>
+            <p className="text-orange-700 text-sm">
+              Our agent will contact you within 24 hours for payment processing and any additional requirements.
+            </p>
+          </div>
+          
           <div className="mt-6 text-sm text-gray-500">
             <p>You will receive email updates about your application status.</p>
           </div>

@@ -40,34 +40,6 @@ const upload = multer({
   }
 });
 
-// Create Razorpay order
-router.post('/create-payment-order', auth, async (req, res) => {
-  try {
-    const Razorpay = require('razorpay');
-    const { visaTypeId, amount } = req.body;
-    
-    const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET
-    });
-    
-    const options = {
-      amount: amount * 100,
-      currency: 'INR',
-      receipt: `visa_${Date.now()}`,
-      notes: {
-        visaTypeId: visaTypeId
-      }
-    };
-    
-    const order = await razorpay.orders.create(options);
-    res.json({ orderId: order.id, amount: order.amount, currency: order.currency });
-  } catch (error) {
-    console.error('Error creating payment order:', error);
-    res.status(500).json({ message: 'Error creating payment order', error: error.message });
-  }
-});
-
 // File upload endpoint
 router.post('/visa-applications/upload', auth, upload.single('file'), async (req, res) => {
   try {
@@ -102,6 +74,14 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const Applicant = require('../models/Applicant');
     const FormField = require('../models/FormField');
+    const Status = require('../models/Status');
+    
+    // Get draft status
+    const draftStatus = await Status.findOne({ name: 'draft' });
+    console.log('Draft status:', draftStatus);
+    if (!draftStatus) {
+      return res.status(500).json({ message: 'Draft status not found' });
+    }
     
     // Create draft application
     const applicationNumber = `DRAFT-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
@@ -111,7 +91,7 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
       applicationNumber,
       applicationType,
       numberOfApplicants,
-      status: 'draft'
+      status: draftStatus._id
     });
     await application.save();
     
@@ -279,16 +259,23 @@ router.post('/visa-applications/submit-draft', auth, async (req, res) => {
       }
     }
     
+    // Get submitted status
+    const Status = require('../models/Status');
+    const submittedStatus = await Status.findOne({ name: 'submitted' });
+    if (!submittedStatus) {
+      return res.status(500).json({ message: 'Submitted status not found' });
+    }
+    
     // Update application status
     application.applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-    application.status = 'submitted';
+    application.status = submittedStatus._id;
     application.submittedAt = new Date();
     await application.save();
     
     // Create status history
     await ApplicationStatusHistory.create({
       application: application._id,
-      status: 'submitted',
+      status: submittedStatus._id,
       remarks: 'Application submitted from draft',
       changedBy: req.user._id
     });
@@ -301,6 +288,117 @@ router.post('/visa-applications/submit-draft', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error submitting draft application:', error);
+    res.status(500).json({ message: 'Error submitting application', error: error.message });
+  }
+});
+
+// Submit visa application without payment
+router.post('/visa-applications/submit-without-payment', auth, async (req, res) => {
+  try {
+    console.log('Submit without payment request body:', req.body);
+    console.log('Submit without payment request user:', req.user);
+    
+    const { visaTypeId, draftId, formData, applicationType = 'individual', numberOfApplicants = 1, relationships = [] } = req.body;
+    
+    if (!visaTypeId) {
+      return res.status(400).json({ message: 'Visa type ID is required' });
+    }
+    
+    const Application = require('../models/Application');
+    const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
+    const Status = require('../models/Status');
+    
+    let application;
+    if (draftId) {
+      // Update existing draft
+      application = await Application.findById(draftId);
+      if (!application || application.user.toString() !== req.user._id.toString()) {
+        return res.status(404).json({ message: 'Draft not found' });
+      }
+      
+      // Get submitted status
+      const submittedStatus = await Status.findOne({ name: 'submitted' });
+      if (!submittedStatus) {
+        return res.status(500).json({ message: 'Submitted status not found' });
+      }
+      
+      // Change application number from DRAFT to APP
+      application.applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+      application.status = submittedStatus._id;
+      application.submittedAt = new Date();
+      await application.save();
+    } else {
+      // Get submitted status
+      const submittedStatus = await Status.findOne({ name: 'submitted' });
+      if (!submittedStatus) {
+        return res.status(500).json({ message: 'Submitted status not found' });
+      }
+      
+      // Create new application
+      const applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+      application = new Application({
+        user: req.user._id,
+        countryVisaType: visaTypeId,
+        applicationNumber,
+        status: submittedStatus._id,
+        applicationType,
+        numberOfApplicants,
+        submittedAt: new Date()
+      });
+      await application.save();
+    }
+    
+    // Create status history
+    const submittedStatus = await Status.findOne({ name: 'submitted' });
+    await ApplicationStatusHistory.create({
+      application: application._id,
+      status: submittedStatus._id,
+      remarks: 'Application submitted - payment pending',
+      changedBy: req.user._id
+    });
+    
+    // Create payment entry with pending status
+    const CountryVisaType = require('../models/CountryVisaType');
+    const Payment = require('../models/Payment');
+    const visaTypeData = await CountryVisaType.findById(visaTypeId);
+    
+    if (visaTypeData) {
+      const totalAmount = (visaTypeData.totalAmount || 0) * numberOfApplicants;
+      await Payment.create({
+        application: application._id,
+        user: req.user._id,
+        amount: totalAmount.toString(),
+        currency: 'INR',
+        status: 'pending',
+        paymentMethod: 'agent_contact'
+      });
+    }
+    
+    // Send application submission emails
+    const User = require('../models/User');
+    const user = await User.findById(req.user._id);
+    
+    // Email to customer
+    sendEmail(user.email, 'applicationSubmitted', { 
+      userName: user.name, 
+      applicationId: application.applicationNumber 
+    });
+    
+    // Email to admin
+    sendAdminNotification('adminNewApplication', {
+      applicationId: application.applicationNumber,
+      userName: user.name,
+      userEmail: user.email
+    });
+    
+    res.json({ 
+      success: true, 
+      applicationId: application._id,
+      applicationNumber: application.applicationNumber,
+      message: 'Application submitted successfully - agent will contact for payment' 
+    });
+  } catch (error) {
+    console.error('Error submitting visa application without payment:', error);
     res.status(500).json({ message: 'Error submitting application', error: error.message });
   }
 });
@@ -342,28 +440,44 @@ router.post('/visa-applications/submit', auth, upload.any(), async (req, res) =>
       if (!application || application.user.toString() !== req.user._id.toString()) {
         return res.status(404).json({ message: 'Draft not found' });
       }
+      // Get submitted status
+      const Status = require('../models/Status');
+      const submittedStatus = await Status.findOne({ name: 'Submitted' });
+      if (!submittedStatus) {
+        return res.status(500).json({ message: 'Submitted status not found' });
+      }
+      
       // Change application number from DRAFT to APP
       application.applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-      application.status = 'submitted';
+      application.status = submittedStatus._id;
       application.submittedAt = new Date();
       await application.save();
     } else {
+      // Get submitted status
+      const Status = require('../models/Status');
+      const submittedStatus = await Status.findOne({ name: 'Submitted' });
+      if (!submittedStatus) {
+        return res.status(500).json({ message: 'Submitted status not found' });
+      }
+      
       // Create new application
       const applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       application = new Application({
         user: req.user._id,
         countryVisaType: visaTypeId,
         applicationNumber,
-        status: 'submitted',
+        status: submittedStatus._id,
         submittedAt: new Date()
       });
       await application.save();
     }
     
     // Create status history
+    const Status = require('../models/Status');
+    const submittedStatus = await Status.findOne({ name: 'Submitted' });
     await ApplicationStatusHistory.create({
       application: application._id,
-      status: 'submitted',
+      status: submittedStatus._id,
       remarks: 'Application submitted with payment',
       changedBy: req.user._id
     });
@@ -492,11 +606,15 @@ router.get('/customer/stats', auth, async (req, res) => {
     
     const Application = require('../models/Application');
     const Payment = require('../models/Payment');
+    const Status = require('../models/Status');
+    
+    // Get draft status ID
+    const draftStatus = await Status.findOne({ name: 'Draft' });
     
     const [totalApplications, draftApplications, submittedApplications, totalPayments] = await Promise.all([
       Application.countDocuments({ user: req.user._id, deletedAt: null }),
-      Application.countDocuments({ user: req.user._id, status: 'draft', deletedAt: null }),
-      Application.countDocuments({ user: req.user._id, status: { $ne: 'draft' }, deletedAt: null }),
+      draftStatus ? Application.countDocuments({ user: req.user._id, status: draftStatus._id, deletedAt: null }) : 0,
+      draftStatus ? Application.countDocuments({ user: req.user._id, status: { $ne: draftStatus._id }, deletedAt: null }) : Application.countDocuments({ user: req.user._id, deletedAt: null }),
       Payment.aggregate([
         { $match: { user: req.user._id, status: 'success', deletedAt: null } },
         { $group: { _id: null, total: { $sum: { $toDouble: '$amount' } } } }

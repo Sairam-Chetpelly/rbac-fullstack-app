@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Table from '../components/Table';
+import PaymentModal from '../components/PaymentModal';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
 export default function Payments() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [paymentModal, setPaymentModal] = useState({ isOpen: false, applicationId: null, payment: null });
   const { user } = useAuth();
 
   useEffect(() => {
@@ -16,12 +18,24 @@ export default function Payments() {
 
   const fetchPayments = async () => {
     try {
-      const response = await api.get('/payments');
+      const endpoint = user?.role === 'employee' ? '/applications/assigned/payments' : '/payments';
+      const response = await api.get(endpoint);
       setPayments(response.data);
     } catch (error) {
       console.error('Error fetching payments:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePaymentUpdate = async (paymentData) => {
+    try {
+      await api.put(`/applications/${paymentModal.applicationId}/payment`, paymentData);
+      fetchPayments();
+      alert('Payment status updated successfully');
+    } catch (error) {
+      console.error('Error updating payment:', error);
+      alert('Failed to update payment status');
     }
   };
 
@@ -89,6 +103,18 @@ export default function Payments() {
       key: 'paidAt',
       label: 'Paid At',
       render: (value) => value ? new Date(value).toLocaleDateString() : 'Not paid'
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (value, row) => (
+        <button
+          onClick={() => setPaymentModal({ isOpen: true, applicationId: row.application?._id, payment: row })}
+          className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
+        >
+          Update
+        </button>
+      )
     }
   ];
 
@@ -96,8 +122,12 @@ export default function Payments() {
     <div className="space-y-6 lg:space-y-8 p-4 sm:p-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 lg:gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">💳 Payments Management</h1>
-          <p className="text-sm sm:text-base text-gray-600">Track and manage payment transactions</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+            💳 {user?.role === 'employee' ? 'Payment Records' : 'Payments Management'}
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            {user?.role === 'employee' ? 'Payment records for your assigned applications' : 'Track and manage payment transactions'}
+          </p>
         </div>
       </div>
 
@@ -113,10 +143,19 @@ export default function Payments() {
           <Table
             data={payments}
             columns={columns}
+            canEdit={false}
+            canDelete={false}
             emptyMessage="No payments found"
           />
         </Card>
       )}
+      
+      <PaymentModal
+        isOpen={paymentModal.isOpen}
+        onClose={() => setPaymentModal({ isOpen: false, applicationId: null, payment: null })}
+        onUpdate={handlePaymentUpdate}
+        payment={paymentModal.payment}
+      />
     </div>
   );
 }

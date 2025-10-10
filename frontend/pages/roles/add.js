@@ -60,7 +60,7 @@ export default function AddRole() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
         <Button 
           variant="ghost" 

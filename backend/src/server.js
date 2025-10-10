@@ -1,4 +1,6 @@
 require('dotenv').config();
+// Set timezone to Indian Standard Time
+process.env.TZ = 'Asia/Kolkata';
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -22,11 +24,15 @@ const applicationRoutes = require('./routes/applications');
 const paymentRoutes = require('./routes/payments');
 const customerRoutes = require('./routes/customer');
 const visaApplicationRoutes = require('./routes/visaApplications');
+const { startReminderService } = require('./services/reminderService');
 
 const app = express();
 
 // Connect to database
 connectDB();
+
+// Start reminder service
+startReminderService();
 
 // Middleware
 app.use(cors());

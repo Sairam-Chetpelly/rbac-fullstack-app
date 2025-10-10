@@ -26,9 +26,18 @@ const applicationSchema = new mongoose.Schema({
     min: 1
   },
   status: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Status',
+    required: true
+  },
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  embassyVisitDateTime: {
     type: String,
-    enum: ['draft', 'submitted', 'under_review', 'approved', 'rejected'],
-    default: 'draft'
+    default: null
   },
   submittedAt: {
     type: Date,

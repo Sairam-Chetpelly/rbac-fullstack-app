@@ -4,6 +4,10 @@ const Status = require('../models/Status');
 
 const getUsers = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
     let query = {};
     
     // Role-based filtering
@@ -14,8 +18,24 @@ const getUsers = async (req, res) => {
       }
     }
     
-    const users = await User.find(query).select('-password').populate('role').populate('status');
-    res.json(users);
+    const total = await User.countDocuments(query);
+    const users = await User.find(query)
+      .select('-password')
+      .populate('role')
+      .populate('status')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      data: users,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

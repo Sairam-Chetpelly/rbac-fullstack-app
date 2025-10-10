@@ -16,7 +16,14 @@ export default function Login() {
 
   useEffect(() => {
     if (user) {
-      window.location.href = '/';
+      // Redirect based on user role
+      if (user.role === 'employee') {
+        window.location.href = '/dashboard';
+      } else if (user.role === 'customer') {
+        window.location.href = '/customer/dashboard';
+      } else {
+        window.location.href = '/dashboard';
+      }
     }
   }, [user]);
 

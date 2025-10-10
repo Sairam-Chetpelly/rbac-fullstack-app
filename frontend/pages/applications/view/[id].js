@@ -15,6 +15,7 @@ export default function AdminViewApplication() {
   const [answers, setAnswers] = useState([]);
   const [statusHistory, setStatusHistory] = useState([]);
   const [payment, setPayment] = useState(null);
+  const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [newStatus, setNewStatus] = useState('');
@@ -24,8 +25,18 @@ export default function AdminViewApplication() {
   useEffect(() => {
     if (id) {
       fetchApplicationDetails();
+      fetchStatuses();
     }
   }, [id]);
+
+  const fetchStatuses = async () => {
+    try {
+      const response = await api.get('/applications/statuses');
+      setStatuses(response.data);
+    } catch (error) {
+      console.error('Error fetching statuses:', error);
+    }
+  };
 
   const fetchApplicationDetails = async () => {
     try {
@@ -35,7 +46,7 @@ export default function AdminViewApplication() {
       setAnswers(response.data.answers);
       setStatusHistory(response.data.statusHistory);
       setPayment(response.data.payment);
-      setNewStatus(response.data.application.status);
+      setNewStatus(response.data.application.status?._id || '');
     } catch (error) {
       console.error('Error fetching application details:', error);
     } finally {
@@ -88,14 +99,20 @@ export default function AdminViewApplication() {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'submitted': return 'bg-blue-100 text-blue-800';
-      case 'under_review': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    if (!status?.color) return 'bg-gray-100 text-gray-800';
+    
+    const colorMap = {
+      '#gray': 'bg-gray-100 text-gray-800',
+      '#blue': 'bg-blue-100 text-blue-800',
+      '#yellow': 'bg-yellow-100 text-yellow-800',
+      '#green': 'bg-green-100 text-green-800',
+      '#red': 'bg-red-100 text-red-800',
+      '#purple': 'bg-purple-100 text-purple-800',
+      '#indigo': 'bg-indigo-100 text-indigo-800',
+      '#pink': 'bg-pink-100 text-pink-800'
+    };
+    
+    return colorMap[status.color] || 'bg-gray-100 text-gray-800';
   };
 
   if (loading) {
@@ -123,16 +140,25 @@ export default function AdminViewApplication() {
 
   return (
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={() => router.push('/applications')}
+              variant="ghost"
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900">Application Details</h1>
+          </div>
           <Button
-            onClick={() => router.push('/applications')}
-            variant="ghost"
+            onClick={() => router.push(`/applications/edit/${id}`)}
             className="flex items-center gap-2"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back
+            <Edit className="h-4 w-4" />
+            Edit Application
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Application Details</h1>
         </div>
 
         {/* Application Header */}
@@ -159,7 +185,7 @@ export default function AdminViewApplication() {
               </div>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
-              {application.status.replace('_', ' ').toUpperCase()}
+              {application.status?.name?.toUpperCase() || 'UNKNOWN'}
             </span>
           </div>
           
@@ -194,10 +220,12 @@ export default function AdminViewApplication() {
                 onChange={(e) => setNewStatus(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value="submitted">Submitted</option>
-                <option value="under_review">Under Review</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
+                <option value="">Select Status</option>
+                {statuses.map(status => (
+                  <option key={status._id} value={status._id}>
+                    {status.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -213,7 +241,7 @@ export default function AdminViewApplication() {
             <div className="flex items-end">
               <Button
                 onClick={handleStatusUpdate}
-                disabled={updating || newStatus === application.status}
+                disabled={updating || newStatus === application.status?._id}
                 className="w-full"
               >
                 {updating ? 'Updating...' : 'Update Status'}
@@ -373,7 +401,7 @@ export default function AdminViewApplication() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-gray-900">
-                        {history.status.replace('_', ' ').toUpperCase()}
+                        {history.status?.name?.toUpperCase() || 'UNKNOWN'}
                       </span>
                       <span className="text-sm text-gray-500">
                         {new Date(history.createdAt).toLocaleDateString()}

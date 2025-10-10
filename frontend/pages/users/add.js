@@ -17,6 +17,7 @@ export default function AddUser() {
     name: '',
     email: '',
     password: '',
+    mobile: '',
     role: '',
     status: ''
   });
@@ -63,9 +64,32 @@ export default function AddUser() {
     return roles.filter(role => allowed.includes(role.name));
   };
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateMobile = (mobile) => {
+    if (!mobile) return true; // Optional field
+    const mobileRegex = /^\d{10}$/;
+    return mobileRegex.test(mobile);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    if (!validateEmail(formData.email)) {
+      toast.error('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    if (!validateMobile(formData.mobile)) {
+      toast.error('Please enter a valid 10-digit mobile number');
+      setLoading(false);
+      return;
+    }
 
     try {
       await api.post('/users', formData);
@@ -137,6 +161,22 @@ export default function AddUser() {
 
             <div>
               <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
+                📱 Phone Number
+              </label>
+              <input
+                type="tel"
+                name="mobile"
+                value={formData.mobile}
+                onChange={handleChange}
+                className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
+                placeholder="Enter 10-digit phone number"
+                pattern="\d{10}"
+                maxLength="10"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
                 🔒 Password
               </label>
               <input
@@ -169,27 +209,24 @@ export default function AddUser() {
               </select>
             </div>
 
-            <div className="lg:col-span-2">
-              <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-3">
+            <div>
+              <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
                 ⚡ Status
               </label>
-              <div className="flex flex-col sm:flex-row gap-4 lg:gap-6">
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
+                required
+              >
+                <option value="">Select Status</option>
                 {statuses.map(status => (
-                  <label key={status._id} className="flex items-center gap-3 p-3 lg:p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
-                    <input
-                      type="radio"
-                      name="status"
-                      value={status._id}
-                      checked={formData.status === status._id}
-                      onChange={handleChange}
-                      className="w-4 h-4 lg:w-5 lg:h-5 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm lg:text-base font-medium text-gray-700 capitalize">
-                      {status.name}
-                    </span>
-                  </label>
+                  <option key={status._id} value={status._id}>
+                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
           </div>
 

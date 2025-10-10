@@ -14,10 +14,8 @@ export default function EditCountryVisaType() {
     country: '',
     processingTimeMin: '',
     processingTimeMax: '',
-    vfsAmount: '',
-    consulateAmount: '',
-    serviceAmount: '',
-    totalAmount: ''
+    totalAmount: '',
+    agentDiscount: '0'
   });
   const [statuses, setStatuses] = useState([]);
   const [visaTypes, setVisaTypes] = useState([]);
@@ -32,10 +30,6 @@ export default function EditCountryVisaType() {
       fetchCountryVisaType();
     }
   }, [id]);
-
-  useEffect(() => {
-    calculateTotal();
-  }, [formData.vfsAmount, formData.consulateAmount, formData.serviceAmount]);
 
   const fetchData = async () => {
     try {
@@ -65,23 +59,13 @@ export default function EditCountryVisaType() {
           country: item.country._id,
           processingTimeMin: item.processingTimeMin,
           processingTimeMax: item.processingTimeMax,
-          vfsAmount: item.vfsAmount,
-          consulateAmount: item.consulateAmount,
-          serviceAmount: item.serviceAmount,
-          totalAmount: item.totalAmount
+          totalAmount: item.totalAmount,
+          agentDiscount: item.agentDiscount || '0'
         });
       }
     } catch (error) {
       console.error('Error fetching country visa type:', error);
     }
-  };
-
-  const calculateTotal = () => {
-    const vfs = parseFloat(formData.vfsAmount) || 0;
-    const consulate = parseFloat(formData.consulateAmount) || 0;
-    const service = parseFloat(formData.serviceAmount) || 0;
-    const total = vfs + consulate + service;
-    setFormData(prev => ({ ...prev, totalAmount: total.toString() }));
   };
 
   const handleSubmit = async (e) => {
@@ -205,80 +189,48 @@ export default function EditCountryVisaType() {
 
               <div>
                 <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                  💰 VFS Amount
-                </label>
-                <input
-                  type="number"
-                  value={formData.vfsAmount}
-                  onChange={(e) => setFormData({...formData, vfsAmount: e.target.value})}
-                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
-                  placeholder="Enter VFS amount"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                  🏛️ Consulate Amount
-                </label>
-                <input
-                  type="number"
-                  value={formData.consulateAmount}
-                  onChange={(e) => setFormData({...formData, consulateAmount: e.target.value})}
-                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
-                  placeholder="Enter consulate amount"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                  🔧 Service Amount
-                </label>
-                <input
-                  type="number"
-                  value={formData.serviceAmount}
-                  onChange={(e) => setFormData({...formData, serviceAmount: e.target.value})}
-                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
-                  placeholder="Enter service amount"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
                   💵 Total Amount
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   value={formData.totalAmount}
-                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl bg-gray-50 text-sm lg:text-base"
-                  placeholder="Auto-calculated"
-                  readOnly
+                  onChange={(e) => setFormData({...formData, totalAmount: e.target.value})}
+                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
+                  placeholder="Enter total amount"
+                  required
                 />
               </div>
 
-              <div className="lg:col-span-2">
-                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-3">
+              <div>
+                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
+                  🎯 Agent Discount
+                </label>
+                <input
+                  type="number"
+                  value={formData.agentDiscount}
+                  onChange={(e) => setFormData({...formData, agentDiscount: e.target.value})}
+                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
+                  placeholder="Enter agent discount"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
                   ⚡ Status
                 </label>
-                <div className="flex flex-col sm:flex-row gap-4 lg:gap-6">
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
+                  required
+                >
+                  <option value="">Select Status</option>
                   {statuses.map(status => (
-                    <label key={status._id} className="flex items-center gap-3 p-3 lg:p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
-                      <input
-                        type="radio"
-                        name="status"
-                        value={status._id}
-                        checked={formData.status === status._id}
-                        onChange={(e) => setFormData({...formData, status: e.target.value})}
-                        className="w-4 h-4 lg:w-5 lg:h-5 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm lg:text-base font-medium text-gray-700 capitalize">
-                        {status.name}
-                      </span>
-                    </label>
+                    <option key={status._id} value={status._id}>
+                      {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
             </div>
 

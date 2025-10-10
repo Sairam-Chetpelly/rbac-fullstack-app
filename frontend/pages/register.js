@@ -27,19 +27,35 @@ export default function Register() {
     }
   }, [user]);
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateMobile = (mobile) => {
+    const mobileRegex = /^\d{10}$/;
+    return mobileRegex.test(mobile);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+    if (!validateEmail(formData.email)) {
+      setError('Please enter a valid email address');
       setLoading(false);
       return;
     }
 
-    if (formData.mobile.trim() === '') {
-      setError('Please enter a valid mobile number');
+    if (!validateMobile(formData.mobile)) {
+      setError('Please enter a valid 10-digit mobile number');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
       setLoading(false);
       return;
     }
@@ -161,10 +177,12 @@ export default function Register() {
               <input
                 type="tel"
                 name="mobile"
-                placeholder="Mobile Number"
+                placeholder="10-digit Mobile Number"
                 value={formData.mobile}
                 onChange={handleChange}
                 className="w-full p-4 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                pattern="\d{10}"
+                maxLength="10"
                 required
               />
             </div>

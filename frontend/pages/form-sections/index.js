@@ -53,7 +53,7 @@ export default function FormSections() {
   }
 
   return (
-      <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8 p-4 sm:p-6 lg:p-0">
+      <div className="max-w-full mx-auto space-y-6 lg:space-y-8 p-4 sm:p-6 lg:p-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">📑 Form Sections</h1>

@@ -63,7 +63,7 @@ const register = async (req, res) => {
     const populatedUser = await User.findById(user._id).populate('role').populate('status');
     
     // Send welcome email
-    await sendEmail(email, 'welcome', { userName: name });
+    sendEmail(email, 'welcome', { userName: name });
     
     res.status(201).json({
       message: 'Registration successful',

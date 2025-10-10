@@ -1,0 +1,591 @@
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import Head from 'next/head';
+import { ArrowLeft, Save, Upload, CheckCircle, Eye } from 'lucide-react';
+import Button from '../../../components/Button';
+import Layout from '../../../components/Layout';
+import api from '../../../lib/api';
+
+const EditApplication = () => {
+  const router = useRouter();
+  const { id } = router.query;
+  const [application, setApplication] = useState(null);
+  const [formSections, setFormSections] = useState([]);
+  const [formFields, setFormFields] = useState([]);
+  const [answers, setAnswers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [fileModal, setFileModal] = useState({ show: false, url: '', fileName: '', type: '' });
+
+  useEffect(() => {
+    if (id) {
+      fetchApplicationDetails();
+    }
+  }, [id]);
+
+  const fetchApplicationDetails = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await api.get(`/applications/${id}`);
+      const { application: appData, answers: answersData } = response.data;
+      
+      setApplication(appData);
+      setAnswers(answersData || []);
+
+      // Fetch form structure
+      if (appData?.countryVisaType?._id) {
+        const formResponse = await api.get(`/public/visa-types/${appData.countryVisaType._id}/form`);
+        setFormSections(formResponse.data.sections || []);
+        setFormFields(formResponse.data.fields || []);
+      }
+    } catch (err) {
+      console.error('Error fetching application details:', err);
+      setError('Failed to load application details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getFieldsBySection = (sectionId) => {
+    return formFields.filter(field => field.formSection === sectionId).sort((a, b) => a.order - b.order);
+  };
+
+  const getAnswerValue = (fieldId, applicantIndex = 0) => {
+    const answer = answers.find(ans => 
+      ans.field?._id === fieldId && ans.applicantIndex === applicantIndex
+    );
+    return answer?.answerText || answer?.answerFile || '';
+  };
+
+  const handleAnswerChange = (fieldId, value, applicantIndex = 0) => {
+    setAnswers(prev => {
+      const existingIndex = prev.findIndex(ans => 
+        ans.field?._id === fieldId && ans.applicantIndex === applicantIndex
+      );
+      
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = { ...updated[existingIndex], answerText: value };
+        return updated;
+      } else {
+        return [...prev, {
+          _id: `temp-${Date.now()}-${Math.random()}`,
+          field: { _id: fieldId },
+          applicantIndex,
+          answerText: value
+        }];
+      }
+    });
+  };
+
+  const handleFileUpload = async (fieldId, file, applicantIndex = 0) => {
+    if (!file) return;
+    
+    const uploadFormData = new FormData();
+    uploadFormData.append('file', file);
+    uploadFormData.append('fieldName', 'file');
+    
+    try {
+      const response = await api.post('/visa-applications/upload', uploadFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      const fileData = {
+        filePath: response.data.filePath,
+        fileName: file.name,
+        fileType: file.type,
+        fileUrl: URL.createObjectURL(file)
+      };
+      
+      setAnswers(prev => {
+        const existingIndex = prev.findIndex(ans => 
+          ans.field?._id === fieldId && ans.applicantIndex === applicantIndex
+        );
+        
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = { ...updated[existingIndex], answerFile: JSON.stringify(fileData) };
+          return updated;
+        } else {
+          return [...prev, {
+            _id: `temp-${Date.now()}-${Math.random()}`,
+            field: { _id: fieldId },
+            applicantIndex,
+            answerFile: JSON.stringify(fileData)
+          }];
+        }
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Failed to upload file');
+    }
+  };
+
+  const handleFileView = (fileData) => {
+    if (typeof fileData === 'string') {
+      try {
+        fileData = JSON.parse(fileData);
+      } catch (e) {
+        return;
+      }
+    }
+    
+    const { fileName, fileType, fileUrl, filePath } = fileData;
+    const url = fileUrl || `http://localhost:5000/uploads/applications/${filePath}`;
+    
+    setFileModal({
+      show: true,
+      url,
+      fileName,
+      type: fileType
+    });
+  };
+
+  const renderFilePreview = (fileData) => {
+    if (!fileData) return null;
+    
+    if (typeof fileData === 'string') {
+      try {
+        fileData = JSON.parse(fileData);
+      } catch (e) {
+        return <span className="text-sm text-gray-600">{fileData}</span>;
+      }
+    }
+    
+    const { fileName, fileType, fileUrl, filePath } = fileData;
+    const isImage = fileType?.startsWith('image/');
+    const isPDF = fileType === 'application/pdf';
+    
+    if (isImage) {
+      return (
+        <div className="mt-4">
+          <img 
+            src={fileUrl || `http://localhost:5000/uploads/applications/${filePath}`}
+            alt={fileName}
+            className="w-full max-w-xs h-32 object-cover rounded-lg border border-gray-200 cursor-pointer"
+            onClick={() => handleFileView(fileData)}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+          <p className="text-xs text-gray-500 mt-2">{fileName}</p>
+        </div>
+      );
+    }
+    
+    if (isPDF) {
+      return (
+        <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+          <div className="flex items-center gap-2">
+            <span className="text-red-600 text-2xl">📄</span>
+            <div>
+              <p className="text-sm font-medium text-red-800">{fileName}</p>
+              <p className="text-xs text-red-600">PDF Document</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <p className="text-sm text-gray-700">{fileName}</p>
+      </div>
+    );
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put(`/applications/${id}`, { answers });
+      alert('Application updated successfully');
+      router.push(`/applications/view/${id}`);
+    } catch (error) {
+      console.error('Error updating application:', error);
+      alert('Failed to update application');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!loading && error) {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Application</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={() => router.back()}>Go Back</Button>
+          </div>
+        </div>
+    );
+  }
+
+  if (loading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading application details...</p>
+          </div>
+        </div>
+    );
+  }
+
+  if (!application) {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Application Not Found</h2>
+            <Button onClick={() => router.push('/applications')}>
+              Back to Applications
+            </Button>
+          </div>
+        </div>
+    );
+  }
+
+  return (
+    <div>
+      <Head>
+        <title>Edit Application - Options Travel Services</title>
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <span className="text-3xl">{application.countryVisaType?.country?.flagEmoji || '🌍'}</span>
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      Edit Application
+                    </h1>
+                    <p className="text-gray-600 text-lg font-medium mt-1">
+                      {application.countryVisaType?.country?.name} - {application.countryVisaType?.visaType?.name}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <Button
+                  onClick={() => router.push(`/applications/view/${id}`)}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                >
+                  <Save className="h-4 w-4" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Application Info */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 mb-8">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <Eye className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">Application Details</h3>
+                <p className="text-gray-600 mt-1">Application #{application.applicationNumber}</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-blue-50 rounded-xl p-4">
+                <div className="text-sm font-bold text-blue-800">Customer</div>
+                <div className="text-blue-900 font-medium">{application.user?.name}</div>
+                <div className="text-blue-700 text-sm">{application.user?.email}</div>
+              </div>
+              <div className="bg-green-50 rounded-xl p-4">
+                <div className="text-sm font-bold text-green-800">Application Type</div>
+                <div className="text-green-900 font-medium capitalize">{application.applicationType || 'individual'}</div>
+              </div>
+              <div className="bg-purple-50 rounded-xl p-4">
+                <div className="text-sm font-bold text-purple-800">Applicants</div>
+                <div className="text-purple-900 font-medium">{application.numberOfApplicants || 1}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Sections */}
+          <div className="space-y-8">
+            {formSections.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-xl p-12 text-center border border-gray-100">
+                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <span className="text-4xl">📋</span>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">No Form Available</h3>
+                <p className="text-gray-600 text-lg">The form structure for this application is not available.</p>
+              </div>
+            ) : (
+              application.applicationType === 'individual' ? (
+                formSections
+                  .sort((a, b) => a.order - b.order)
+                  .map((section, index) => {
+                    const sectionFields = getFieldsBySection(section._id);
+                    if (sectionFields.length === 0) return null;
+
+                    return (
+                      <div 
+                        key={section._id} 
+                        className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 hover:shadow-2xl transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-4 mb-8 pb-4 border-b border-gray-100">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span className="text-white text-xl">📋</span>
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-bold text-gray-900">{section.name}</h3>
+                            <p className="text-gray-600 mt-1">{section.description}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {sectionFields.map((field) => {
+                            const currentValue = getAnswerValue(field._id, 0);
+                            
+                            return (
+                              <div key={field._id} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+                                <label className="block text-sm font-bold text-gray-800 mb-3">
+                                  {field.label}
+                                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                                </label>
+                                
+                                {field.type === 'textarea' ? (
+                                  <textarea
+                                    name={field.name}
+                                    placeholder={field.placeholder}
+                                    value={currentValue}
+                                    onChange={(e) => handleAnswerChange(field._id, e.target.value, 0)}
+                                    required={field.required}
+                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                    rows={4}
+                                  />
+                                ) : field.type === 'select' ? (
+                                  <select 
+                                    name={field.name}
+                                    value={currentValue}
+                                    onChange={(e) => handleAnswerChange(field._id, e.target.value, 0)}
+                                    required={field.required}
+                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white"
+                                  >
+                                    <option value="">Select {field.label}</option>
+                                    {field.options && field.options.map((option, index) => (
+                                      <option key={index} value={option.toLowerCase().replace(/\s+/g, '-')}>
+                                        {option}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : field.type === 'file' ? (
+                                  <div>
+                                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-300 group">
+                                      <input 
+                                        type="file" 
+                                        name={field.name}
+                                        onChange={(e) => handleFileUpload(field._id, e.target.files[0], 0)}
+                                        required={field.required}
+                                        className="hidden" 
+                                        id={field.name}
+                                        accept="image/*,.pdf"
+                                      />
+                                      <label htmlFor={field.name} className="cursor-pointer">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 transition-colors">
+                                          <Upload className="h-8 w-8 text-gray-400 group-hover:text-blue-500" />
+                                        </div>
+                                        <div className="text-gray-600 font-medium">
+                                          {currentValue ? (
+                                            <span className="text-green-600 flex items-center justify-center gap-2">
+                                              <CheckCircle className="h-5 w-5" />
+                                              File uploaded successfully
+                                            </span>
+                                          ) : (
+                                            `Click to upload ${field.label}`
+                                          )}
+                                        </div>
+                                      </label>
+                                    </div>
+                                    {currentValue && renderFilePreview(currentValue)}
+                                  </div>
+                                ) : (
+                                  <input
+                                    type={field.type}
+                                    name={field.name}
+                                    placeholder={field.placeholder}
+                                    value={currentValue}
+                                    onChange={(e) => handleAnswerChange(field._id, e.target.value, 0)}
+                                    required={field.required}
+                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })
+              ) : (
+                <div className="space-y-8">
+                  {[...Array(application.numberOfApplicants || 1)].map((_, applicantIndex) => (
+                    <div key={applicantIndex} className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6">
+                        <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                          <span className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                            {applicantIndex + 1}
+                          </span>
+                          <div>
+                            <div>{applicantIndex === 0 ? 'Primary Applicant' : `Applicant ${applicantIndex + 1}`}</div>
+                          </div>
+                        </h3>
+                      </div>
+                      
+                      {formSections
+                        .sort((a, b) => a.order - b.order)
+                        .map((section, sectionIndex) => {
+                          const sectionFields = getFieldsBySection(section._id);
+                          if (sectionFields.length === 0) return null;
+
+                          return (
+                            <div 
+                              key={`${applicantIndex}-${section._id}`} 
+                              className="mb-6 pb-6 border-b border-gray-100 last:border-b-0"
+                            >
+                              <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-3">
+                                <span className="w-6 h-6 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 font-bold text-sm">
+                                  {sectionIndex + 1}
+                                </span>
+                                {section.name}
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {sectionFields.map((field) => {
+                                  const currentValue = getAnswerValue(field._id, applicantIndex);
+                                  
+                                  return (
+                                    <div key={field._id} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+                                      <label className="block text-sm font-bold text-gray-800 mb-2">
+                                        {field.label}
+                                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                                      </label>
+                                      
+                                      {field.type === 'textarea' ? (
+                                        <textarea
+                                          value={currentValue}
+                                          onChange={(e) => handleAnswerChange(field._id, e.target.value, applicantIndex)}
+                                          rows={3}
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                      ) : field.type === 'select' ? (
+                                        <select
+                                          value={currentValue}
+                                          onChange={(e) => handleAnswerChange(field._id, e.target.value, applicantIndex)}
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        >
+                                          <option value="">Select an option</option>
+                                          {field.options?.map((option, index) => (
+                                            <option key={index} value={option}>{option}</option>
+                                          ))}
+                                        </select>
+                                      ) : field.type === 'file' ? (
+                                        <div>
+                                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                                            <input 
+                                              type="file" 
+                                              onChange={(e) => handleFileUpload(field._id, e.target.files[0], applicantIndex)}
+                                              className="hidden" 
+                                              id={`${field.name}-${applicantIndex}`}
+                                              accept="image/*,.pdf"
+                                            />
+                                            <label htmlFor={`${field.name}-${applicantIndex}`} className="cursor-pointer">
+                                              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                              <div className="text-gray-600">
+                                                {currentValue ? 'File uploaded - click to change' : `Upload ${field.label}`}
+                                              </div>
+                                            </label>
+                                          </div>
+                                          {currentValue && renderFilePreview(currentValue)}
+                                        </div>
+                                      ) : (
+                                        <input
+                                          type={field.type === 'email' ? 'email' : field.type === 'date' ? 'date' : 'text'}
+                                          value={currentValue}
+                                          onChange={(e) => handleAnswerChange(field._id, e.target.value, applicantIndex)}
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        </div>
+
+        {/* File Modal */}
+        {fileModal.show && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-4xl max-h-[90vh] w-full overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="text-lg font-semibold text-gray-900">{fileModal.fileName}</h3>
+                <button 
+                  onClick={() => setFileModal({ show: false, url: '', fileName: '', type: '' })}
+                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="p-4 max-h-[calc(90vh-80px)] overflow-auto">
+                {fileModal.type?.startsWith('image/') ? (
+                  <img 
+                    src={fileModal.url} 
+                    alt={fileModal.fileName}
+                    className="w-full h-auto max-h-full object-contain"
+                  />
+                ) : fileModal.type === 'application/pdf' ? (
+                  <iframe 
+                    src={fileModal.url} 
+                    className="w-full h-[70vh]"
+                    title={fileModal.fileName}
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-600">Preview not available for this file type</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default EditApplication;

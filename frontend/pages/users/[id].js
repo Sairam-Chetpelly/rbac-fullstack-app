@@ -26,7 +26,8 @@ export default function ViewUser() {
   const fetchUser = async () => {
     try {
       const response = await api.get('/users');
-      const foundUser = response.data.find(u => u._id === id);
+      const users = response.data.data || response.data;
+      const foundUser = users.find(u => u._id === id);
       setUserData(foundUser);
     } catch (error) {
       console.error('Failed to fetch user:', error);
@@ -58,7 +59,7 @@ export default function ViewUser() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <Card>
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -71,7 +72,7 @@ export default function ViewUser() {
 
   if (!userData) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <Card>
           <div className="text-center py-12">
             <div className="text-6xl mb-4">❌</div>
@@ -87,7 +88,7 @@ export default function ViewUser() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
         <Button 
           variant="ghost" 
@@ -111,6 +112,9 @@ export default function ViewUser() {
             <div className="flex-1">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">{userData.name}</h2>
               <p className="text-gray-600 text-lg">{userData.email}</p>
+              {userData.mobile && (
+                <p className="text-gray-600">📱 {userData.mobile}</p>
+              )}
               <div className="flex gap-3 mt-4">
                 <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getRoleColor(userData.role)}`}>
                   🛡️ {(userData.role?.name || userData.role || '').toUpperCase()}

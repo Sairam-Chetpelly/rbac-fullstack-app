@@ -65,22 +65,179 @@ const seedDatabase = async () => {
 
     // Create Statuses
     const statuses = await Status.insertMany([
+      // General System Statuses
       {
         name: 'active',
-        description: 'User is active and can access the system',
+        description: 'Active and operational',
         color: '#10B981',
         isActive: true
       },
       {
         name: 'inactive',
-        description: 'User is inactive and cannot access the system',
+        description: 'Inactive or disabled',
         color: '#EF4444',
         isActive: true
       },
       {
         name: 'pending',
-        description: 'User registration is pending approval',
+        description: 'Pending approval or processing',
         color: '#F59E0B',
+        isActive: true
+      },
+      // Application Statuses
+      {
+        name: 'draft',
+        description: 'Application saved as draft',
+        color: '#6B7280',
+        isActive: true
+      },
+      {
+        name: 'submitted',
+        description: 'Application submitted for review',
+        color: '#3B82F6',
+        isActive: true
+      },
+      {
+        name: 'under-review',
+        description: 'Application under review',
+        color: '#8B5CF6',
+        isActive: true
+      },
+      {
+        name: 'documents-required',
+        description: 'Additional documents required',
+        color: '#F97316',
+        isActive: true
+      },
+      {
+        name: 'interview-scheduled',
+        description: 'Interview scheduled',
+        color: '#06B6D4',
+        isActive: true
+      },
+      {
+        name: 'approved',
+        description: 'Application approved',
+        color: '#059669',
+        isActive: true
+      },
+      {
+        name: 'rejected',
+        description: 'Application rejected',
+        color: '#DC2626',
+        isActive: true
+      },
+      {
+        name: 'cancelled',
+        description: 'Application cancelled',
+        color: '#9CA3AF',
+        isActive: true
+      },
+      // Payment Statuses
+      {
+        name: 'payment-pending',
+        description: 'Payment pending',
+        color: '#FBBF24',
+        isActive: true
+      },
+      {
+        name: 'payment-completed',
+        description: 'Payment completed successfully',
+        color: '#10B981',
+        isActive: true
+      },
+      {
+        name: 'payment-failed',
+        description: 'Payment failed',
+        color: '#EF4444',
+        isActive: true
+      },
+      {
+        name: 'refunded',
+        description: 'Payment refunded',
+        color: '#6366F1',
+        isActive: true
+      },
+      // Document Statuses
+      {
+        name: 'document-uploaded',
+        description: 'Document uploaded',
+        color: '#10B981',
+        isActive: true
+      },
+      {
+        name: 'document-verified',
+        description: 'Document verified',
+        color: '#059669',
+        isActive: true
+      },
+      {
+        name: 'document-rejected',
+        description: 'Document rejected',
+        color: '#DC2626',
+        isActive: true
+      },
+      // Processing Statuses
+      {
+        name: 'in-progress',
+        description: 'Currently in progress',
+        color: '#3B82F6',
+        isActive: true
+      },
+      {
+        name: 'on-hold',
+        description: 'Processing on hold',
+        color: '#F59E0B',
+        isActive: true
+      },
+      {
+        name: 'completed',
+        description: 'Process completed',
+        color: '#10B981',
+        isActive: true
+      },
+      // User Account Statuses
+      {
+        name: 'verified',
+        description: 'Account verified',
+        color: '#10B981',
+        isActive: true
+      },
+      {
+        name: 'suspended',
+        description: 'Account suspended',
+        color: '#EF4444',
+        isActive: true
+      },
+      {
+        name: 'blocked',
+        description: 'Account blocked',
+        color: '#7F1D1D',
+        isActive: true
+      },
+      // Visa Statuses
+      {
+        name: 'visa-applied',
+        description: 'Visa applied successfully',
+        color: '#8fd4d2ff',
+        isActive: true
+      },
+      {
+        name: 'visa-issued',
+        description: 'Visa issued successfully',
+        color: '#059669',
+        isActive: true
+      },
+      {
+        name: 'visa-expired',
+        description: 'Visa has expired',
+        color: '#9CA3AF',
+        isActive: true
+      },
+      {
+        name: 'visa-cancelled',
+        description: 'Visa cancelled',
+        color: '#DC2626',
         isActive: true
       }
     ]);
@@ -133,29 +290,29 @@ const seedDatabase = async () => {
     // 7. Create Country Visa Types
     const countryVisaTypes = await CountryVisaType.insertMany([
       // USA
-      { name: 'USA Tourist Visa (B1/B2)', country: countries[0]._id, visaType: visaTypes[0]._id, processingTimeMin: '3 weeks', processingTimeMax: '5 weeks', vfsAmount: '25', consulateAmount: '160', serviceAmount: '50', totalAmount: '235', status: statuses[0]._id },
-      { name: 'USA Student Visa (F1)', country: countries[0]._id, visaType: visaTypes[1]._id, processingTimeMin: '2 months', processingTimeMax: '3 months', vfsAmount: '25', consulateAmount: '350', serviceAmount: '75', totalAmount: '450', status: statuses[0]._id },
-      { name: 'USA Work Visa (H1B)', country: countries[0]._id, visaType: visaTypes[2]._id, processingTimeMin: '1 month', processingTimeMax: '3 months', vfsAmount: '25', consulateAmount: '190', serviceAmount: '60', totalAmount: '275', status: statuses[0]._id },
+      { name: 'USA Tourist Visa (B1/B2)', country: countries[0]._id, visaType: visaTypes[0]._id, processingTimeMin: '3 weeks', processingTimeMax: '5 weeks', totalAmount: '235', agentDiscount: '10', status: statuses[0]._id },
+      { name: 'USA Student Visa (F1)', country: countries[0]._id, visaType: visaTypes[1]._id, processingTimeMin: '2 months', processingTimeMax: '3 months', totalAmount: '450', agentDiscount: '15', status: statuses[0]._id },
+      { name: 'USA Work Visa (H1B)', country: countries[0]._id, visaType: visaTypes[2]._id, processingTimeMin: '1 month', processingTimeMax: '3 months', totalAmount: '275', agentDiscount: '12', status: statuses[0]._id },
       
       // Canada
-      { name: 'Canada Tourist Visa (TRV)', country: countries[1]._id, visaType: visaTypes[0]._id, processingTimeMin: '2 weeks', processingTimeMax: '4 weeks', vfsAmount: '30', consulateAmount: '100', serviceAmount: '45', totalAmount: '175', status: statuses[0]._id },
-      { name: 'Canada Student Visa', country: countries[1]._id, visaType: visaTypes[1]._id, processingTimeMin: '4 weeks', processingTimeMax: '6 weeks', vfsAmount: '30', consulateAmount: '150', serviceAmount: '55', totalAmount: '235', status: statuses[0]._id },
+      { name: 'Canada Tourist Visa (TRV)', country: countries[1]._id, visaType: visaTypes[0]._id, processingTimeMin: '2 weeks', processingTimeMax: '4 weeks', totalAmount: '175', agentDiscount: '8', status: statuses[0]._id },
+      { name: 'Canada Student Visa', country: countries[1]._id, visaType: visaTypes[1]._id, processingTimeMin: '4 weeks', processingTimeMax: '6 weeks', totalAmount: '235', agentDiscount: '10', status: statuses[0]._id },
       
       // UK
-      { name: 'UK Tourist Visa (Standard)', country: countries[2]._id, visaType: visaTypes[0]._id, processingTimeMin: '3 weeks', processingTimeMax: '3 weeks', vfsAmount: '55', consulateAmount: '95', serviceAmount: '40', totalAmount: '190', status: statuses[0]._id },
-      { name: 'UK Student Visa (Tier 4)', country: countries[2]._id, visaType: visaTypes[1]._id, processingTimeMin: '3 weeks', processingTimeMax: '3 weeks', vfsAmount: '55', consulateAmount: '348', serviceAmount: '65', totalAmount: '468', status: statuses[0]._id },
+      { name: 'UK Tourist Visa (Standard)', country: countries[2]._id, visaType: visaTypes[0]._id, processingTimeMin: '3 weeks', processingTimeMax: '3 weeks', totalAmount: '190', agentDiscount: '9', status: statuses[0]._id },
+      { name: 'UK Student Visa (Tier 4)', country: countries[2]._id, visaType: visaTypes[1]._id, processingTimeMin: '3 weeks', processingTimeMax: '3 weeks', totalAmount: '468', agentDiscount: '20', status: statuses[0]._id },
       
       // Germany
-      { name: 'Germany Tourist Visa (Schengen)', country: countries[3]._id, visaType: visaTypes[0]._id, processingTimeMin: '2 weeks', processingTimeMax: '4 weeks', vfsAmount: '35', consulateAmount: '80', serviceAmount: '35', totalAmount: '150', status: statuses[0]._id },
-      { name: 'Germany Student Visa', country: countries[3]._id, visaType: visaTypes[1]._id, processingTimeMin: '4 weeks', processingTimeMax: '8 weeks', vfsAmount: '35', consulateAmount: '75', serviceAmount: '40', totalAmount: '150', status: statuses[0]._id },
+      { name: 'Germany Tourist Visa (Schengen)', country: countries[3]._id, visaType: visaTypes[0]._id, processingTimeMin: '2 weeks', processingTimeMax: '4 weeks', totalAmount: '150', agentDiscount: '7', status: statuses[0]._id },
+      { name: 'Germany Student Visa', country: countries[3]._id, visaType: visaTypes[1]._id, processingTimeMin: '4 weeks', processingTimeMax: '8 weeks', totalAmount: '150', agentDiscount: '7', status: statuses[0]._id },
       
       // Australia
-      { name: 'Australia Tourist Visa (600)', country: countries[5]._id, visaType: visaTypes[0]._id, processingTimeMin: '15 days', processingTimeMax: '20 days', vfsAmount: '35', consulateAmount: '145', serviceAmount: '50', totalAmount: '230', status: statuses[0]._id },
-      { name: 'Australia Student Visa (500)', country: countries[5]._id, visaType: visaTypes[1]._id, processingTimeMin: '1 month', processingTimeMax: '4 months', vfsAmount: '35', consulateAmount: '620', serviceAmount: '80', totalAmount: '735', status: statuses[0]._id },
+      { name: 'Australia Tourist Visa (600)', country: countries[5]._id, visaType: visaTypes[0]._id, processingTimeMin: '15 days', processingTimeMax: '20 days', totalAmount: '230', agentDiscount: '10', status: statuses[0]._id },
+      { name: 'Australia Student Visa (500)', country: countries[5]._id, visaType: visaTypes[1]._id, processingTimeMin: '1 month', processingTimeMax: '4 months', totalAmount: '735', agentDiscount: '25', status: statuses[0]._id },
       
       // Japan
-      { name: 'Japan Tourist Visa', country: countries[6]._id, visaType: visaTypes[0]._id, processingTimeMin: '5 days', processingTimeMax: '1 week', vfsAmount: '20', consulateAmount: '30', serviceAmount: '25', totalAmount: '75', status: statuses[0]._id },
-      { name: 'Japan Student Visa', country: countries[6]._id, visaType: visaTypes[1]._id, processingTimeMin: '1 week', processingTimeMax: '2 weeks', vfsAmount: '20', consulateAmount: '30', serviceAmount: '30', totalAmount: '80', status: statuses[0]._id }
+      { name: 'Japan Tourist Visa', country: countries[6]._id, visaType: visaTypes[0]._id, processingTimeMin: '5 days', processingTimeMax: '1 week', totalAmount: '75', agentDiscount: '5', status: statuses[0]._id },
+      { name: 'Japan Student Visa', country: countries[6]._id, visaType: visaTypes[1]._id, processingTimeMin: '1 week', processingTimeMax: '2 weeks', totalAmount: '80', agentDiscount: '5', status: statuses[0]._id }
     ]);
 
     // 8. Create Country Terms & Conditions
@@ -555,7 +712,7 @@ const seedDatabase = async () => {
 
     console.log('✅ Database seeded successfully with proper relationships!');
     console.log('📊 Created:');
-    console.log('- 4 Statuses');
+    console.log('- 26 Statuses');
     console.log('- 4 Roles');
     console.log('- 6 Users');
     console.log('- 6 Continents');

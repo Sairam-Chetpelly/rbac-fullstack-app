@@ -128,26 +128,18 @@ const CountryVisaTypes = () => {
                       </span>
                     </div>
 
-                    {/* Pricing Breakdown */}
+                    {/* Pricing Information */}
                     <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">VFS Fee:</span>
-                        <span className="font-medium">${visaType.vfsAmount}</span>
+                      <div className="flex justify-between">
+                        <span className="font-semibold text-gray-900">Total Amount:</span>
+                        <span className="font-bold text-lg text-green-600">${visaType.totalAmount}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Consulate Fee:</span>
-                        <span className="font-medium">${visaType.consulateAmount}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Service Fee:</span>
-                        <span className="font-medium">${visaType.serviceAmount}</span>
-                      </div>
-                      <div className="border-t pt-2">
-                        <div className="flex justify-between">
-                          <span className="font-semibold text-gray-900">Total Amount:</span>
-                          <span className="font-bold text-lg text-green-600">${visaType.totalAmount}</span>
+                      {visaType.agentDiscount && visaType.agentDiscount !== '0' && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Agent Discount:</span>
+                          <span className="font-medium text-blue-600">${visaType.agentDiscount}</span>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* Apply Button */}

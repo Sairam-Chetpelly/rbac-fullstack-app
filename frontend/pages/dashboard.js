@@ -16,7 +16,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !canAccess(user.role, 'dashboard')) {
+    if (!user) {
+      window.location.href = '/';
+      return;
+    }
+    
+
+    
+    if (!canAccess(user.role, 'dashboard')) {
       window.location.href = '/';
       return;
     }
@@ -25,7 +32,30 @@ export default function Dashboard() {
 
   const fetchStats = async () => {
     try {
-      if (canAccess(user.role, 'users')) {
+      if (user.role === 'employee') {
+        // Employee stats - assigned applications and payments
+        const [appsResponse, paymentsResponse] = await Promise.all([
+          api.get('/applications/assigned'),
+          api.get('/applications/assigned/payments')
+        ]);
+        
+        const applications = appsResponse.data;
+        const payments = paymentsResponse.data;
+        
+        setStats({
+          totalUsers: applications.length,
+          activeUsers: applications.filter(app => 
+            app.status?.name?.toLowerCase().includes('submitted') || 
+            app.status?.name?.toLowerCase().includes('review')
+          ).length,
+          pendingUsers: payments.filter(pay => pay.status === 'pending').length,
+          inactiveUsers: applications.filter(app => 
+            app.status?.name?.toLowerCase().includes('approved') || 
+            app.status?.name?.toLowerCase().includes('rejected')
+          ).length
+        });
+      } else if (canAccess(user.role, 'users')) {
+        // Admin/Manager stats - all users
         const response = await api.get('/users');
         const users = response.data;
         setStats({
@@ -46,7 +76,12 @@ export default function Dashboard() {
     return <div>Access denied</div>;
   }
 
-  const statCards = [
+  const statCards = user.role === 'employee' ? [
+    { title: 'Total Applications', value: stats.totalUsers, icon: '📋', color: 'from-blue-500 to-blue-600', bgColor: 'bg-blue-50', textColor: 'text-blue-600' },
+    { title: 'Pending Review', value: stats.activeUsers, icon: '⏳', color: 'from-yellow-500 to-yellow-600', bgColor: 'bg-yellow-50', textColor: 'text-yellow-600' },
+    { title: 'Pending Payments', value: stats.pendingUsers, icon: '💳', color: 'from-orange-500 to-orange-600', bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
+    { title: 'Completed', value: stats.inactiveUsers, icon: '✅', color: 'from-green-500 to-green-600', bgColor: 'bg-green-50', textColor: 'text-green-600' }
+  ] : [
     { title: 'Total Users', value: stats.totalUsers, icon: '👥', color: 'from-blue-500 to-blue-600', bgColor: 'bg-blue-50', textColor: 'text-blue-600' },
     { title: 'Active Users', value: stats.activeUsers, icon: '✅', color: 'from-green-500 to-green-600', bgColor: 'bg-green-50', textColor: 'text-green-600' },
     { title: 'Pending Users', value: stats.pendingUsers, icon: '⏳', color: 'from-yellow-500 to-yellow-600', bgColor: 'bg-yellow-50', textColor: 'text-yellow-600' },

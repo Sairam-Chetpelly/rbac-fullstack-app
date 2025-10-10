@@ -38,51 +38,53 @@ export default function CustomerApplications() {
   };
 
   const getStatusIcon = (status) => {
-    switch (status) {
-      case "approved":
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case "under_review":
-        return <Clock className="h-5 w-5 text-yellow-600" />;
-      case "rejected":
-        return <AlertCircle className="h-5 w-5 text-red-600" />;
-      default:
-        return <FileText className="h-5 w-5 text-gray-600" />;
+    const statusName = status?.name?.toLowerCase() || '';
+    if (statusName.includes('approved')) {
+      return <CheckCircle className="h-5 w-5 text-green-600" />;
+    } else if (statusName.includes('review')) {
+      return <Clock className="h-5 w-5 text-yellow-600" />;
+    } else if (statusName.includes('rejected')) {
+      return <AlertCircle className="h-5 w-5 text-red-600" />;
+    } else {
+      return <FileText className="h-5 w-5 text-gray-600" />;
     }
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800";
-      case "under_review":
-        return "bg-yellow-100 text-yellow-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
-      case "draft":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-blue-100 text-blue-800";
-    }
+    if (!status?.color) return 'bg-gray-100 text-gray-800';
+    
+    const colorMap = {
+      '#gray': 'bg-gray-100 text-gray-800',
+      '#blue': 'bg-blue-100 text-blue-800',
+      '#yellow': 'bg-yellow-100 text-yellow-800',
+      '#green': 'bg-green-100 text-green-800',
+      '#red': 'bg-red-100 text-red-800',
+      '#purple': 'bg-purple-100 text-purple-800',
+      '#indigo': 'bg-indigo-100 text-indigo-800',
+      '#pink': 'bg-pink-100 text-pink-800'
+    };
+    
+    return colorMap[status.color] || 'bg-gray-100 text-gray-800';
   };
 
   const formatStatus = (status) => {
-    return status.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+    return status?.name || 'Unknown';
   };
 
   const getProgressValue = (status) => {
-    switch (status) {
-      case "draft":
-        return 25;
-      case "submitted":
-        return 50;
-      case "under_review":
-        return 75;
-      case "approved":
-        return 100;
-      case "rejected":
-        return 50;
-      default:
-        return 0;
+    const statusName = status?.name?.toLowerCase() || '';
+    if (statusName.includes('draft')) {
+      return 25;
+    } else if (statusName.includes('submitted')) {
+      return 50;
+    } else if (statusName.includes('review')) {
+      return 75;
+    } else if (statusName.includes('approved')) {
+      return 100;
+    } else if (statusName.includes('rejected')) {
+      return 50;
+    } else {
+      return 0;
     }
   };
 

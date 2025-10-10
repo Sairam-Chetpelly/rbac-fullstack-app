@@ -79,7 +79,39 @@ const VisaApplicationForm = () => {
       const response = await api.get(`/customer/draft/${draftId}`);
       const { application, formData: draftFormData, applicants } = response.data;
       
-      setFormData(draftFormData || {});
+      // Process file data to ensure proper format
+      const processFileData = (data) => {
+        if (!data) return data;
+        
+        const processedData = {};
+        for (const [key, value] of Object.entries(data)) {
+          if (typeof value === 'string' && value.startsWith('{')) {
+            try {
+              // Try to parse as JSON (file data)
+              const parsed = JSON.parse(value);
+              if (parsed.fileName && parsed.filePath) {
+                processedData[key] = parsed;
+              } else {
+                processedData[key] = value;
+              }
+            } catch {
+              processedData[key] = value;
+            }
+          } else {
+            processedData[key] = value;
+          }
+        }
+        return processedData;
+      };
+      
+      let processedFormData;
+      if (Array.isArray(draftFormData)) {
+        processedFormData = draftFormData.map(processFileData);
+      } else {
+        processedFormData = processFileData(draftFormData || {});
+      }
+      
+      setFormData(processedFormData);
       setApplicationType(application.applicationType || 'individual');
       setNumberOfApplicants(application.numberOfApplicants || 1);
       setCurrentDraftId(application._id);
@@ -89,7 +121,7 @@ const VisaApplicationForm = () => {
         setRelationships(relationshipList);
       }
       
-      console.log('Loaded draft data:', draftFormData);
+      console.log('Loaded draft data:', processedFormData);
     } catch (err) {
       console.error('Error loading draft data:', err);
       setError('Failed to load draft data');
@@ -372,88 +404,40 @@ const VisaApplicationForm = () => {
     }
   };
 
-  const handlePayment = async () => {
+  const handleFinalSubmit = async () => {
     try {
-      // Create Razorpay order
-      const totalAmount = visaType.totalAmount * numberOfApplicants;
-      const orderResponse = await api.post('/create-payment-order', {
-        visaTypeId,
-        amount: totalAmount
-      });
+      setSubmitting(true);
+      let submitResponse;
+      
+      if (draftId || currentDraftId) {
+        // Submit draft without payment
+        submitResponse = await api.post('/visa-applications/submit-without-payment', {
+          visaTypeId,
+          draftId: currentDraftId || draftId,
+          formData,
+          applicationType,
+          numberOfApplicants,
+          relationships
+        });
+      } else {
+        // Submit new application without payment
+        submitResponse = await api.post('/visa-applications/submit-without-payment', {
+          visaTypeId,
+          draftId: currentDraftId,
+          formData,
+          applicationType,
+          numberOfApplicants,
+          relationships
+        });
+      }
 
-      const { orderId, amount, currency } = orderResponse.data;
-
-      // Initialize Razorpay
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: amount,
-        currency: currency,
-        name: 'Visa Application',
-        description: `${visaType.name} - ${country.name}`,
-        order_id: orderId,
-        handler: async function (response) {
-          try {
-            let submitResponse;
-            if (draftId || currentDraftId) {
-              // Submit draft with payment
-              submitResponse = await api.post('/visa-applications/submit', {
-                visaTypeId,
-                draftId: currentDraftId || draftId,
-                paymentId: response.razorpay_payment_id,
-                orderId: response.razorpay_order_id,
-                signature: response.razorpay_signature,
-                formData,
-                applicationType,
-                numberOfApplicants,
-                relationships
-              });
-            } else {
-              // Submit new application with payment
-              submitResponse = await api.post('/visa-applications/submit', {
-                visaTypeId,
-                draftId: currentDraftId,
-                paymentId: response.razorpay_payment_id,
-                orderId: response.razorpay_order_id,
-                signature: response.razorpay_signature,
-                formData,
-                applicationType,
-                numberOfApplicants,
-                relationships
-              });
-            }
-
-            setApplicationNumber(submitResponse.data.applicationNumber);
-            setPaymentStatus('success');
-            setCurrentStep(4);
-          } catch (err) {
-            console.error('Error submitting application:', err);
-            alert('Payment successful but application submission failed. Please contact support.');
-          }
-        },
-        prefill: {
-          name: (() => {
-            const primaryData = applicationType === 'individual' ? formData : (Array.isArray(formData) && formData[0] ? formData[0] : {});
-            return (primaryData.firstName || '') + ' ' + (primaryData.lastName || '');
-          })(),
-          email: (() => {
-            const primaryData = applicationType === 'individual' ? formData : (Array.isArray(formData) && formData[0] ? formData[0] : {});
-            return primaryData.email || '';
-          })(),
-          contact: (() => {
-            const primaryData = applicationType === 'individual' ? formData : (Array.isArray(formData) && formData[0] ? formData[0] : {});
-            return primaryData.phone || '';
-          })()
-        },
-        theme: {
-          color: '#3B82F6'
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      setApplicationNumber(submitResponse.data.applicationNumber);
+      setCurrentStep(4);
     } catch (err) {
-      console.error('Error creating payment order:', err);
-      alert('Failed to initiate payment. Please try again.');
+      console.error('Error submitting application:', err);
+      alert('Failed to submit application. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -485,7 +469,7 @@ const VisaApplicationForm = () => {
           relationships
         });
       }
-      alert('Draft saved successfully!');
+      alert('saved successfully!');
       return response.data;
     } catch (err) {
       console.error('Error saving draft:', err);
@@ -503,7 +487,7 @@ const VisaApplicationForm = () => {
     const tabs = [
       { id: 1, name: 'Application Form', icon: '📝', description: 'Fill out your details' },
       { id: 2, name: 'Review', icon: '👁️', description: 'Verify information' },
-      { id: 3, name: 'Payment', icon: '💳', description: 'Complete payment' },
+      { id: 3, name: 'Payment Details', icon: '💰', description: 'Payment information' },
       { id: 4, name: 'Tracking', icon: '📍', description: 'Application status' }
     ];
 
@@ -1036,60 +1020,75 @@ const VisaApplicationForm = () => {
   const renderPayment = () => {
     return (
       <div className="animate-fadeIn">
-        {/* Pricing Summary - Show only in payment tab */}
+        {/* Pricing Summary */}
         <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-green-50 rounded-2xl p-8 border-2 border-blue-200 mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full -mr-20 -mt-20"></div>
           <div className="relative">
             <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
               <span className="text-3xl">💰</span>
-              Pricing Breakdown
+              Payment Details
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
-                <div className="text-2xl font-bold text-blue-600">₹{visaType?.vfsAmount}</div>
-                <div className="text-sm font-semibold text-gray-600 mt-1">VFS Fee {numberOfApplicants > 1 ? `(×${numberOfApplicants})` : ''}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="text-center bg-white/80 backdrop-blur-sm rounded-xl p-6 border-2 border-blue-300">
+                <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">₹{visaType?.totalAmount * numberOfApplicants}</div>
+                <div className="text-sm font-bold text-gray-700 mt-2">Total Amount {numberOfApplicants > 1 ? `(×${numberOfApplicants})` : ''}</div>
               </div>
-              <div className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
-                <div className="text-2xl font-bold text-green-600">₹{visaType?.consulateAmount}</div>
-                <div className="text-sm font-semibold text-gray-600 mt-1">Consulate Fee {numberOfApplicants > 1 ? `(×${numberOfApplicants})` : ''}</div>
-              </div>
-              <div className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
-                <div className="text-2xl font-bold text-purple-600">₹{visaType?.serviceAmount}</div>
-                <div className="text-sm font-semibold text-gray-600 mt-1">Service Fee {numberOfApplicants > 1 ? `(×${numberOfApplicants})` : ''}</div>
-              </div>
-              <div className="text-center bg-white/80 backdrop-blur-sm rounded-xl p-4 border-2 border-blue-300">
-                <div className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">₹{visaType?.totalAmount * numberOfApplicants}</div>
-                <div className="text-sm font-bold text-gray-700 mt-1">Total Amount</div>
+              <div className="text-center bg-white/80 backdrop-blur-sm rounded-xl p-6 border-2 border-green-300">
+                <div className="text-2xl font-bold text-green-600">{visaType?.name}</div>
+                <div className="text-sm font-bold text-gray-700 mt-2">{country?.name} Visa</div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 mb-8">
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <CreditCard className="h-10 w-10 text-white" />
+            <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <span className="text-3xl text-white">📞</span>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-3">Complete Payment</h3>
+            <h3 className="text-3xl font-bold text-gray-900 mb-3">Our Agent Will Connect With You Shortly</h3>
             <p className="text-gray-600 text-lg">
-              Your application is ready. Complete the payment to submit your visa application.
+              Our agent will contact you for payment details and further processing.
             </p>
           </div>
           
-          <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-green-50 rounded-2xl p-8 mb-8 border-2 border-blue-200 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full -mr-16 -mt-16"></div>
-            <div className="relative text-center">
-              <div className="text-sm font-semibold text-gray-600 mb-2">Total Amount</div>
-              <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2">
-                ₹{visaType?.totalAmount * numberOfApplicants}
+          <div className="bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 rounded-2xl p-8 mb-8 border-2 border-orange-200">
+            <div className="text-center">
+              <div className="text-lg font-semibold text-gray-800 mb-4">Payment Information</div>
+              <div className="space-y-3 text-left max-w-md mx-auto">
+                <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                  <span className="font-medium text-gray-700">Visa Type:</span>
+                  <span className="text-gray-900">{visaType?.name}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                  <span className="font-medium text-gray-700">Country:</span>
+                  <span className="text-gray-900">{country?.name}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                  <span className="font-medium text-gray-700">Applicants:</span>
+                  <span className="text-gray-900">{numberOfApplicants}</span>
+                </div>
+                <div className="flex justify-between items-center py-3 bg-white rounded-lg px-4 border-2 border-green-300">
+                  <span className="font-bold text-gray-800">Total Amount:</span>
+                  <span className="text-2xl font-bold text-green-600">₹{visaType?.totalAmount * numberOfApplicants}</span>
+                </div>
               </div>
-              <div className="text-gray-600 font-medium">
-                {visaType?.name} - {country?.name}
-                {numberOfApplicants > 1 && <div className="text-sm mt-1">{numberOfApplicants} Applicants</div>}
+            </div>
+          </div>
+
+          <div className="bg-blue-50 rounded-xl p-6 border border-blue-200 mb-6">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <span className="text-white text-sm font-bold">ℹ️</span>
               </div>
-              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                Secure payment powered by Razorpay
+              <div>
+                <h4 className="font-bold text-blue-800 mb-2">What happens next?</h4>
+                <ul className="text-blue-700 space-y-1 text-sm">
+                  <li>• Our agent will contact you shortly</li>
+                  <li>• Payment details and methods will be discussed</li>
+                  <li>• Application processing will begin after payment</li>
+                  <li>• You'll receive regular status updates via email</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -1104,11 +1103,21 @@ const VisaApplicationForm = () => {
               Back to Review
             </Button>
             <Button 
-              onClick={handlePayment}
+              onClick={handleFinalSubmit}
+              disabled={submitting}
               className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
             >
-              <CreditCard className="h-5 w-5 mr-3" />
-              Pay Now
+              {submitting ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Submitting...
+                </span>
+              ) : (
+                <>
+                  <CheckCircle className="h-5 w-5 mr-3" />
+                  Continue & Submit
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -1128,7 +1137,7 @@ const VisaApplicationForm = () => {
               Application Submitted Successfully! 🎉
             </h1>
             <p className="text-gray-600 text-lg">
-              Your visa application has been submitted and payment processed successfully.
+              Your visa application has been submitted. Our agent will contact you for payment details.
             </p>
           </div>
 
@@ -1141,6 +1150,22 @@ const VisaApplicationForm = () => {
               <p className="text-sm text-gray-500 mt-2">Keep this number for tracking your application</p>
             </div>
           )}
+
+          {/* <div className="bg-orange-50 rounded-xl p-6 border border-orange-200 mb-8">
+            <div className="flex items-center justify-center gap-2 text-orange-800 mb-3">
+              <span className="text-2xl">📞</span>
+              <span className="font-bold text-lg">Agent Contact Information</span>
+            </div>
+            <div className="text-orange-700 space-y-2">
+              <p className="font-medium">Our agent will contact you within 24 hours for:</p>
+              <ul className="text-sm space-y-1">
+                <li>• Payment processing and methods</li>
+                <li>• Document verification if needed</li>
+                <li>• Application status updates</li>
+                <li>• Any additional requirements</li>
+              </ul>
+            </div>
+          </div> */}
 
           <div className="space-y-4 mb-8">
             <Button 
@@ -1164,7 +1189,7 @@ const VisaApplicationForm = () => {
               <span className="font-semibold">What's Next?</span>
             </div>
             <p className="text-blue-700">
-              You will receive email updates about your application status. Processing typically takes 5-15 business days.
+              You will receive email updates about your application status. Processing begins after payment confirmation.
             </p>
           </div>
         </div>
@@ -1214,7 +1239,7 @@ const VisaApplicationForm = () => {
   return (
     <>
       <Head>
-        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+        <title>Visa Application Form - Options Travel Services</title>
       </Head>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
         {/* Header */}

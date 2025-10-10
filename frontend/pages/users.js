@@ -5,6 +5,7 @@ import { canAccess } from '../lib/roles';
 import api from '../lib/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import Table from '../components/Table';
 import toast from 'react-hot-toast';
 
 export default function Users() {
@@ -13,19 +14,24 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (!user || !canAccess(user.role, 'users')) {
       window.location.href = '/dashboard';
       return;
     }
-    fetchUsers();
-  }, [user]);
+    fetchUsers(currentPage);
+  }, [user, currentPage]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1) => {
     try {
-      const response = await api.get('/users');
-      setUsers(response.data);
+      const response = await api.get(`/users?page=${page}&limit=12`);
+      setUsers(response.data.data || response.data);
+      if (response.data.pagination) {
+        setPagination(response.data.pagination);
+      }
     } catch (error) {
       toast.error('Failed to fetch users');
     } finally {
@@ -38,7 +44,7 @@ export default function Users() {
       try {
         await api.delete(`/users/${userId}`);
         toast.success('User deleted successfully!');
-        fetchUsers();
+        fetchUsers(currentPage);
       } catch (error) {
         toast.error(error.response?.data?.message || 'Failed to delete user');
       }
@@ -111,7 +117,7 @@ export default function Users() {
           </div>
           <div className="flex gap-2">
             <span className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
-              Total: {users.length}
+              Total: {pagination.total || users.length}
             </span>
             <span className="px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
               Active: {users.filter(u => (u.status?.name || u.status) === 'active').length}
@@ -128,63 +134,174 @@ export default function Users() {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-4 lg:gap-6">
-          {filteredUsers.map((userData) => (
-            <Card key={userData._id} className="hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 lg:gap-4">
-                  <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-lg lg:text-2xl font-bold shadow-lg">
-                    {userData.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg lg:text-xl font-bold text-gray-900 truncate">{userData.name}</h3>
-                    <p className="text-sm lg:text-base text-gray-600 truncate">{userData.email}</p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getRoleColor(userData.role)}`}>
-                    {(userData.role?.name || userData.role || '').toUpperCase()}
-                  </span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(userData.status)}`}>
-                    {(userData.status?.name || userData.status || '').toUpperCase()}
-                  </span>
-                </div>
-                
-                <div className="flex gap-2 pt-4 border-t border-gray-100">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => router.push(`/users/${userData._id}`)}
-                    className="flex-1"
-                    icon="👁️"
-                  >
-                    View
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => router.push(`/users/${userData._id}/edit`)}
-                    className="flex-1"
-                    icon="✏️"
-                  >
-                    Edit
-                  </Button>
-                  {canDelete && (
-                    <Button 
-                      size="sm" 
-                      variant="danger" 
-                      onClick={() => handleDelete(userData._id)}
-                      icon="🗑️"
-                    >
-                      Delete
-                    </Button>
-                  )}
-                </div>
-              </div>
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden lg:block">
+            <Card>
+              <Table
+                data={filteredUsers}
+                columns={[
+                  {
+                    key: 'name',
+                    label: 'User',
+                    render: (value, row) => (
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                          {value.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-semibold">{value}</div>
+                          <div className="text-sm text-gray-600">{row.email}</div>
+                          {row.mobile && <div className="text-xs text-gray-500">📱 {row.mobile}</div>}
+                        </div>
+                      </div>
+                    )
+                  },
+                  {
+                    key: 'role',
+                    label: 'Role',
+                    render: (value) => (
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getRoleColor(value)}`}>
+                        {(value?.name || value || '').toUpperCase()}
+                      </span>
+                    )
+                  },
+                  {
+                    key: 'status',
+                    label: 'Status',
+                    render: (value) => (
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(value)}`}>
+                        {(value?.name || value || '').toUpperCase()}
+                      </span>
+                    )
+                  },
+                  {
+                    key: 'createdAt',
+                    label: 'Created',
+                    render: (value) => new Date(value).toLocaleDateString()
+                  }
+                ]}
+                actions={[
+                  {
+                    label: 'View',
+                    onClick: (row) => router.push(`/users/${row._id}`),
+                    icon: '👁️'
+                  },
+                  {
+                    label: 'Edit',
+                    onClick: (row) => router.push(`/users/${row._id}/edit`),
+                    icon: '✏️'
+                  },
+                  ...(canDelete ? [{
+                    label: 'Delete',
+                    onClick: (row) => handleDelete(row._id),
+                    icon: '🗑️',
+                    variant: 'danger'
+                  }] : [])
+                ]}
+                emptyMessage="No users found"
+              />
             </Card>
-          ))}
-        </div>
+          </div>
+          
+          {/* Mobile/Tablet Card View */}
+          <div className="lg:hidden space-y-4">
+            {filteredUsers.length === 0 ? (
+              <Card>
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No users found</p>
+                </div>
+              </Card>
+            ) : (
+              filteredUsers.map((userData) => (
+                <Card key={userData._id} className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                        {userData.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 truncate">{userData.name}</h3>
+                        <p className="text-sm text-gray-600 truncate">{userData.email}</p>
+                        {userData.mobile && <p className="text-xs text-gray-500 truncate">📱 {userData.mobile}</p>}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getRoleColor(userData.role)}`}>
+                        {(userData.role?.name || userData.role || '').toUpperCase()}
+                      </span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(userData.status)}`}>
+                        {(userData.status?.name || userData.status || '').toUpperCase()}
+                      </span>
+                    </div>
+                    
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => router.push(`/users/${userData._id}`)}
+                        className="flex-1 bg-gray-100 text-gray-600 px-3 py-2 rounded text-sm hover:bg-gray-200"
+                      >
+                        👁️ View
+                      </button>
+                      <button
+                        onClick={() => router.push(`/users/${userData._id}/edit`)}
+                        className="flex-1 bg-blue-100 text-blue-600 px-3 py-2 rounded text-sm hover:bg-blue-200"
+                      >
+                        ✏️ Edit
+                      </button>
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDelete(userData._id)}
+                          className="bg-red-100 text-red-600 px-3 py-2 rounded text-sm hover:bg-red-200"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+          
+          {pagination.pages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              
+              {[...Array(pagination.pages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-3 py-2 border rounded-lg ${
+                    currentPage === i + 1 
+                      ? 'bg-blue-500 text-white border-blue-500' 
+                      : 'hover:bg-gray-50'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.pages))}
+                disabled={currentPage === pagination.pages}
+                className="px-3 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
+              
+              <span className="text-sm text-gray-600 ml-4">
+                Page {currentPage} of {pagination.pages} ({pagination.total} total)
+              </span>
+            </div>
+          )}
+        </>
       )}
       
       {!loading && filteredUsers.length === 0 && (

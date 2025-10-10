@@ -36,6 +36,40 @@ export default function CustomerPayments() {
     }
   };
 
+  const downloadInvoice = (payment) => {
+    const doc = {
+      content: [
+        { text: 'Options Travel Services', style: 'header' },
+        { text: 'Payment Invoice', style: 'subheader' },
+        { text: '\n' },
+        {
+          table: {
+            widths: ['*', '*'],
+            body: [
+              ['Invoice Number:', payment.transactionId || 'N/A'],
+              ['Application Number:', payment.application?.applicationNumber || 'N/A'],
+              ['Amount:', `₹${payment.amount}`],
+              ['Status:', payment.status.toUpperCase()],
+              ['Payment Date:', new Date(payment.paidAt || payment.createdAt).toLocaleDateString()],
+              ['Payment Method:', payment.paymentMethod || 'N/A']
+            ]
+          }
+        }
+      ],
+      styles: {
+        header: { fontSize: 18, bold: true, alignment: 'center' },
+        subheader: { fontSize: 14, bold: true, alignment: 'center', margin: [0, 10, 0, 5] }
+      }
+    };
+    
+    import('pdfmake/build/pdfmake').then(pdfMake => {
+      import('pdfmake/build/vfs_fonts').then(vfs => {
+        pdfMake.default.vfs = vfs.default;
+        pdfMake.default.createPdf(doc).download(`invoice-${payment.transactionId || payment._id}.pdf`);
+      });
+    });
+  };
+
   if (loading) {
     return (
       <CustomerLayout>
@@ -89,7 +123,14 @@ export default function CustomerPayments() {
                     {new Date(payment.paidAt || payment.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Button variant="outline" size="sm">Download</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => downloadInvoice(payment)}
+                      disabled={payment.status !== 'success'}
+                    >
+                      Download
+                    </Button>
                   </td>
                 </tr>
               ))}

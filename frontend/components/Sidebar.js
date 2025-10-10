@@ -9,48 +9,60 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
   const router = useRouter();
   const [expandedGroups, setExpandedGroups] = useState({});
 
-  const menuGroups = [
-    { name: 'Dashboard', href: '/dashboard', permission: 'dashboard', icon: '🏠' },
-    {
-      name: 'User Management',
-      icon: '👥',
-      children: [
-        { name: 'Users', href: '/users', permission: 'users', icon: '👤' },
-        { name: 'Roles', href: '/roles', permission: 'roles', icon: '🔐' }
-      ]
-    },
-    {
-      name: 'Location Management',
-      icon: '🗺️',
-      children: [
-        { name: 'Continents', href: '/continents', permission: 'continents', icon: '🌍' },
-        { name: 'Countries', href: '/countries', permission: 'countries', icon: '🏳️' }
-      ]
-    },
-    {
-      name: 'Visa Management',
-      icon: '📄',
-      children: [
-        { name: 'Visa Types', href: '/visa-types', permission: 'visa-types', icon: '📋' },
-        { name: 'Country Visas', href: '/country-visa-types', permission: 'country-visa-types', icon: '🎫' },
-        { name: 'Country Terms', href: '/country-terms-conditions', permission: 'country-terms-conditions', icon: '📜' },
-        { name: 'Visa Terms', href: '/visa-terms-conditions', permission: 'visa-terms-conditions', icon: '📃' }
-      ]
-    },
-    {
-      name: 'Form Management',
-      icon: '📝',
-      children: [
-        { name: 'Form Builder', href: '/form-builder', permission: 'form-sections', icon: '🏗️' },
-        { name: 'Form Sections', href: '/form-sections', permission: 'form-sections', icon: '📑' },
-        { name: 'Form Fields', href: '/form-fields', permission: 'form-fields', icon: '📄' }
-      ]
-    },
-    { name: 'Applications', href: '/applications', permission: 'applications', icon: '📋' },
-    { name: 'Payments', href: '/payments', permission: 'payments', icon: '💳' },
-    { name: 'Status', href: '/status', permission: 'status', icon: '⚡' },
-    { name: 'Settings', href: '/settings', permission: 'settings', icon: '⚙️' }
-  ];
+  const getMenuGroups = () => {
+    if (user?.role === 'employee') {
+      return [
+        { name: 'Dashboard', href: '/dashboard', permission: 'dashboard', icon: '🏠' },
+        { name: 'Applications', href: '/applications', permission: 'applications', icon: '📋' },
+        { name: 'Payments', href: '/payments', permission: 'payments', icon: '💳' }
+      ];
+    }
+    
+    return [
+      { name: 'Dashboard', href: '/dashboard', permission: 'dashboard', icon: '🏠' },
+      {
+        name: 'User Management',
+        icon: '👥',
+        children: [
+          { name: 'Users', href: '/users', permission: 'users', icon: '👤' },
+          { name: 'Roles', href: '/roles', permission: 'roles', icon: '🔐' }
+        ]
+      },
+      {
+        name: 'Location Management',
+        icon: '🗺️',
+        children: [
+          { name: 'Continents', href: '/continents', permission: 'continents', icon: '🌍' },
+          { name: 'Countries', href: '/countries', permission: 'countries', icon: '🏳️' }
+        ]
+      },
+      {
+        name: 'Visa Management',
+        icon: '📄',
+        children: [
+          { name: 'Visa Types', href: '/visa-types', permission: 'visa-types', icon: '📋' },
+          { name: 'Country Visas', href: '/country-visa-types', permission: 'country-visa-types', icon: '🎫' },
+          { name: 'Country Terms', href: '/country-terms-conditions', permission: 'country-terms-conditions', icon: '📜' },
+          { name: 'Visa Terms', href: '/visa-terms-conditions', permission: 'visa-terms-conditions', icon: '📃' }
+        ]
+      },
+      {
+        name: 'Form Management',
+        icon: '📝',
+        children: [
+          { name: 'Form Builder', href: '/form-builder', permission: 'form-sections', icon: '🏗️' },
+          { name: 'Form Sections', href: '/form-sections', permission: 'form-sections', icon: '📑' },
+          { name: 'Form Fields', href: '/form-fields', permission: 'form-fields', icon: '📄' }
+        ]
+      },
+      { name: 'Applications', href: '/applications', permission: 'applications', icon: '📋' },
+      { name: 'Payments', href: '/payments', permission: 'payments', icon: '💳' },
+      { name: 'Status', href: '/status', permission: 'status', icon: '⚡' },
+      { name: 'Settings', href: '/settings', permission: 'settings', icon: '⚙️' }
+    ];
+  };
+  
+  const menuGroups = getMenuGroups();
 
   const toggleGroup = (groupName) => {
     setExpandedGroups(prev => {
@@ -145,7 +157,7 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
                     )}
                   </button>
                   {!isCollapsed && isExpanded && (
-                    <div className="ml-8 mt-1 space-y-1  pl-4">
+                    <div className="ml-8 mt-1 space-y-1 pl-4">
                       {group.children.filter(child => canAccess(user?.role, child.permission)).map((child) => (
                         <Link
                           key={child.name}

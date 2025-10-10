@@ -46,7 +46,7 @@ export default function VisaApplicationDemo() {
   }
 
   return (
-      <div className="max-w-7xl mx-auto space-y-8 p-4 sm:p-6 lg:p-0">
+      <div className="max-w-full mx-auto space-y-8 p-4 sm:p-6 lg:p-0">
         <div className="text-center">
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">🌍 Visa Application System Demo</h1>
           <p className="text-lg text-gray-600">Sample data for visa application forms with pricing</p>
@@ -66,22 +66,16 @@ export default function VisaApplicationDemo() {
                 </div>
                 
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-sm text-gray-600">VFS Fee:</span>
-                    <span className="font-semibold">${cvt.vfsAmount}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-sm text-gray-600">Consulate Fee:</span>
-                    <span className="font-semibold">${cvt.consulateAmount}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-sm text-gray-600">Service Fee:</span>
-                    <span className="font-semibold">${cvt.serviceAmount}</span>
-                  </div>
                   <div className="flex justify-between items-center py-3 bg-blue-100 rounded-lg px-3">
                     <span className="font-bold text-blue-900">Total Amount:</span>
                     <span className="text-xl font-bold text-blue-900">${cvt.totalAmount}</span>
                   </div>
+                  {cvt.agentDiscount && cvt.agentDiscount !== '0' && (
+                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                      <span className="text-sm text-gray-600">Agent Discount:</span>
+                      <span className="font-semibold text-orange-600">${cvt.agentDiscount}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-sm text-gray-600">
                     <span>Processing Time:</span>
                     <span>{cvt.processingTimeMin}-{cvt.processingTimeMax} days</span>

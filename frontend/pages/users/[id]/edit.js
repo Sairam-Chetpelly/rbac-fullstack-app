@@ -18,6 +18,7 @@ export default function EditUser() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    mobile: '',
     role: '',
     status: ''
   });
@@ -43,11 +44,13 @@ export default function EditUser() {
       setRoles(rolesRes.data);
       setStatuses(statusesRes.data);
       
-      const foundUser = userRes.data.find(u => u._id === id);
+      const users = userRes.data.data || userRes.data;
+      const foundUser = users.find(u => u._id === id);
       if (foundUser) {
         setFormData({
           name: foundUser.name,
           email: foundUser.email,
+          mobile: foundUser.mobile || '',
           role: foundUser.role?._id || foundUser.role,
           status: foundUser.status?._id || foundUser.status
         });
@@ -69,9 +72,32 @@ export default function EditUser() {
     return roles.filter(role => allowed.includes(role.name));
   };
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateMobile = (mobile) => {
+    if (!mobile) return true; // Optional field
+    const mobileRegex = /^\d{10}$/;
+    return mobileRegex.test(mobile);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    if (!validateEmail(formData.email)) {
+      toast.error('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    if (!validateMobile(formData.mobile)) {
+      toast.error('Please enter a valid 10-digit mobile number');
+      setLoading(false);
+      return;
+    }
 
     try {
       await api.put(`/users/${id}`, formData);
@@ -93,7 +119,7 @@ export default function EditUser() {
 
   if (fetchLoading) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <Card>
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -105,7 +131,7 @@ export default function EditUser() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
         <Button 
           variant="ghost" 
@@ -155,6 +181,22 @@ export default function EditUser() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
+                📱 Phone Number
+              </label>
+              <input
+                type="tel"
+                name="mobile"
+                value={formData.mobile}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                placeholder="Enter 10-digit phone number"
+                pattern="\d{10}"
+                maxLength="10"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 🛡️ Role
               </label>
               <select
@@ -162,7 +204,9 @@ export default function EditUser() {
                 value={formData.role}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                required
               >
+                <option value="">Select Role</option>
                 {getRoleOptions().map(role => (
                   <option key={role._id} value={role._id}>
                     {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
@@ -175,24 +219,20 @@ export default function EditUser() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 ⚡ Status
               </label>
-              <div className="flex flex-col gap-2">
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                required
+              >
+                <option value="">Select Status</option>
                 {statuses.map(status => (
-                  <label key={status._id} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
-                    <input
-                      type="radio"
-                      name="status"
-                      value={status._id}
-                      checked={formData.status === status._id}
-                      onChange={handleChange}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-medium text-gray-700 capitalize flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: status.color }}></div>
-                      {status.name}
-                    </span>
-                  </label>
+                  <option key={status._id} value={status._id}>
+                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
           </div>
 

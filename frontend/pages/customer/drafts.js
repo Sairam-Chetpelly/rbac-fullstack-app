@@ -28,7 +28,9 @@ export default function CustomerDrafts() {
   const fetchDrafts = async () => {
     try {
       const response = await api.get('/customer/applications');
-      const draftApplications = response.data.filter(app => app.status === 'draft');
+      const draftApplications = response.data.filter(app => 
+        app.status?.name === 'draft' || app.status === 'draft'
+      );
       setDrafts(draftApplications);
     } catch (error) {
       console.error('Error fetching drafts:', error);

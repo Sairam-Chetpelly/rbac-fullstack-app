@@ -3,6 +3,7 @@ const router = express.Router();
 const Application = require('../models/Application');
 const Payment = require('../models/Payment');
 const User = require('../models/User');
+const Status = require('../models/Status');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
 const { sendEmail } = require('../services/emailService');
@@ -12,15 +13,15 @@ router.get('/dashboard-stats', auth, role(['customer']), async (req, res) => {
   try {
     const userId = req.user._id;
     
-    const applications = await Application.find({ user: userId, deletedAt: null });
+    const applications = await Application.find({ user: userId, deletedAt: null }).populate('status', 'name');
     const payments = await Payment.find({ user: userId, deletedAt: null });
     
     const stats = {
       total_applications: applications.length,
-      approved: applications.filter(app => app.status === 'approved').length,
-      under_review: applications.filter(app => app.status === 'under_review').length,
-      rejected: applications.filter(app => app.status === 'rejected').length,
-      draft: applications.filter(app => app.status === 'draft').length,
+      approved: applications.filter(app => app.status?.name?.toLowerCase().includes('approved')).length,
+      under_review: applications.filter(app => app.status?.name?.toLowerCase().includes('review')).length,
+      rejected: applications.filter(app => app.status?.name?.toLowerCase().includes('rejected')).length,
+      draft: applications.filter(app => app.status?.name?.toLowerCase().includes('draft')).length,
       total_payments: payments.length,
       total_amount_paid: payments.reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0)
     };
@@ -39,6 +40,7 @@ router.get('/applications', auth, role(['customer']), async (req, res) => {
       user: req.user._id, 
       deletedAt: null 
     })
+    .populate('status', 'name color')
     .populate({
       path: 'countryVisaType',
       populate: [
@@ -80,11 +82,16 @@ router.get('/draft/:id', auth, role(['customer']), async (req, res) => {
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const FormField = require('../models/FormField');
     const Applicant = require('../models/Applicant');
+    const draftStatus = await Status.findOne({ name: 'draft' });
+    console.log('Draft status:', draftStatus);
+    if (!draftStatus) {
+      return res.status(500).json({ message: 'Draft status not found' });
+    }
     
     const application = await Application.findOne({
       _id: req.params.id,
       user: req.user._id,
-      status: 'draft',
+      status: draftStatus._id,
       deletedAt: null
     }).populate({
       path: 'countryVisaType',
@@ -119,7 +126,11 @@ router.get('/draft/:id', auth, role(['customer']), async (req, res) => {
       answers.forEach(answer => {
         if (answer.field && answer.field.name) {
           if (answer.answerFile) {
-            formData[answer.field.name] = answer.answerFile;
+            try {
+              formData[answer.field.name] = JSON.parse(answer.answerFile);
+            } catch {
+              formData[answer.field.name] = answer.answerFile;
+            }
           } else if (answer.answerText) {
             try {
               formData[answer.field.name] = JSON.parse(answer.answerText);
@@ -139,7 +150,11 @@ router.get('/draft/:id', auth, role(['customer']), async (req, res) => {
         applicantAnswers.forEach(answer => {
           if (answer.field && answer.field.name) {
             if (answer.answerFile) {
-              applicantData[answer.field.name] = answer.answerFile;
+              try {
+                applicantData[answer.field.name] = JSON.parse(answer.answerFile);
+              } catch {
+                applicantData[answer.field.name] = answer.answerFile;
+              }
             } else if (answer.answerText) {
               try {
                 applicantData[answer.field.name] = JSON.parse(answer.answerText);
@@ -168,11 +183,19 @@ router.put('/draft/:id', auth, role(['customer']), async (req, res) => {
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const FormField = require('../models/FormField');
     const Applicant = require('../models/Applicant');
+    const Status = require('../models/Status');
+    
+    // Get draft status
+    const draftStatus = await Status.findOne({ name: 'draft' });
+    console.log('Draft status:', draftStatus);
+    if (!draftStatus) {
+      return res.status(500).json({ message: 'Draft status not found' });
+    }
     
     const application = await Application.findOne({
       _id: req.params.id,
       user: req.user._id,
-      status: 'draft',
+      status: draftStatus._id,
       deletedAt: null
     });
     
@@ -281,6 +304,7 @@ router.get('/application/:id', auth, role(['customer']), async (req, res) => {
       user: req.user._id,
       deletedAt: null
     })
+    .populate('status', 'name color')
     .populate({
       path: 'countryVisaType',
       populate: [
@@ -309,7 +333,7 @@ router.get('/application/:id', auth, role(['customer']), async (req, res) => {
     // Get status history
     const statusHistory = await ApplicationStatusHistory.find({
       application: application._id
-    }).populate('changedBy', 'name').sort({ createdAt: -1 });
+    }).populate('changedBy', 'name').populate('status', 'name color').sort({ createdAt: -1 });
     
     // Get payment info
     const payment = await Payment.findOne({

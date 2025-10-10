@@ -80,7 +80,7 @@ const Layout = ({ children }) => {
           marginLeft: isMobile ? '0' : sidebarWidth
         }}
       >
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-full mx-auto">
           {children}
         </div>
       </main>

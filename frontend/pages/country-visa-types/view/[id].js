@@ -128,23 +128,15 @@ export default function ViewCountryVisaType() {
             </div>
 
             <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 Pricing Breakdown</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-blue-50 p-4 rounded-xl">
-                  <label className="block text-sm font-semibold text-blue-700 mb-1">VFS Amount</label>
-                  <div className="text-2xl font-bold text-blue-900">${countryVisaType.vfsAmount}</div>
-                </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 Pricing Information</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-green-50 p-4 rounded-xl">
-                  <label className="block text-sm font-semibold text-green-700 mb-1">Consulate Amount</label>
-                  <div className="text-2xl font-bold text-green-900">${countryVisaType.consulateAmount}</div>
+                  <label className="block text-sm font-semibold text-green-700 mb-1">Total Amount</label>
+                  <div className="text-2xl font-bold text-green-900">${countryVisaType.totalAmount}</div>
                 </div>
-                <div className="bg-purple-50 p-4 rounded-xl">
-                  <label className="block text-sm font-semibold text-purple-700 mb-1">Service Amount</label>
-                  <div className="text-2xl font-bold text-purple-900">${countryVisaType.serviceAmount}</div>
-                </div>
-                <div className="bg-gray-100 p-4 rounded-xl border-2 border-gray-300">
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Total Amount</label>
-                  <div className="text-2xl font-bold text-gray-900">${countryVisaType.totalAmount}</div>
+                <div className="bg-blue-50 p-4 rounded-xl">
+                  <label className="block text-sm font-semibold text-blue-700 mb-1">Agent Discount</label>
+                  <div className="text-2xl font-bold text-blue-900">${countryVisaType.agentDiscount || '0'}</div>
                 </div>
               </div>
             </div>

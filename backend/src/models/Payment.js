@@ -38,6 +38,9 @@ const paymentSchema = new mongoose.Schema({
   razorpaySignature: {
     type: String
   },
+  remarks: {
+    type: String
+  },
   paidAt: {
     type: Date,
     default: null

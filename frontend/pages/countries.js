@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Button from '../components/Button';
-import Card from '../components/Card';
+import EnhancedTable from '../components/EnhancedTable';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -9,7 +8,6 @@ import toast from 'react-hot-toast';
 export default function Countries() {
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const { user } = useAuth();
   const router = useRouter();
 
@@ -28,10 +26,18 @@ export default function Countries() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this country?')) {
+  const handleView = (country) => {
+    router.push(`/countries/view/${country._id}`);
+  };
+
+  const handleEdit = (country) => {
+    router.push(`/countries/${country._id}`);
+  };
+
+  const handleDelete = async (country) => {
+    if (confirm(`Are you sure you want to delete "${country.name}"?`)) {
       try {
-        await api.delete(`/countries/${id}`);
+        await api.delete(`/countries/${country._id}`);
         toast.success('Country deleted successfully!');
         fetchCountries();
       } catch (error) {
@@ -40,135 +46,114 @@ export default function Countries() {
     }
   };
 
-  const filteredCountries = countries.filter(country => 
-    country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    country.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    country.continent?.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleAdd = () => {
+    router.push('/countries/add');
+  };
 
-  const getStatusColor = (status) => {
-    const statusName = status?.name || '';
-    const colors = {
-      active: 'bg-green-100 text-green-800 border-green-200',
-      inactive: 'bg-red-100 text-red-800 border-red-200',
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    };
-    return colors[statusName] || 'bg-gray-100 text-gray-800 border-gray-200';
+  const columns = [
+    {
+      key: 'name',
+      label: 'Country',
+      sortable: true,
+      render: (value, item) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-white text-lg">
+            {item.flagEmoji || '🏳️'}
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900">{value}</div>
+            <div className="text-sm text-gray-500">{item.code}</div>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'continent.name',
+      label: 'Continent',
+      sortable: true,
+      render: (value) => (
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+          {value || 'N/A'}
+        </span>
+      )
+    },
+    {
+      key: 'description',
+      label: 'Description',
+      render: (value) => (
+        <div className="max-w-xs truncate" title={value}>
+          {value || 'No description'}
+        </div>
+      )
+    },
+    {
+      key: 'processingTimeMin',
+      label: 'Processing Time',
+      render: (value, item) => (
+        <span className="text-sm text-gray-600">
+          {value}-{item.processingTimeMax} days
+        </span>
+      )
+    },
+    {
+      key: 'status.name',
+      label: 'Status',
+      type: 'status',
+      sortable: true
+    },
+    {
+      key: 'createdAt',
+      label: 'Created',
+      type: 'date',
+      sortable: true
+    }
+  ];
+
+  const filters = [
+    {
+      key: 'continent.name',
+      label: 'Continent',
+      type: 'select',
+      options: [...new Set(countries.map(c => c.continent?.name).filter(Boolean))].map(name => ({
+        value: name,
+        label: name
+      }))
+    },
+    {
+      key: 'status.name',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+        { value: 'pending', label: 'Pending' }
+      ]
+    }
+  ];
+
+  const stats = {
+    total: countries.length,
+    active: countries.filter(c => c.status?.name === 'active').length,
+    continents: [...new Set(countries.map(c => c.continent?.name).filter(Boolean))].length
   };
 
   return (
-      <div className="space-y-6 lg:space-y-8 p-4 sm:p-0">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 lg:gap-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">🏳️ Countries Management</h1>
-            <p className="text-sm sm:text-base text-gray-600">Manage countries and their details</p>
-          </div>
-          <Button 
-            onClick={() => router.push('/countries/add')} 
-            icon="➕"
-            className="shadow-lg w-full sm:w-auto"
-            size="lg"
-          >
-            Add New Country
-          </Button>
-        </div>
-
-        <Card className="mb-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="🔍 Search countries by name, code, or continent..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-              />
-            </div>
-            <div className="flex gap-2">
-              <span className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
-                Total: {countries.length}
-              </span>
-            </div>
-          </div>
-        </Card>
-
-        {loading ? (
-          <Card>
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading countries...</p>
-            </div>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {filteredCountries.map((country) => (
-              <Card key={country._id} className="hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 lg:gap-4">
-                    <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center text-white text-lg lg:text-2xl font-bold shadow-lg">
-                      {country.flagEmoji || '🏳️'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg lg:text-xl font-bold text-gray-900 truncate">{country.name}</h3>
-                      <p className="text-sm lg:text-base text-gray-600 truncate">{country.code}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="text-sm text-gray-600">
-                    <p className="line-clamp-2">{country.description}</p>
-                    <p className="text-xs text-gray-500 mt-1">Continent: {country.continent?.name}</p>
-                    <p className="text-xs text-gray-500">Processing: {country.processingTimeMin}-{country.processingTimeMax} days</p>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(country.status)}`}>
-                      {(country.status?.name || '').toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  <div className="flex gap-2 pt-4 border-t border-gray-100">
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => router.push(`/countries/view/${country._id}`)}
-                      className="flex-1"
-                      icon="👁️"
-                    >
-                      View
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => router.push(`/countries/${country._id}`)}
-                      className="flex-1"
-                      icon="✏️"
-                    >
-                      Edit
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="danger" 
-                      onClick={() => handleDelete(country._id)}
-                      icon="🗑️"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-        
-        {!loading && filteredCountries.length === 0 && (
-          <Card>
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No countries found</h3>
-              <p className="text-gray-600">Try adjusting your search criteria</p>
-            </div>
-          </Card>
-        )}
-      </div>
+    <EnhancedTable
+      title="🏳️ Countries Management"
+      data={countries}
+      columns={columns}
+      loading={loading}
+      searchPlaceholder="🔍 Search countries by name, code, continent, or description..."
+      onView={handleView}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+      onAdd={handleAdd}
+      addButtonText="Add New Country"
+      emptyMessage="No countries found"
+      emptyIcon="🏳️"
+      showStats={true}
+      stats={stats}
+      filters={filters}
+    />
   );
 }

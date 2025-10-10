@@ -132,25 +132,22 @@ export default function EditVisaTermsConditions() {
 
               <div className="lg:col-span-2">
                 <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-3">
+                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
                   ⚡ Status
                 </label>
-                <div className="flex flex-col sm:flex-row gap-4 lg:gap-6">
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
+                  required
+                >
+                  <option value="">Select Status</option>
                   {statuses.map(status => (
-                    <label key={status._id} className="flex items-center gap-3 p-3 lg:p-4 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
-                      <input
-                        type="radio"
-                        name="status"
-                        value={status._id}
-                        checked={formData.status === status._id}
-                        onChange={(e) => setFormData({...formData, status: e.target.value})}
-                        className="w-4 h-4 lg:w-5 lg:h-5 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm lg:text-base font-medium text-gray-700 capitalize">
-                        {status.name}
-                      </span>
-                    </label>
+                    <option key={status._id} value={status._id}>
+                      {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
             </div>
 
