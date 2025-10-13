@@ -201,7 +201,7 @@ const VisaFlowHomepage = () => {
                             </span>
                             {hasVisaTypes && (
                               <span className="text-sm font-semibold text-green-600">
-                                From ${Math.min(...destination.visa_types.map(vt => vt.fee || 0))}
+                                From ₹{Math.min(...destination.visa_types.map(vt => vt.fee || 0))}
                               </span>
                             )}
                           </div>

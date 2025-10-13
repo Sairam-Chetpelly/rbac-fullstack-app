@@ -98,10 +98,22 @@ export default function EditFormField() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
+    const newValue = type === 'checkbox' ? checked : value;
+    
+    // Auto-generate name from label
+    if (name === 'label' && newValue) {
+      const autoName = newValue.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+      setFormData({
+        ...formData,
+        [name]: newValue,
+        name: autoName
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: newValue
+      });
+    }
   };
 
   const addOption = () => {
@@ -165,21 +177,6 @@ export default function EditFormField() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter field name (e.g., firstName)"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Label *
                 </label>
                 <input
@@ -190,6 +187,22 @@ export default function EditFormField() {
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter field label (e.g., First Name)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  placeholder="Auto-generated from label"
+                  readOnly
                 />
               </div>
 

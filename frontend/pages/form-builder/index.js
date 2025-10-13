@@ -246,10 +246,22 @@ export default function FormBuilder() {
 
   const handleFieldChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFieldForm({
-      ...fieldForm,
-      [name]: type === 'checkbox' ? checked : value
-    });
+    const newValue = type === 'checkbox' ? checked : value;
+    
+    // Auto-generate name from label
+    if (name === 'label' && newValue) {
+      const autoName = newValue.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+      setFieldForm({
+        ...fieldForm,
+        [name]: newValue,
+        name: autoName
+      });
+    } else {
+      setFieldForm({
+        ...fieldForm,
+        [name]: newValue
+      });
+    }
   };
 
   const addOption = () => {
@@ -635,6 +647,33 @@ export default function FormBuilder() {
                                       <div className="text-2xl mb-2">📎</div>
                                       <div className="text-sm text-gray-600">Click to upload {field.label}</div>
                                     </div>
+                                  ) : field.type === 'checkbox' ? (
+                                    <div className="space-y-3">
+                                      {field.options && field.options.map((option, index) => (
+                                        <label key={index} className="flex items-center space-x-3 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            value={option}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                          />
+                                          <span className="text-gray-700">{option}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  ) : field.type === 'radio' ? (
+                                    <div className="space-y-3">
+                                      {field.options && field.options.map((option, index) => (
+                                        <label key={index} className="flex items-center space-x-3 cursor-pointer">
+                                          <input
+                                            type="radio"
+                                            name={field.name}
+                                            value={option}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                          />
+                                          <span className="text-gray-700">{option}</span>
+                                        </label>
+                                      ))}
+                                    </div>
                                   ) : (
                                     <input
                                       type={field.type}
@@ -777,19 +816,6 @@ export default function FormBuilder() {
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={fieldForm.name}
-                  onChange={handleFieldChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter field name (e.g., firstName)"
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Label *</label>
                 <input
                   type="text"
@@ -799,6 +825,20 @@ export default function FormBuilder() {
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter field label (e.g., First Name)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={fieldForm.name}
+                  onChange={handleFieldChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  placeholder="Auto-generated from label"
+                  readOnly
                 />
               </div>
 

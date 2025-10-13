@@ -346,8 +346,14 @@ const VisaApplicationForm = () => {
     if (applicationType === 'individual') {
       requiredFields.forEach(field => {
         const value = formData[field.name];
-        if (!value || (Array.isArray(value) && value.length === 0)) {
-          missingFields.push(field.label);
+        if (field.type === 'checkbox') {
+          if (!value || !Array.isArray(value) || value.length === 0) {
+            missingFields.push(field.label);
+          }
+        } else {
+          if (!value || (typeof value === 'string' && value.trim() === '')) {
+            missingFields.push(field.label);
+          }
         }
       });
     } else {
@@ -355,8 +361,14 @@ const VisaApplicationForm = () => {
         const applicantData = Array.isArray(formData) && formData[i] ? formData[i] : {};
         requiredFields.forEach(field => {
           const value = applicantData[field.name];
-          if (!value || (Array.isArray(value) && value.length === 0)) {
-            missingFields.push(`${field.label} (Applicant ${i + 1})`);
+          if (field.type === 'checkbox') {
+            if (!value || !Array.isArray(value) || value.length === 0) {
+              missingFields.push(`${field.label} (Applicant ${i + 1})`);
+            }
+          } else {
+            if (!value || (typeof value === 'string' && value.trim() === '')) {
+              missingFields.push(`${field.label} (Applicant ${i + 1})`);
+            }
           }
         });
       }
@@ -765,6 +777,57 @@ const VisaApplicationForm = () => {
                               </div>
                               {currentFormData[field.name] && renderFilePreview(currentFormData[field.name])}
                             </div>
+                          ) : field.type === 'checkbox' ? (
+                            <div className="space-y-4">
+                              {field.options && field.options.map((option, index) => {
+                                const currentValues = currentFormData[field.name] || [];
+                                const isChecked = Array.isArray(currentValues) ? currentValues.includes(option) : false;
+                                
+                                return (
+                                  <label key={index} className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-blue-50 transition-colors">
+                                    <input
+                                      type="checkbox"
+                                      name={field.name}
+                                      value={option}
+                                      checked={isChecked}
+                                      onChange={(e) => {
+                                        const currentValues = currentFormData[field.name] || [];
+                                        let newValues;
+                                        if (e.target.checked) {
+                                          newValues = [...currentValues, option];
+                                        } else {
+                                          newValues = currentValues.filter(val => val !== option);
+                                        }
+                                        handleInputChange(field.name, newValues);
+                                      }}
+                                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    />
+                                    <span className="text-gray-800 font-medium">{option}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          ) : field.type === 'radio' ? (
+                            <div className="space-y-4">
+                              {field.options && field.options.map((option, index) => {
+                                const isSelected = currentFormData[field.name] === option;
+                                
+                                return (
+                                  <label key={index} className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-blue-50 transition-colors">
+                                    <input
+                                      type="radio"
+                                      name={field.name}
+                                      value={option}
+                                      checked={isSelected}
+                                      onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                      required={field.required}
+                                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                    />
+                                    <span className="text-gray-800 font-medium">{option}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
                           ) : (
                             <input
                               type={field.type}
@@ -884,6 +947,19 @@ const VisaApplicationForm = () => {
                                   </span>
                                   <span className="text-gray-900">{value?.fileName || 'File uploaded'}</span>
                                 </div>
+                              ) : field.type === 'checkbox' ? (
+                                <div className="space-y-1">
+                                  {Array.isArray(value) && value.length > 0 ? (
+                                    value.map((item, idx) => (
+                                      <div key={idx} className="flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                        <span className="text-gray-900">{item}</span>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <span className="text-gray-500 italic">No options selected</span>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-gray-900">{value}</span>
                               )}
@@ -958,6 +1034,19 @@ const VisaApplicationForm = () => {
                                           File uploaded successfully
                                         </span>
                                         <span className="text-gray-900">{value?.fileName || 'File uploaded'}</span>
+                                      </div>
+                                    ) : field.type === 'checkbox' ? (
+                                      <div className="space-y-1">
+                                        {Array.isArray(value) && value.length > 0 ? (
+                                          value.map((item, idx) => (
+                                            <div key={idx} className="flex items-center gap-2">
+                                              <CheckCircle className="h-4 w-4 text-green-600" />
+                                              <span className="text-gray-900">{item}</span>
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <span className="text-gray-500 italic">No options selected</span>
+                                        )}
                                       </div>
                                     ) : (
                                       <span className="text-gray-900">{value}</span>
