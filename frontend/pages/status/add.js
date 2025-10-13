@@ -13,7 +13,8 @@ export default function AddStatus() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    color: '#3b82f6'
+    color: '#3b82f6',
+    category: 'General'
   });
 
   useEffect(() => {
@@ -89,6 +90,27 @@ export default function AddStatus() {
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
               placeholder="Enter status description"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              📂 Category
+            </label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+              required
+            >
+              <option value="General">General</option>
+              <option value="System">System</option>
+              <option value="Application">Application</option>
+              <option value="Payment">Payment</option>
+              <option value="Document">Document</option>
+              <option value="Processing">Processing</option>
+              <option value="Visa">Visa</option>
+            </select>
           </div>
 
           <div>

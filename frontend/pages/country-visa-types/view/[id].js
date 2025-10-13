@@ -132,11 +132,11 @@ export default function ViewCountryVisaType() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-green-50 p-4 rounded-xl">
                   <label className="block text-sm font-semibold text-green-700 mb-1">Total Amount</label>
-                  <div className="text-2xl font-bold text-green-900">${countryVisaType.totalAmount}</div>
+                  <div className="text-2xl font-bold text-green-900">₹{countryVisaType.totalAmount}</div>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-xl">
                   <label className="block text-sm font-semibold text-blue-700 mb-1">Agent Discount</label>
-                  <div className="text-2xl font-bold text-blue-900">${countryVisaType.agentDiscount || '0'}</div>
+                  <div className="text-2xl font-bold text-blue-900">₹{countryVisaType.agentDiscount || '0'}</div>
                 </div>
               </div>
             </div>

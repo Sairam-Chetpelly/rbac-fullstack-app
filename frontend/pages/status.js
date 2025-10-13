@@ -57,27 +57,7 @@ export default function Status() {
     }
   };
 
-  const getStatusCategory = (name) => {
-    if (['active', 'inactive', 'pending', 'verified', 'suspended', 'blocked'].includes(name)) {
-      return 'System';
-    }
-    if (['draft', 'submitted', 'under-review', 'documents-required', 'interview-scheduled', 'approved', 'rejected', 'cancelled'].includes(name)) {
-      return 'Application';
-    }
-    if (['payment-pending', 'payment-completed', 'payment-failed', 'refunded'].includes(name)) {
-      return 'Payment';
-    }
-    if (['document-uploaded', 'document-verified', 'document-rejected'].includes(name)) {
-      return 'Document';
-    }
-    if (['in-progress', 'on-hold', 'completed'].includes(name)) {
-      return 'Processing';
-    }
-    if (['visa-issued', 'visa-expired', 'visa-cancelled'].includes(name)) {
-      return 'Visa';
-    }
-    return 'General';
-  };
+
 
   if (!user || !canAccess(user.role, 'status')) {
     return <div>Access denied</div>;
@@ -90,7 +70,7 @@ export default function Status() {
   let filteredStatuses = statuses.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getStatusCategory(s.name).toLowerCase().includes(searchTerm.toLowerCase())
+    s.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (sortColumn) {
@@ -99,8 +79,8 @@ export default function Status() {
       let bValue = b[sortColumn];
       
       if (sortColumn === 'category') {
-        aValue = getStatusCategory(a.name);
-        bValue = getStatusCategory(b.name);
+        aValue = a.category;
+        bValue = b.category;
       }
       
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
@@ -223,7 +203,7 @@ export default function Status() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {paginatedStatuses.map((status) => {
-                    const category = getStatusCategory(status.name);
+                    const category = status.category || 'General';
                     const categoryColors = {
                       'System': 'bg-blue-100 text-blue-800',
                       'Application': 'bg-green-100 text-green-800',

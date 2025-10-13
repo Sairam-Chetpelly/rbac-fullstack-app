@@ -125,7 +125,6 @@ export default function EditContinent() {
               </div>
 
               <div className="lg:col-span-2">
-                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-3">
                 <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
                   ⚡ Status
                 </label>

@@ -68,12 +68,12 @@ export default function VisaApplicationDemo() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-3 bg-blue-100 rounded-lg px-3">
                     <span className="font-bold text-blue-900">Total Amount:</span>
-                    <span className="text-xl font-bold text-blue-900">${cvt.totalAmount}</span>
+                    <span className="text-xl font-bold text-blue-900">₹{cvt.totalAmount}</span>
                   </div>
                   {cvt.agentDiscount && cvt.agentDiscount !== '0' && (
                     <div className="flex justify-between items-center py-2 border-b border-gray-200">
                       <span className="text-sm text-gray-600">Agent Discount:</span>
-                      <span className="font-semibold text-orange-600">${cvt.agentDiscount}</span>
+                      <span className="font-semibold text-orange-600">₹{cvt.agentDiscount}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center text-sm text-gray-600">

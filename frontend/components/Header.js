@@ -77,7 +77,7 @@ const Header = ({ sidebarWidth, isMobile, onToggleSidebar }) => {
                   <p className="font-semibold text-gray-900 text-sm lg:text-base">{user?.name}</p>
                   <p className="text-sm lg:text-base text-gray-600">{user?.email}</p>
                 </div>
-                <button
+                {/* <button
                   onClick={() => {
                     setShowProfileMenu(false);
                     window.location.href = '/profile';
@@ -85,7 +85,7 @@ const Header = ({ sidebarWidth, isMobile, onToggleSidebar }) => {
                   className="w-full text-left px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                 >
                   👤 Profile
-                </button>
+                </button> */}
                 <button
                   onClick={() => {
                     setShowProfileMenu(false);

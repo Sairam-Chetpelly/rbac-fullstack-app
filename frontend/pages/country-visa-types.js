@@ -112,9 +112,9 @@ export default function CountryVisaTypes() {
       sortable: true,
       render: (value, item) => (
         <div className="text-sm">
-          <div className="font-bold text-green-600 text-lg">${value}</div>
+          <div className="font-bold text-green-600 text-lg">₹{value}</div>
           <div className="text-xs text-gray-500">
-            Agent Discount: ${item.agentDiscount || '0'}
+            Agent Discount: ₹{item.agentDiscount || '0'}
           </div>
         </div>
       )
