@@ -6,6 +6,8 @@ const Status = require('../models/Status');
 const PasswordReset = require('../models/PasswordReset');
 const { sendPasswordResetEmail } = require('../utils/email');
 const { sendEmail } = require('../services/emailService');
+const { sendNotification } = require('./whatsappController');
+const { sendNotifications } = require('../services/notificationService');
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
@@ -62,8 +64,9 @@ const register = async (req, res) => {
     
     const populatedUser = await User.findById(user._id).populate('role').populate('status');
     
-    // Send welcome email
-    sendEmail(email, 'welcome', { userName: name });
+    // Send welcome notifications (email & WhatsApp based on settings)
+    const welcomeMessage = `Welcome to Options Travel Services, ${name}! 🎉\n\nThank you for registering with us. We're here to help you with all your visa and travel needs.\n\nFor any assistance, contact us anytime.\n\nHappy Travels! ✈️`;
+    sendNotifications(email, mobile, 'welcome', { userName: name }, welcomeMessage);
     
     res.status(201).json({
       message: 'Registration successful',

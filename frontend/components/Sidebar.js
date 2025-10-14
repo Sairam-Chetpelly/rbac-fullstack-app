@@ -58,6 +58,7 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
       { name: 'Applications', href: '/applications', permission: 'applications', icon: '📋' },
       { name: 'Payments', href: '/payments', permission: 'payments', icon: '💳' },
       { name: 'Status', href: '/status', permission: 'status', icon: '⚡' },
+      { name: 'Notifications', href: '/notification-settings', permission: 'settings', icon: '🔔' },
       { name: 'Settings', href: '/settings', permission: 'settings', icon: '⚙️' }
     ];
   };
