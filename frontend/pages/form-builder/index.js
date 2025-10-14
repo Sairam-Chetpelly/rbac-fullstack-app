@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { createPortal } from 'react-dom';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import api from '../../lib/api';
@@ -497,7 +498,7 @@ export default function FormBuilder() {
                                 variant="outline"
                                 icon="➕"
                               >
-                                Add Field
+                                <span className="hidden sm:inline">Add Field</span>
                               </Button>
                               <Button
                                 onClick={() => openSectionModal(section)}
@@ -505,7 +506,7 @@ export default function FormBuilder() {
                                 variant="ghost"
                                 icon="✏️"
                               >
-                                Edit
+                                <span className="hidden sm:inline">Edit</span>
                               </Button>
                               <Button
                                 onClick={() => deleteSection(section._id)}
@@ -513,7 +514,7 @@ export default function FormBuilder() {
                                 variant="danger"
                                 icon="🗑️"
                               >
-                                Delete
+                                <span className="hidden sm:inline">Delete</span>
                               </Button>
                             </div>
                           </div>
@@ -705,12 +706,20 @@ export default function FormBuilder() {
       </div>
 
       {/* Section Modal */}
-      {showSectionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      {showSectionModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {editingSection ? 'Edit Section' : 'Add New Section'}
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {editingSection ? 'Edit Section' : 'Add New Section'}
+              </h3>
+              <button
+                onClick={() => setShowSectionModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
@@ -802,17 +811,26 @@ export default function FormBuilder() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
 
       {/* Field Modal */}
-      {showFieldModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      {showFieldModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
           <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-screen overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {editingField ? 'Edit Field' : 'Add New Field'}
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {editingField ? 'Edit Field' : 'Add New Field'}
+              </h3>
+              <button
+                onClick={() => setShowFieldModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
@@ -1082,7 +1100,8 @@ export default function FormBuilder() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
