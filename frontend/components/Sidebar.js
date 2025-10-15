@@ -13,6 +13,7 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
     if (user?.role === 'employee') {
       return [
         { name: 'Dashboard', href: '/dashboard', permission: 'dashboard', icon: '🏠' },
+        { name: 'Reports', href: '/reports', permission: 'dashboard', icon: '📊' },
         { name: 'Applications', href: '/applications', permission: 'applications', icon: '📋' },
         { name: 'Payments', href: '/payments', permission: 'payments', icon: '💳' }
       ];
@@ -20,6 +21,7 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
     
     return [
       { name: 'Dashboard', href: '/dashboard', permission: 'dashboard', icon: '🏠' },
+      { name: 'Reports', href: '/reports', permission: 'dashboard', icon: '📊' },
       {
         name: 'User Management',
         icon: '👥',

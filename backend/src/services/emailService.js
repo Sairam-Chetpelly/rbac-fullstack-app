@@ -100,6 +100,51 @@ const emailTemplates = {
     `, '#3b82f6', '🎉')
   }),
 
+  accountCreated: (userName, email, password) => ({
+    subject: '🔐 Your Account Has Been Created - Login Details Inside',
+    html: createEmailTemplate('Account Created', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Welcome to Options Travel Services, ${userName}! 🎉</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        Your account has been successfully created by our admin team. Below are your login credentials to access the system.
+      </p>
+      
+      <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 25px 0;">
+        <p style="color: #92400e; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">🔐 Your Login Credentials:</p>
+        <div style="background: #ffffff; border-radius: 6px; padding: 16px; margin: 12px 0;">
+          <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Email: <span style="color: #3b82f6; font-weight: 600; font-family: monospace;">${email}</span></p>
+          <p style="color: #374151; margin: 0; font-size: 15px;">Password: <span style="color: #dc2626; font-weight: 600; font-family: monospace; background: #fef2f2; padding: 4px 8px; border-radius: 4px;">${password}</span></p>
+        </div>
+        <p style="color: #92400e; margin: 12px 0 0 0; font-size: 14px; font-weight: 500;">
+          ⚠️ Please change your password after first login for security.
+        </p>
+      </div>
+      
+      <table role="presentation" style="margin: 30px 0;">
+        <tr>
+          <td style="text-align: center;">
+            <a href="${process.env.FRONTEND_URL}/login" style="display: inline-block; background: rgba(59, 130, 246, 0.9); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);">
+              Login to Your Account
+            </a>
+          </td>
+        </tr>
+      </table>
+      
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">🌟 Getting Started:</p>
+        <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.6;">
+          • Login using the credentials above<br>
+          • Update your profile information<br>
+          • Change your password for security<br>
+          • Start exploring the system features
+        </p>
+      </div>
+      
+      <p style="color: #6b7280; line-height: 1.6; margin: 25px 0 0 0; font-size: 14px;">
+        If you have any questions or need assistance, please contact our support team.
+      </p>
+    `, '#3b82f6', '🔐')
+  }),
+
   forgotPassword: (userName, resetToken) => ({
     subject: '🔐 Reset Your Password - Options Travel Services',
     html: createEmailTemplate('Password Reset', `
@@ -430,6 +475,9 @@ const sendEmail = async (to, template, data = {}) => {
     switch (template) {
       case 'welcome':
         emailContent = emailTemplates.welcome(data.userName);
+        break;
+      case 'accountCreated':
+        emailContent = emailTemplates.accountCreated(data.userName, data.email, data.password);
         break;
       case 'forgotPassword':
         emailContent = emailTemplates.forgotPassword(data.userName, data.resetToken);

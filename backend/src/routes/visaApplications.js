@@ -25,37 +25,102 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB per file
+    files: 10 // Maximum 10 files per request
   },
   fileFilter: function (req, file, cb) {
     const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
+    const allowedMimeTypes = [
+      'image/jpeg', 'image/jpg', 'image/png',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const mimetype = allowedMimeTypes.includes(file.mimetype);
     
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(new Error('Only images, PDFs, and Word documents are allowed'));
+      cb(new Error(`File type not allowed: ${file.originalname}. Only images, PDFs, and Word documents are supported.`));
     }
   }
 });
 
-// File upload endpoint
-router.post('/visa-applications/upload', auth, upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
+// Single file upload endpoint
+router.post('/visa-applications/upload-single', auth, (req, res) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      console.error('Multer error:', err);
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ message: 'File too large. Maximum size is 5MB.' });
+        }
+      }
+      return res.status(400).json({ message: err.message || 'File upload error' });
     }
     
-    res.json({ 
-      success: true, 
-      filePath: req.file.filename,
-      originalName: req.file.originalname
-    });
-  } catch (error) {
-    console.error('Error uploading file:', error);
-    res.status(500).json({ message: 'Error uploading file', error: error.message });
-  }
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+      
+      res.json({ 
+        success: true, 
+        filePath: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      });
+    } catch (error) {
+      console.error('Error processing uploaded file:', error);
+      res.status(500).json({ message: 'Error processing uploaded file', error: error.message });
+    }
+  });
+});
+
+// File upload endpoint - supports multiple files (legacy)
+router.post('/visa-applications/upload', auth, (req, res) => {
+  upload.array('files', 10)(req, res, (err) => {
+    if (err) {
+      console.error('Multer error:', err);
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ message: 'File too large. Maximum size is 5MB per file.' });
+        }
+        if (err.code === 'LIMIT_FILE_COUNT') {
+          return res.status(400).json({ message: 'Too many files. Maximum 10 files allowed.' });
+        }
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+          return res.status(400).json({ message: 'Unexpected field name for file upload.' });
+        }
+      }
+      return res.status(400).json({ message: err.message || 'File upload error' });
+    }
+    
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: 'No files uploaded' });
+      }
+      
+      const uploadedFiles = req.files.map(file => ({
+        filePath: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype
+      }));
+      
+      res.json({ 
+        success: true, 
+        files: uploadedFiles,
+        count: uploadedFiles.length
+      });
+    } catch (error) {
+      console.error('Error processing uploaded files:', error);
+      res.status(500).json({ message: 'Error processing uploaded files', error: error.message });
+    }
+  });
 });
 
 // Save visa application draft

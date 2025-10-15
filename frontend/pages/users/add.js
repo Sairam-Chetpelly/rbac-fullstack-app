@@ -16,7 +16,6 @@ export default function AddUser() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '',
     mobile: '',
     role: '',
     status: ''
@@ -93,8 +92,8 @@ export default function AddUser() {
 
     try {
       await api.post('/users', formData);
-      toast.success('User created successfully!');
-      setTimeout(() => router.push('/users'), 1000);
+      toast.success('User created successfully! Welcome email sent with login credentials.');
+      setTimeout(() => router.push('/users'), 1500);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create user');
     } finally {
@@ -128,6 +127,18 @@ export default function AddUser() {
 
       <Card title="User Information" icon="👤">
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <span className="text-blue-500 text-lg">🔐</span>
+              <div>
+                <h3 className="text-sm font-semibold text-blue-800 mb-1">Automatic Password Generation</h3>
+                <p className="text-xs text-blue-600">
+                  A secure password will be automatically generated and sent to the user's email address along with login instructions.
+                </p>
+              </div>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <div>
               <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
@@ -175,20 +186,7 @@ export default function AddUser() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                🔒 Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
-                placeholder="Enter password"
-                required
-              />
-            </div>
+
 
             <div>
               <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">

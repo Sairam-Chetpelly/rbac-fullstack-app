@@ -40,12 +40,12 @@ export default function ViewApplication() {
   };
 
   const handleFileView = (fileName, filePath, fileType) => {
-    const url = `http://localhost:5000/uploads/applications/${filePath}`;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api', '')}/uploads/applications/${filePath}`;
     setFileModal({ show: true, url, fileName, type: fileType });
   };
 
   const handleFileDownload = async (fileName, filePath) => {
-    const url = `http://localhost:5000/uploads/applications/${filePath}`;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api', '')}/uploads/applications/${filePath}`;
     try {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -337,7 +337,7 @@ export default function ViewApplication() {
             <h3 className="text-lg font-bold text-gray-900 mb-4">💳 Payment Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-green-50 p-4 rounded-lg">
-                <dt className="text-sm font-medium text-gray-700 mb-1">Amount Paid</dt>
+                <dt className="text-sm font-medium text-gray-700 mb-1">Amount</dt>
                 <dd className="text-2xl font-bold text-green-600">₹{payment.amount}</dd>
               </div>
               <div className="bg-blue-50 p-4 rounded-lg">

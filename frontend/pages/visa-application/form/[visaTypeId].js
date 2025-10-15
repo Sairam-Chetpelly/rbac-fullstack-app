@@ -28,12 +28,37 @@ const VisaApplicationForm = () => {
   const [applicationNumber, setApplicationNumber] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [fileModal, setFileModal] = useState({ show: false, url: '', fileName: '', type: '' });
+  const [uploadingFiles, setUploadingFiles] = useState({});
 
   useEffect(() => {
     if (visaTypeId) {
       fetchFormData();
     }
   }, [visaTypeId]);
+
+  // Initialize form data with default values when form fields are loaded
+  useEffect(() => {
+    if (formFields.length > 0 && Object.keys(formData).length === 0 && !draftId) {
+      const defaultFormData = {};
+      formFields.forEach(field => {
+        if (field.defaultValue) {
+          if (field.type === 'checkbox') {
+            try {
+              defaultFormData[field.name] = JSON.parse(field.defaultValue);
+            } catch {
+              defaultFormData[field.name] = [field.defaultValue];
+            }
+          } else {
+            defaultFormData[field.name] = field.defaultValue;
+          }
+        }
+      });
+      
+      if (Object.keys(defaultFormData).length > 0) {
+        setFormData(defaultFormData);
+      }
+    }
+  }, [formFields, draftId]);
 
   useEffect(() => {
     if (draftId && user) {
@@ -160,6 +185,35 @@ const VisaApplicationForm = () => {
     return Array.isArray(formData) && formData[currentApplicant] ? formData[currentApplicant] : {};
   };
 
+  const getFieldValue = (field) => {
+    const currentData = getCurrentFormData();
+    const currentValue = currentData[field.name];
+    
+    // If field has been explicitly set (even to empty), use that value
+    if (currentData.hasOwnProperty(field.name)) {
+      return currentValue;
+    }
+    
+    // Only use default value if field hasn't been touched
+    if (field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== '') {
+      if (field.type === 'checkbox') {
+        try {
+          return JSON.parse(field.defaultValue);
+        } catch {
+          return [field.defaultValue];
+        }
+      }
+      return field.defaultValue;
+    }
+    
+    // Return appropriate empty value based on field type
+    if (field.type === 'checkbox') {
+      return [];
+    }
+    
+    return '';
+  };
+
   const handleApplicationTypeChange = (type) => {
     setApplicationType(type);
     if (type === 'individual') {
@@ -209,31 +263,46 @@ const VisaApplicationForm = () => {
     });
   };
 
-  const handleFileUpload = async (fieldName, file) => {
-    if (!file) return;
+  const handleFileUpload = async (fieldName, files) => {
+    if (!files || files.length === 0) return;
     
-    const uploadFormData = new FormData();
-    uploadFormData.append('file', file);
-    uploadFormData.append('fieldName', fieldName);
+    const file = files[0]; // Only take the first file
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    
+    if (file.size > maxSize) {
+      alert(`File size exceeds 5MB limit. Please select a smaller file.`);
+      return;
+    }
     
     try {
-      const response = await api.post('/visa-applications/upload', uploadFormData, {
+      setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
+      
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+      uploadFormData.append('fieldName', fieldName);
+      
+      const response = await api.post('/visa-applications/upload-single', uploadFormData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
-      const fileData = {
+      const uploadedFile = {
         filePath: response.data.filePath,
-        fileName: file.name,
+        fileName: response.data.originalName,
         fileType: file.type,
-        fileUrl: URL.createObjectURL(file)
+        fileUrl: URL.createObjectURL(file),
+        size: response.data.size
       };
       
-      handleInputChange(fieldName, fileData);
+      handleInputChange(fieldName, uploadedFile);
+      
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('Failed to upload file');
+      const errorMessage = error.response?.data?.message || 'Failed to upload file';
+      alert(`Upload Error: ${errorMessage}`);
+    } finally {
+      setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
     }
   };
 
@@ -247,7 +316,7 @@ const VisaApplicationForm = () => {
     }
     
     const { fileName, fileType, fileUrl, filePath } = fileData;
-    const url = fileUrl || `http://localhost:5000/uploads/applications/${filePath}`;
+    const url = fileUrl || `${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api', '')}/uploads/applications/${filePath}`;
     
     setFileModal({
       show: true,
@@ -267,7 +336,7 @@ const VisaApplicationForm = () => {
     }
     
     const { fileName, filePath } = fileData;
-    const url = `http://localhost:5000/uploads/applications/${filePath}`;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api', '')}/uploads/applications/${filePath}`;
     
     try {
       const response = await fetch(url);
@@ -285,10 +354,13 @@ const VisaApplicationForm = () => {
     }
   };
 
-  const renderFilePreview = (fileData) => {
+  const handleFileRemove = (fieldName) => {
+    handleInputChange(fieldName, null);
+  };
+
+  const renderFilePreview = (fileData, fieldName) => {
     if (!fileData) return null;
     
-    // Handle string format (legacy)
     if (typeof fileData === 'string') {
       try {
         fileData = JSON.parse(fileData);
@@ -297,44 +369,58 @@ const VisaApplicationForm = () => {
       }
     }
     
-    const { fileName, fileType, fileUrl, filePath } = fileData;
+    const { fileName, fileType, fileUrl, filePath, size } = fileData;
     const isImage = fileType?.startsWith('image/');
     const isPDF = fileType === 'application/pdf';
-    
-    if (isImage) {
-      return (
-        <div className="mt-4">
-          <img 
-            src={fileUrl || `http://localhost:5000/uploads/applications/${filePath}`}
-            alt={fileName}
-            className="w-full max-w-xs h-32 object-cover rounded-lg border border-gray-200 cursor-pointer"
-            onClick={() => handleFileView(fileData)}
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
-          <p className="text-xs text-gray-500 mt-2">{fileName}</p>
-        </div>
-      );
-    }
-    
-    if (isPDF) {
-      return (
-        <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
-          <div className="flex items-center gap-2">
-            <span className="text-red-600 text-2xl">📄</span>
-            <div>
-              <p className="text-sm font-medium text-red-800">{fileName}</p>
-              <p className="text-xs text-red-600">PDF Document</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
+    const fileSize = size ? `${(size / 1024 / 1024).toFixed(2)} MB` : '';
     
     return (
-      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-        <p className="text-sm text-gray-700">{fileName}</p>
+      <div className="mt-4 relative group">
+        <button
+          type="button"
+          onClick={() => handleFileRemove(fieldName)}
+          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors z-10 opacity-0 group-hover:opacity-100"
+        >
+          ×
+        </button>
+        
+        {isImage ? (
+          <div>
+            <img 
+              src={fileUrl || `${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api', '')}/uploads/applications/${filePath}`}
+              alt={fileName}
+              className="w-full max-w-xs h-32 object-cover rounded-lg border border-gray-200 cursor-pointer"
+              onClick={() => handleFileView(fileData)}
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+            <div className="mt-2">
+              <p className="text-xs text-gray-700 font-medium truncate">{fileName}</p>
+              {fileSize && <p className="text-xs text-gray-500">{fileSize}</p>}
+            </div>
+          </div>
+        ) : isPDF ? (
+          <div className="p-4 bg-red-50 rounded-lg border border-red-200 cursor-pointer" onClick={() => handleFileView(fileData)}>
+            <div className="flex items-center gap-3">
+              <span className="text-red-600 text-2xl">📄</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-red-800 truncate">{fileName}</p>
+                <p className="text-xs text-red-600">PDF Document {fileSize && `• ${fileSize}`}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600 text-lg">📎</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-gray-700 font-medium truncate">{fileName}</p>
+                {fileSize && <p className="text-xs text-gray-500">{fileSize}</p>}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -346,12 +432,16 @@ const VisaApplicationForm = () => {
     if (applicationType === 'individual') {
       requiredFields.forEach(field => {
         const value = formData[field.name];
+        const hasValue = value !== undefined && value !== null && value !== '';
+        const hasDefaultValue = field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== '';
+        
         if (field.type === 'checkbox') {
-          if (!value || !Array.isArray(value) || value.length === 0) {
+          const checkboxValue = value || (hasDefaultValue ? (Array.isArray(field.defaultValue) ? field.defaultValue : [field.defaultValue]) : []);
+          if (!checkboxValue || !Array.isArray(checkboxValue) || checkboxValue.length === 0) {
             missingFields.push(field.label);
           }
         } else {
-          if (!value || (typeof value === 'string' && value.trim() === '')) {
+          if (!hasValue && !hasDefaultValue) {
             missingFields.push(field.label);
           }
         }
@@ -361,12 +451,16 @@ const VisaApplicationForm = () => {
         const applicantData = Array.isArray(formData) && formData[i] ? formData[i] : {};
         requiredFields.forEach(field => {
           const value = applicantData[field.name];
+          const hasValue = value !== undefined && value !== null && value !== '';
+          const hasDefaultValue = field.defaultValue !== undefined && field.defaultValue !== null && field.defaultValue !== '';
+          
           if (field.type === 'checkbox') {
-            if (!value || !Array.isArray(value) || value.length === 0) {
+            const checkboxValue = value || (hasDefaultValue ? (Array.isArray(field.defaultValue) ? field.defaultValue : [field.defaultValue]) : []);
+            if (!checkboxValue || !Array.isArray(checkboxValue) || checkboxValue.length === 0) {
               missingFields.push(`${field.label} (Applicant ${i + 1})`);
             }
           } else {
-            if (!value || (typeof value === 'string' && value.trim() === '')) {
+            if (!hasValue && !hasDefaultValue) {
               missingFields.push(`${field.label} (Applicant ${i + 1})`);
             }
           }
@@ -726,7 +820,7 @@ const VisaApplicationForm = () => {
                             <textarea
                               name={field.name}
                               placeholder={field.placeholder}
-                              value={currentFormData[field.name] || ''}
+                              value={getFieldValue(field)}
                               onChange={(e) => handleInputChange(field.name, e.target.value)}
                               required={field.required}
                               className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
@@ -735,7 +829,7 @@ const VisaApplicationForm = () => {
                           ) : field.type === 'select' ? (
                             <select 
                               name={field.name}
-                              value={currentFormData[field.name] || ''}
+                              value={getFieldValue(field)}
                               onChange={(e) => handleInputChange(field.name, e.target.value)}
                               required={field.required}
                               className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white"
@@ -753,34 +847,54 @@ const VisaApplicationForm = () => {
                                 <input 
                                   type="file" 
                                   name={field.name}
-                                  onChange={(e) => handleFileUpload(field.name, e.target.files[0])}
-                                  required={field.required}
+                                  onChange={(e) => handleFileUpload(field.name, e.target.files)}
+                                  required={field.required && !getFieldValue(field)}
                                   className="hidden" 
                                   id={field.name}
-                                  accept="image/*,.pdf"
+                                  accept="image/*,.pdf,.doc,.docx"
+                                  disabled={uploadingFiles[field.name]}
                                 />
                                 <label htmlFor={field.name} className="cursor-pointer">
                                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 transition-colors">
-                                    <Upload className="h-8 w-8 text-gray-400 group-hover:text-blue-500" />
+                                    {uploadingFiles[field.name] ? (
+                                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                      <Upload className="h-8 w-8 text-gray-400 group-hover:text-blue-500" />
+                                    )}
                                   </div>
                                   <div className="text-gray-600 font-medium">
-                                    {currentFormData[field.name] ? (
-                                      <span className="text-green-600 flex items-center justify-center gap-2">
-                                        <CheckCircle className="h-5 w-5" />
-                                        File uploaded successfully
-                                      </span>
+                                    {uploadingFiles[field.name] ? (
+                                      <div className="text-blue-600">Uploading files...</div>
                                     ) : (
-                                      `Click to upload ${field.label}`
+                                      <div>
+                                        <div>Click to upload {field.label}</div>
+                                        <div className="text-xs text-gray-500 mt-1">Max 5MB per file</div>
+                                        <div className="text-xs text-gray-500">Supported: Images, PDF, Word documents</div>
+                                      </div>
                                     )}
                                   </div>
                                 </label>
                               </div>
-                              {currentFormData[field.name] && renderFilePreview(currentFormData[field.name])}
+                              
+                              {getFieldValue(field) && (
+                                <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                                  <div className="flex items-center gap-2 text-green-700">
+                                    <CheckCircle className="h-5 w-5" />
+                                    <span className="font-medium">File uploaded successfully</span>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {getFieldValue(field) && (
+                                <div className="mt-4">
+                                  {renderFilePreview(getFieldValue(field), field.name)}
+                                </div>
+                              )}
                             </div>
                           ) : field.type === 'checkbox' ? (
                             <div className="space-y-4">
                               {field.options && field.options.map((option, index) => {
-                                const currentValues = currentFormData[field.name] || [];
+                                const currentValues = getFieldValue(field) || [];
                                 const isChecked = Array.isArray(currentValues) ? currentValues.includes(option) : false;
                                 
                                 return (
@@ -791,7 +905,7 @@ const VisaApplicationForm = () => {
                                       value={option}
                                       checked={isChecked}
                                       onChange={(e) => {
-                                        const currentValues = currentFormData[field.name] || [];
+                                        const currentValues = getFieldValue(field) || [];
                                         let newValues;
                                         if (e.target.checked) {
                                           newValues = [...currentValues, option];
@@ -810,7 +924,7 @@ const VisaApplicationForm = () => {
                           ) : field.type === 'radio' ? (
                             <div className="space-y-4">
                               {field.options && field.options.map((option, index) => {
-                                const isSelected = currentFormData[field.name] === option;
+                                const isSelected = getFieldValue(field) === option;
                                 
                                 return (
                                   <label key={index} className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-blue-50 transition-colors">
@@ -833,7 +947,7 @@ const VisaApplicationForm = () => {
                               type={field.type}
                               name={field.name}
                               placeholder={field.placeholder}
-                              value={currentFormData[field.name] || ''}
+                              value={getFieldValue(field)}
                               onChange={(e) => handleInputChange(field.name, e.target.value)}
                               required={field.required}
                               className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
@@ -925,8 +1039,8 @@ const VisaApplicationForm = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {sectionFields.map((field) => {
                         const value = formData[field.name];
-                        if (!value && !field.required) return null;
-
+                        // Show all fields (required fields always shown, optional fields only if they have values)
+                        
                         return (
                           <div key={field._id} className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200">
                             <div className="text-sm font-bold text-gray-800 mb-2">
@@ -945,7 +1059,9 @@ const VisaApplicationForm = () => {
                                     <CheckCircle className="h-4 w-4" />
                                     File uploaded successfully
                                   </span>
-                                  <span className="text-gray-900">{value?.fileName || 'File uploaded'}</span>
+                                  <div className="text-sm text-gray-700 bg-gray-50 rounded px-2 py-1">
+                                    {value?.fileName || 'File uploaded'}
+                                  </div>
                                 </div>
                               ) : field.type === 'checkbox' ? (
                                 <div className="space-y-1">
@@ -1013,8 +1129,8 @@ const VisaApplicationForm = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {sectionFields.map((field) => {
                               const value = applicantData[field.name];
-                              if (!value && !field.required) return null;
-
+                              // Show all fields (required fields always shown, optional fields only if they have values)
+                              
                               return (
                                 <div key={field._id} className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-lg p-4 border border-gray-200">
                                   <div className="text-sm font-bold text-gray-800 mb-2">
@@ -1033,7 +1149,9 @@ const VisaApplicationForm = () => {
                                           <CheckCircle className="h-4 w-4" />
                                           File uploaded successfully
                                         </span>
-                                        <span className="text-gray-900">{value?.fileName || 'File uploaded'}</span>
+                                        <div className="text-sm text-gray-700 bg-gray-50 rounded px-2 py-1">
+                                          {value?.fileName || 'File uploaded'}
+                                        </div>
                                       </div>
                                     ) : field.type === 'checkbox' ? (
                                       <div className="space-y-1">

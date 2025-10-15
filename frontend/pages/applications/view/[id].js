@@ -4,6 +4,7 @@ import { ArrowLeft, FileText, Calendar, User, CreditCard, Clock, Edit, Download,
 import api from '../../../lib/api';
 import Button from '../../../components/Button';
 import Layout from '../../../components/Layout';
+import StatusModal from '../../../components/StatusModal';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function AdminViewApplication() {
@@ -17,9 +18,7 @@ export default function AdminViewApplication() {
   const [payment, setPayment] = useState(null);
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [newStatus, setNewStatus] = useState('');
-  const [remarks, setRemarks] = useState('');
+  const [statusModal, setStatusModal] = useState({ isOpen: false, applicationId: null, currentStatus: null });
   const [fileModal, setFileModal] = useState({ show: false, url: '', fileName: '', type: '' });
 
   useEffect(() => {
@@ -46,7 +45,6 @@ export default function AdminViewApplication() {
       setAnswers(response.data.answers);
       setStatusHistory(response.data.statusHistory);
       setPayment(response.data.payment);
-      setNewStatus(response.data.application.status?._id || '');
     } catch (error) {
       console.error('Error fetching application details:', error);
     } finally {
@@ -55,12 +53,14 @@ export default function AdminViewApplication() {
   };
 
   const handleFileView = (fileName, filePath, fileType) => {
-    const url = `http://localhost:5000/uploads/applications/${filePath}`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000';
+    const url = `${baseUrl}/uploads/applications/${filePath}`;
     setFileModal({ show: true, url, fileName, type: fileType });
   };
 
   const handleFileDownload = async (fileName, filePath) => {
-    const url = `http://localhost:5000/uploads/applications/${filePath}`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000';
+    const url = `${baseUrl}/uploads/applications/${filePath}`;
     try {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -77,24 +77,19 @@ export default function AdminViewApplication() {
     }
   };
 
-  const handleStatusUpdate = async () => {
-    if (!newStatus) return;
-    
-    setUpdating(true);
+  const handleStatusChange = async (newStatusId, remarks, embassyVisitDateTime) => {
     try {
       await api.put(`/applications/${id}/status`, {
-        status: newStatus,
-        remarks
+        status: newStatusId,
+        remarks,
+        embassyVisitDateTime
       });
       
       alert('Status updated successfully');
-      setRemarks('');
       fetchApplicationDetails();
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Failed to update status');
-    } finally {
-      setUpdating(false);
     }
   };
 
@@ -184,9 +179,19 @@ export default function AdminViewApplication() {
                 </div>
               </div>
             </div>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
-              {application.status?.name?.toUpperCase() || 'UNKNOWN'}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
+                {application.status?.name?.toUpperCase() || 'UNKNOWN'}
+              </span>
+              <Button
+                onClick={() => setStatusModal({ isOpen: true, applicationId: id, currentStatus: application.status })}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                Change Status
+              </Button>
+            </div>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -209,46 +214,7 @@ export default function AdminViewApplication() {
           </div>
         </div>
 
-        {/* Status Update */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Update Status</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select Status</option>
-                {statuses.map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
-              <input
-                type="text"
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                placeholder="Optional remarks"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button
-                onClick={handleStatusUpdate}
-                disabled={updating || newStatus === application.status?._id}
-                className="w-full"
-              >
-                {updating ? 'Updating...' : 'Update Status'}
-              </Button>
-            </div>
-          </div>
-        </div>
+
 
         {/* Application Answers */}
         {answers.length > 0 && (
@@ -428,7 +394,7 @@ export default function AdminViewApplication() {
             <h3 className="text-lg font-bold text-gray-900 mb-4">💳 Payment Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-green-50 p-4 rounded-lg">
-                <dt className="text-sm font-medium text-gray-700 mb-1">Amount Paid</dt>
+                <dt className="text-sm font-medium text-gray-700 mb-1">Amount</dt>
                 <dd className="text-2xl font-bold text-green-600">₹{payment.amount}</dd>
               </div>
               <div className="bg-blue-50 p-4 rounded-lg">
@@ -515,6 +481,14 @@ export default function AdminViewApplication() {
             </div>
           </div>
         )}
+        
+        <StatusModal
+          isOpen={statusModal.isOpen}
+          onClose={() => setStatusModal({ isOpen: false, applicationId: null, currentStatus: null })}
+          onSubmit={handleStatusChange}
+          statuses={statuses}
+          currentStatus={statusModal.currentStatus}
+        />
       </div>
   );
 }

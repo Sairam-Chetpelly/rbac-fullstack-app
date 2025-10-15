@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const Role = require('../models/Role');
 const Status = require('../models/Status');
+const { generateDefaultPassword } = require('../utils/passwordGenerator');
+const { sendEmail } = require('../services/emailService');
 
 const getUsers = async (req, res) => {
   try {
@@ -43,7 +45,7 @@ const getUsers = async (req, res) => {
 
 const createUser = async (req, res) => {
   try {
-    const { name, email, password, role, status } = req.body;
+    const { name, email, role, status, mobile } = req.body;
     
     // Find role and status by ID or name
     const roleDoc = await Role.findOne({ 
@@ -76,10 +78,14 @@ const createUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    // Generate default password
+    const defaultPassword = generateDefaultPassword();
+
     const user = new User({ 
       name, 
       email, 
-      password, 
+      mobile,
+      password: defaultPassword, 
       role: roleDoc._id, 
       status: statusDoc._id 
     });
@@ -87,8 +93,19 @@ const createUser = async (req, res) => {
     
     const populatedUser = await User.findById(user._id).populate('role').populate('status');
 
+    // Send welcome email with login credentials
+    try {
+      await sendEmail(email, 'accountCreated', {
+        userName: name,
+        email: email,
+        password: defaultPassword
+      });
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+    }
+
     res.status(201).json({
-      message: 'User created successfully',
+      message: 'User created successfully and welcome email sent',
       user: { 
         id: populatedUser._id, 
         name: populatedUser.name, 
@@ -165,4 +182,79 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, createUser, updateUser, deleteUser };
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id || req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getProfile = async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const user = await User.findById(userId)
+      .select('-password')
+      .populate('role')
+      .populate('status');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const { name, email, mobile, nationality } = req.body;
+    const userId = req.user._id || req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email already exists' });
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { name, email, mobile, nationality },
+      { new: true }
+    ).select('-password').populate('role').populate('status');
+
+    res.json({ message: 'Profile updated successfully', user: updatedUser });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getUsers, createUser, updateUser, deleteUser, changePassword, getProfile, updateProfile };

@@ -136,7 +136,8 @@ const EditApplication = () => {
     }
     
     const { fileName, fileType, fileUrl, filePath } = fileData;
-    const url = fileUrl || `http://localhost:5000/uploads/applications/${filePath}`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000';
+    const url = fileUrl || `${baseUrl}/uploads/applications/${filePath}`;
     
     setFileModal({
       show: true,
@@ -165,7 +166,7 @@ const EditApplication = () => {
       return (
         <div className="mt-4">
           <img 
-            src={fileUrl || `http://localhost:5000/uploads/applications/${filePath}`}
+            src={fileUrl || `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/applications/${filePath}`}
             alt={fileName}
             className="w-full max-w-xs h-32 object-cover rounded-lg border border-gray-200 cursor-pointer"
             onClick={() => handleFileView(fileData)}

@@ -26,7 +26,8 @@ const paymentSchema = new mongoose.Schema({
   },
   transactionId: {
     type: String,
-    unique: true
+    default: null,
+    sparse: true
   },
   paymentMethod: {
     type: String,
@@ -53,12 +54,8 @@ const paymentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate transaction ID before saving
-paymentSchema.pre('save', function(next) {
-  if (this.isNew && !this.transactionId) {
-    this.transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-  }
-  next();
-});
+paymentSchema.index({ transactionId: 1 }, { unique: true, sparse: true });
+
+
 
 module.exports = mongoose.model('Payment', paymentSchema);

@@ -26,6 +26,8 @@ const customerRoutes = require('./routes/customer');
 const visaApplicationRoutes = require('./routes/visaApplications');
 const whatsappRoutes = require('./routes/whatsapp');
 const notificationSettingsRoutes = require('./routes/notificationSettings');
+const dashboardRoutes = require('./routes/dashboard');
+const analyticsRoutes = require('./routes/analytics');
 const { startReminderService } = require('./services/reminderService');
 
 const app = express();
@@ -63,6 +65,8 @@ app.use('/api/customer', customerRoutes);
 app.use('/api', visaApplicationRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/notification-settings', notificationSettingsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
