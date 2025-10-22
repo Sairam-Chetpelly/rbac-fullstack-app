@@ -51,8 +51,18 @@ export default function FormBuilder() {
   const [statuses, setStatuses] = useState([]);
   
   const fieldTypes = [
-    'text', 'email', 'password', 'number', 'tel', 'url',
-    'textarea', 'select', 'checkbox', 'radio', 'file', 'date'
+    { value: 'text', label: 'Text' },
+    { value: 'email', label: 'Email' },
+    { value: 'password', label: 'Password' },
+    { value: 'number', label: 'Number' },
+    { value: 'tel', label: 'Phone' },
+    { value: 'url', label: 'URL' },
+    { value: 'textarea', label: 'Textarea' },
+    { value: 'select', label: 'Drop Down' },
+    { value: 'checkbox', label: 'Checkbox' },
+    { value: 'radio', label: 'Radio' },
+    { value: 'file', label: 'File' },
+    { value: 'date', label: 'Date' }
   ];
 
   const router = useRouter();
@@ -636,7 +646,7 @@ export default function FormBuilder() {
                                     />
                                   ) : field.type === 'select' ? (
                                     <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                      <option value="">Select {field.label}</option>
+                                      <option disabled value="">Select {field.label}</option>
                                       {field.options && field.options.map((option, index) => (
                                         <option key={index} value={option}>
                                           {option}
@@ -871,8 +881,8 @@ export default function FormBuilder() {
                 >
                   <option value="">Select Field Type</option>
                   {fieldTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    <option key={type.value} value={type.value}>
+                      {type.label}
                     </option>
                   ))}
                 </select>

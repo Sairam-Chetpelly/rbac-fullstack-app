@@ -834,7 +834,7 @@ const VisaApplicationForm = () => {
                               required={field.required}
                               className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white"
                             >
-                              <option value="">Select {field.label}</option>
+                              <option disabled value="">Select {field.label}</option>
                               {field.options && field.options.map((option, index) => (
                                 <option key={index} value={option.toLowerCase().replace(/\s+/g, '-')}>
                                   {option}

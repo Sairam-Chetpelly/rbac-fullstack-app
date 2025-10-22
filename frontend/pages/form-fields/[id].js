@@ -28,8 +28,18 @@ export default function EditFormField() {
   const { id } = router.query;
 
   const fieldTypes = [
-    'text', 'email', 'password', 'number', 'tel', 'url',
-    'textarea', 'select', 'checkbox', 'radio', 'file', 'date'
+    { value: 'text', label: 'Text' },
+    { value: 'email', label: 'Email' },
+    { value: 'password', label: 'Password' },
+    { value: 'number', label: 'Number' },
+    { value: 'tel', label: 'Phone' },
+    { value: 'url', label: 'URL' },
+    { value: 'textarea', label: 'Textarea' },
+    { value: 'select', label: 'Drop Down' },
+    { value: 'checkbox', label: 'Checkbox' },
+    { value: 'radio', label: 'Radio' },
+    { value: 'file', label: 'File' },
+    { value: 'date', label: 'Date' }
   ];
 
   useEffect(() => {
@@ -219,8 +229,8 @@ export default function EditFormField() {
                 >
                   <option value="">Select Field Type</option>
                   {fieldTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    <option key={type.value} value={type.value}>
+                      {type.label}
                     </option>
                   ))}
                 </select>
