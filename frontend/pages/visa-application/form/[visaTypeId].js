@@ -481,6 +481,7 @@ const VisaApplicationForm = () => {
     }
     
     setCurrentStep(2);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleConfirmSubmit = async () => {
@@ -494,12 +495,14 @@ const VisaApplicationForm = () => {
         if (updateResponse) {
           setCurrentDraftId(currentDraftId || draftId);
           setCurrentStep(3);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       } else {
         const draftResponse = await handleSaveDraft();
         if (draftResponse) {
           setCurrentDraftId(draftResponse.draftId);
           setCurrentStep(3);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       }
     } catch (err) {
@@ -539,6 +542,7 @@ const VisaApplicationForm = () => {
 
       setApplicationNumber(submitResponse.data.applicationNumber);
       setCurrentStep(4);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error('Error submitting application:', err);
       alert('Failed to submit application. Please try again.');
@@ -616,7 +620,12 @@ const VisaApplicationForm = () => {
             return (
               <div key={tab.id} className="flex flex-col items-center relative z-10">
                 <button
-                  onClick={() => isAccessible && setCurrentStep(tab.id)}
+                  onClick={() => {
+                    if (isAccessible) {
+                      setCurrentStep(tab.id);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
                   disabled={!isAccessible}
                   className={`w-16 h-16 rounded-full border-4 flex items-center justify-center text-2xl transition-all duration-300 transform hover:scale-105 ${
                     isActive
@@ -1182,7 +1191,7 @@ const VisaApplicationForm = () => {
             })
           )}
           
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6 mb-8">
+          {/* <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6 mb-8">
             <div className="flex items-center gap-3 text-amber-800">
               <div className="w-8 h-8 bg-amber-200 rounded-full flex items-center justify-center">
                 <CheckCircle className="h-5 w-5" />
@@ -1192,11 +1201,14 @@ const VisaApplicationForm = () => {
             <p className="text-amber-700 mt-2 ml-11">
               Please ensure all information for {numberOfApplicants > 1 ? `all ${numberOfApplicants} applicants` : 'the applicant'} is accurate. Once you proceed to payment, modifications will not be possible.
             </p>
-          </div>
+          </div> */}
           
           <div className="flex gap-6 pt-6">
             <Button 
-              onClick={() => setCurrentStep(1)}
+              onClick={() => {
+                setCurrentStep(1);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               variant="outline" 
               className="flex-1 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 py-4 text-lg font-semibold transition-all duration-200"
             >
@@ -1215,7 +1227,7 @@ const VisaApplicationForm = () => {
                   Processing...
                 </span>
               ) : (
-                'Proceed to Payment'
+                'Proceed to Submit'
               )}
             </Button>
           </div>
@@ -1302,7 +1314,10 @@ const VisaApplicationForm = () => {
           
           <div className="flex gap-6">
             <Button 
-              onClick={() => setCurrentStep(2)}
+              onClick={() => {
+                setCurrentStep(2);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               variant="outline" 
               className="flex-1 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 py-4 text-lg font-semibold transition-all duration-200"
             >
