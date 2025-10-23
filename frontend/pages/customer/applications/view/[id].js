@@ -133,7 +133,7 @@ export default function ViewApplication() {
             <div className="flex items-center gap-4">
               {application.countryVisaType?.country?.placeImage ? (
                 <img 
-                  src={`http://localhost:5000/uploads/countries/${application.countryVisaType.country.placeImage}`} 
+                  src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${application.countryVisaType.country.placeImage}`} 
                   alt={application.countryVisaType?.country?.name}
                   className="w-12 h-12 object-cover rounded-lg"
                 />

@@ -175,7 +175,7 @@ const VisaFlowHomepage = () => {
                           {destination.placeImage ? (
                             <div className="relative w-full h-48 overflow-hidden">
                               <img 
-                                src={`http://localhost:5000/uploads/countries/${destination.placeImage}`} 
+                                src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${destination.placeImage}`} 
                                 alt={destination.name}
                                 className="w-full h-full object-cover"
                               />
