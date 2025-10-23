@@ -55,7 +55,16 @@ export default function AdminViewApplication() {
   const handleFileView = (fileName, filePath, fileType) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000';
     const url = `${baseUrl}/uploads/applications/${filePath}`;
-    setFileModal({ show: true, url, fileName, type: fileType });
+    
+    // Detect file type from extension if not provided
+    let detectedType = fileType;
+    if (!detectedType && fileName) {
+      const ext = fileName.toLowerCase().split('.').pop();
+      if (['pdf'].includes(ext)) detectedType = 'application/pdf';
+      else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) detectedType = 'image/' + (ext === 'jpg' ? 'jpeg' : ext);
+    }
+    
+    setFileModal({ show: true, url, fileName, type: detectedType });
   };
 
   const handleFileDownload = async (fileName, filePath) => {
@@ -160,7 +169,15 @@ export default function AdminViewApplication() {
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <span className="text-4xl">{application.countryVisaType?.country?.flagEmoji || '🌍'}</span>
+              {application.countryVisaType?.country?.placeImage ? (
+                <img 
+                  src={`http://localhost:5000/uploads/countries/${application.countryVisaType.country.placeImage}`} 
+                  alt={application.countryVisaType?.country?.name}
+                  className="w-12 h-12 object-cover rounded-lg"
+                />
+              ) : (
+                <span className="text-4xl">🌍</span>
+              )}
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
                   {application.countryVisaType?.country?.name} - {application.countryVisaType?.visaType?.name}
@@ -211,6 +228,12 @@ export default function AdminViewApplication() {
                 <span>Paid: ₹{payment.amount}</span>
               </div>
             )}
+            {application.embassyVisitDateTime && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <span>Embassy Visit: {new Date(application.embassyVisitDateTime).toLocaleDateString()} at {new Date(application.embassyVisitDateTime).toLocaleTimeString()}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -252,7 +275,7 @@ export default function AdminViewApplication() {
                           <FileText className="h-4 w-4 text-blue-600" />
                           <span className="text-sm">{fileName}</span>
                           <button 
-                            onClick={() => handleFileView(fileName, filePath, 'image/jpeg')}
+                            onClick={() => handleFileView(fileName, filePath)}
                             className="text-blue-600 hover:text-blue-800"
                           >
                             <Eye className="h-4 w-4" />
@@ -326,7 +349,7 @@ export default function AdminViewApplication() {
                                   <FileText className="h-4 w-4 text-blue-600" />
                                   <span className="text-sm">{fileName}</span>
                                   <button 
-                                    onClick={() => handleFileView(fileName, filePath, 'image/jpeg')}
+                                    onClick={() => handleFileView(fileName, filePath)}
                                     className="text-blue-600 hover:text-blue-800"
                                   >
                                     <Eye className="h-3 w-3" />
@@ -466,11 +489,12 @@ export default function AdminViewApplication() {
                     alt={fileModal.fileName}
                     className="w-full h-auto max-h-full object-contain"
                   />
-                ) : fileModal.type === 'application/pdf' ? (
+                ) : fileModal.type === 'application/pdf' || fileModal.fileName?.toLowerCase().endsWith('.pdf') ? (
                   <iframe 
-                    src={fileModal.url} 
-                    className="w-full h-[70vh]"
+                    src={`${fileModal.url}#toolbar=1&navpanes=1&scrollbar=1`}
+                    className="w-full h-[70vh] border-0"
                     title={fileModal.fileName}
+                    allow="fullscreen"
                   />
                 ) : (
                   <div className="text-center py-12">

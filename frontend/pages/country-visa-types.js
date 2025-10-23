@@ -75,7 +75,15 @@ export default function CountryVisaTypes() {
       sortable: true,
       render: (value, item) => (
         <div className="flex items-center gap-2">
-          <span className="text-lg">{item.country?.flagEmoji || '🏳️'}</span>
+          {item.country?.placeImage ? (
+            <img 
+              src={`http://localhost:5000/uploads/countries/${item.country.placeImage}`} 
+              alt={item.country?.name}
+              className="w-6 h-6 object-cover rounded"
+            />
+          ) : (
+            <span className="text-lg">🏞️</span>
+          )}
           <div>
             <div className="font-medium text-gray-900">{value}</div>
             <div className="text-xs text-gray-500">{item.country?.code}</div>

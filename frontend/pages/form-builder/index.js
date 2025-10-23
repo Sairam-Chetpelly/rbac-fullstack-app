@@ -375,7 +375,15 @@ export default function FormBuilder() {
                 {selectedVisa ? (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <span className="text-xl">{selectedVisa.country?.flagEmoji || '🌍'}</span>
+                      {selectedVisa.country?.placeImage ? (
+                        <img 
+                          src={`http://localhost:5000/uploads/countries/${selectedVisa.country.placeImage}`} 
+                          alt={selectedVisa.country?.name}
+                          className="w-6 h-6 object-cover rounded"
+                        />
+                      ) : (
+                        <span className="text-xl">🌍</span>
+                      )}
                       <div>
                         <div className="font-medium text-gray-900">{selectedVisa.name}</div>
                         <div className="text-sm text-gray-500">
@@ -416,7 +424,15 @@ export default function FormBuilder() {
                         className="w-full p-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                       >
                         <div className="flex items-center space-x-3">
-                          <span className="text-lg">{visa.country?.flagEmoji || '🌍'}</span>
+                          {visa.country?.placeImage ? (
+                            <img 
+                              src={`http://localhost:5000/uploads/countries/${visa.country.placeImage}`} 
+                              alt={visa.country?.name}
+                              className="w-6 h-6 object-cover rounded"
+                            />
+                          ) : (
+                            <span className="text-lg">🌍</span>
+                          )}
                           <div>
                             <div className="font-medium text-gray-900">{visa.name}</div>
                             <div className="text-sm text-gray-500">

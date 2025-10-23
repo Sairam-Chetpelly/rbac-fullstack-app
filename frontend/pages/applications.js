@@ -182,7 +182,15 @@ export default function Applications() {
       label: 'Visa Type',
       render: (value) => (
         <div className="flex items-center gap-2">
-          <span className="text-lg">{value?.country?.flagEmoji || '🌍'}</span>
+          {value?.country?.placeImage ? (
+            <img 
+              src={`http://localhost:5000/uploads/countries/${value.country.placeImage}`} 
+              alt={value?.country?.name}
+              className="w-8 h-8 object-cover rounded-lg"
+            />
+          ) : (
+            <span className="text-lg">🌍</span>
+          )}
           <div>
             <div className="font-semibold">{value?.country?.name}</div>
             <div className="text-sm text-gray-600">{value?.name}</div>
@@ -391,7 +399,15 @@ export default function Applications() {
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <span className="text-lg">{app.countryVisaType?.country?.flagEmoji || '🌍'}</span>
+                      {app.countryVisaType?.country?.placeImage ? (
+                        <img 
+                          src={`http://localhost:5000/uploads/countries/${app.countryVisaType.country.placeImage}`} 
+                          alt={app.countryVisaType?.country?.name}
+                          className="w-8 h-8 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <span className="text-lg">🌍</span>
+                      )}
                       <div>
                         <p className="font-semibold text-sm">{app.countryVisaType?.country?.name}</p>
                         <p className="text-xs text-gray-600">{app.countryVisaType?.name}</p>

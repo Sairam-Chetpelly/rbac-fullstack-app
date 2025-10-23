@@ -54,7 +54,8 @@ const paymentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-paymentSchema.index({ transactionId: 1 }, { unique: true, sparse: true });
+// Remove unique constraint to allow multiple null transactionIds
+// paymentSchema.index({ transactionId: 1 }, { unique: true, sparse: true });
 
 
 

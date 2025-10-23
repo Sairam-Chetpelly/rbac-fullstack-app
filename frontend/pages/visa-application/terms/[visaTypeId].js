@@ -94,7 +94,15 @@ const VisaTermsAndConditions = () => {
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Terms & Conditions</h1>
                   <p className="text-gray-600">
-                    {visaType?.name} - {country?.name} {country?.flagEmoji}
+                    {visaType?.name} - {country?.name} {country?.placeImage ? (
+                      <img 
+                        src={`http://localhost:5000/uploads/countries/${country.placeImage}`} 
+                        alt={country?.name}
+                        className="inline w-6 h-6 object-cover rounded ml-1"
+                      />
+                    ) : (
+                      '🌍'
+                    )}
                   </p>
                 </div>
               </div>
@@ -107,7 +115,7 @@ const VisaTermsAndConditions = () => {
           {/* Visa Type Summary */}
           {/* <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border border-blue-200">
             <div className="flex items-center gap-4 mb-4">
-              <span className="text-4xl">{country?.flagEmoji || '🌍'}</span>
+              <span className="text-4xl">{country?.placeImage || '🌍'}</span>
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{visaType?.name}</h2>
                 <p className="text-gray-600">{country?.name}</p>

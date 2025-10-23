@@ -57,8 +57,16 @@ export default function Countries() {
       sortable: true,
       render: (value, item) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-white text-lg">
-            {item.flagEmoji || '🏳️'}
+          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-white text-lg overflow-hidden">
+            {item.placeImage ? (
+              <img 
+                src={`http://localhost:5000/uploads/countries/${item.placeImage}`} 
+                alt={value}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            ) : (
+              '🏞️'
+            )}
           </div>
           <div>
             <div className="font-semibold text-gray-900">{value}</div>
@@ -139,7 +147,7 @@ export default function Countries() {
 
   return (
     <EnhancedTable
-      title="🏳️ Countries Management"
+      title="🏞️ Countries Management"
       data={countries}
       columns={columns}
       loading={loading}
@@ -150,7 +158,7 @@ export default function Countries() {
       onAdd={handleAdd}
       addButtonText="Add New Country"
       emptyMessage="No countries found"
-      emptyIcon="🏳️"
+      emptyIcon="🏞️"
       showStats={true}
       stats={stats}
       filters={filters}

@@ -22,7 +22,7 @@ const countrySchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
-  flagEmoji: {
+  placeImage: {
     type: String,
     default: null
   },

@@ -6,6 +6,7 @@ const Country = require('../models/Country');
 const Continent = require('../models/Continent');
 const CountryVisaType = require('../models/CountryVisaType');
 const auth = require('../middleware/auth');
+const compressMultipleImages = require('../middleware/imageCompressionMultiple');
 
 const router = express.Router();
 
@@ -61,8 +62,7 @@ router.get('/countries', async (req, res) => {
           id: country._id,
           name: country.name,
           code: country.code,
-          flag_emoji: country.flagEmoji,
-          flagEmoji: country.flagEmoji,
+          placeImage: country.placeImage,
           continent: country.continent?.name,
           region: country.continent?.name,
           processing_time_min: country.processingTimeMin,
@@ -116,7 +116,7 @@ router.get('/countries/:id', async (req, res) => {
       id: country._id,
       name: country.name,
       code: country.code,
-      flagEmoji: country.flagEmoji,
+      placeImage: country.placeImage,
       continent: country.continent?.name,
       processingTimeMin: country.processingTimeMin,
       processingTimeMax: country.processingTimeMax
@@ -156,7 +156,7 @@ router.get('/countries/:id/visa-types', async (req, res) => {
 router.get('/visa-types/:id', async (req, res) => {
   try {
     const visaType = await CountryVisaType.findById(req.params.id)
-      .populate('country', 'name flagEmoji')
+      .populate('country', 'name placeImage')
       .populate('visaType', 'name')
       .lean();
 
@@ -305,7 +305,7 @@ router.post('/verify-payment', async (req, res) => {
 });
 
 // Submit visa application with payment (authenticated)
-router.post('/visa-applications', auth, upload.any(), async (req, res) => {
+router.post('/visa-applications', auth, upload.any(), compressMultipleImages, async (req, res) => {
   try {
     const { visaTypeId, draftId, paymentId, orderId, signature, ...formData } = req.body;
     

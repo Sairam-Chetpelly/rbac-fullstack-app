@@ -18,7 +18,7 @@ export default function CustomerDashboard() {
       return;
     }
     const parsedUser = JSON.parse(userData);
-    if (parsedUser.role !== 'customer') {
+    if (parsedUser.role !== 'customer' && parsedUser.role !== 'admin') {
       router.push('/login');
       return;
     }

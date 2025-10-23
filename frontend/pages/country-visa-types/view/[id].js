@@ -87,8 +87,17 @@ export default function ViewCountryVisaType() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
-                <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                  {countryVisaType.country?.flagEmoji} {countryVisaType.country?.name}
+                <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900 flex items-center gap-2">
+                  {countryVisaType.country?.placeImage ? (
+                    <img 
+                      src={`http://localhost:5000/uploads/countries/${countryVisaType.country.placeImage}`} 
+                      alt={countryVisaType.country?.name}
+                      className="w-6 h-6 object-cover rounded"
+                    />
+                  ) : (
+                    <span>🏞️</span>
+                  )}
+                  {countryVisaType.country?.name}
                 </div>
               </div>
 

@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const auth = require('../middleware/auth');
 const { sendEmail, sendAdminNotification } = require('../services/emailService');
+const compressImage = require('../middleware/imageCompression');
+const compressMultipleImages = require('../middleware/imageCompressionMultiple');
 
 const router = express.Router();
 
@@ -49,78 +51,48 @@ const upload = multer({
 });
 
 // Single file upload endpoint
-router.post('/visa-applications/upload-single', auth, (req, res) => {
-  upload.single('file')(req, res, (err) => {
-    if (err) {
-      console.error('Multer error:', err);
-      if (err instanceof multer.MulterError) {
-        if (err.code === 'LIMIT_FILE_SIZE') {
-          return res.status(400).json({ message: 'File too large. Maximum size is 5MB.' });
-        }
-      }
-      return res.status(400).json({ message: err.message || 'File upload error' });
+router.post('/visa-applications/upload-single', auth, upload.single('file'), compressImage, (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
     }
     
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: 'No file uploaded' });
-      }
-      
-      res.json({ 
-        success: true, 
-        filePath: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        mimetype: req.file.mimetype
-      });
-    } catch (error) {
-      console.error('Error processing uploaded file:', error);
-      res.status(500).json({ message: 'Error processing uploaded file', error: error.message });
-    }
-  });
+    res.json({ 
+      success: true, 
+      filePath: req.file.filename,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    });
+  } catch (error) {
+    console.error('Error processing uploaded file:', error);
+    res.status(500).json({ message: 'Error processing uploaded file', error: error.message });
+  }
 });
 
 // File upload endpoint - supports multiple files (legacy)
-router.post('/visa-applications/upload', auth, (req, res) => {
-  upload.array('files', 10)(req, res, (err) => {
-    if (err) {
-      console.error('Multer error:', err);
-      if (err instanceof multer.MulterError) {
-        if (err.code === 'LIMIT_FILE_SIZE') {
-          return res.status(400).json({ message: 'File too large. Maximum size is 5MB per file.' });
-        }
-        if (err.code === 'LIMIT_FILE_COUNT') {
-          return res.status(400).json({ message: 'Too many files. Maximum 10 files allowed.' });
-        }
-        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-          return res.status(400).json({ message: 'Unexpected field name for file upload.' });
-        }
-      }
-      return res.status(400).json({ message: err.message || 'File upload error' });
+router.post('/visa-applications/upload', auth, upload.array('files', 10), compressMultipleImages, (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No files uploaded' });
     }
     
-    try {
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ message: 'No files uploaded' });
-      }
-      
-      const uploadedFiles = req.files.map(file => ({
-        filePath: file.filename,
-        originalName: file.originalname,
-        size: file.size,
-        mimetype: file.mimetype
-      }));
-      
-      res.json({ 
-        success: true, 
-        files: uploadedFiles,
-        count: uploadedFiles.length
-      });
-    } catch (error) {
-      console.error('Error processing uploaded files:', error);
-      res.status(500).json({ message: 'Error processing uploaded files', error: error.message });
-    }
-  });
+    const uploadedFiles = req.files.map(file => ({
+      filePath: file.filename,
+      originalName: file.originalname,
+      size: file.size,
+      mimetype: file.mimetype
+    }));
+    
+    res.json({ 
+      success: true, 
+      files: uploadedFiles,
+      count: uploadedFiles.length
+    });
+  } catch (error) {
+    console.error('Error processing uploaded files:', error);
+    res.status(500).json({ message: 'Error processing uploaded files', error: error.message });
+  }
 });
 
 // Save visa application draft
@@ -469,7 +441,7 @@ router.post('/visa-applications/submit-without-payment', auth, async (req, res) 
 });
 
 // Submit visa application with payment
-router.post('/visa-applications/submit', auth, upload.any(), async (req, res) => {
+router.post('/visa-applications/submit', auth, upload.any(), compressMultipleImages, async (req, res) => {
   try {
     console.log('Submit request body:', req.body);
     console.log('Submit request files:', req.files);
@@ -616,7 +588,7 @@ router.get('/customer/applications', auth, async (req, res) => {
       path: 'countryVisaType',
       populate: {
         path: 'country',
-        select: 'name flagEmoji'
+        select: 'name placeImage'
       }
     })
     .sort({ createdAt: -1 });
@@ -650,7 +622,7 @@ router.get('/customer/payments', auth, async (req, res) => {
         path: 'countryVisaType',
         populate: {
           path: 'country',
-          select: 'name flagEmoji'
+          select: 'name placeImage'
         }
       }
     })

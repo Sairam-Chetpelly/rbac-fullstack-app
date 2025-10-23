@@ -263,8 +263,16 @@ const EditApplication = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <span className="text-3xl">{application.countryVisaType?.country?.flagEmoji || '🌍'}</span>
+                  <div className="w-100 h-100  rounded-2xl flex items-center justify-center shadow-lg">
+                    {application.countryVisaType?.country?.placeImage ? (
+                      <img 
+                        src={`http://localhost:5000/uploads/countries/${application.countryVisaType.country.placeImage}`} 
+                        alt={application.countryVisaType?.country?.name}
+                        className="w-12 h-12 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <span className="text-3xl">🌍</span>
+                    )}
                   </div>
                   <div>
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
@@ -398,6 +406,48 @@ const EditApplication = () => {
                                       </option>
                                     ))}
                                   </select>
+                                ) : field.type === 'checkbox' ? (
+                                  <div className="space-y-3">
+                                    {field.options && field.options.map((option, index) => {
+                                      const isChecked = currentValue.includes(option);
+                                      return (
+                                        <label key={index} className="flex items-center gap-3 cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={(e) => {
+                                              const values = currentValue ? currentValue.split(',').filter(v => v) : [];
+                                              if (e.target.checked) {
+                                                values.push(option);
+                                              } else {
+                                                const idx = values.indexOf(option);
+                                                if (idx > -1) values.splice(idx, 1);
+                                              }
+                                              handleAnswerChange(field._id, values.join(','), 0);
+                                            }}
+                                            className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
+                                          />
+                                          <span className="text-gray-700">{option}</span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                ) : field.type === 'radio' ? (
+                                  <div className="space-y-3">
+                                    {field.options && field.options.map((option, index) => (
+                                      <label key={index} className="flex items-center gap-3 cursor-pointer">
+                                        <input
+                                          type="radio"
+                                          name={`${field.name}-0`}
+                                          value={option}
+                                          checked={currentValue === option}
+                                          onChange={(e) => handleAnswerChange(field._id, e.target.value, 0)}
+                                          className="w-5 h-5 text-blue-600 border-2 border-gray-300 focus:ring-blue-500"
+                                        />
+                                        <span className="text-gray-700">{option}</span>
+                                      </label>
+                                    ))}
+                                  </div>
                                 ) : field.type === 'file' ? (
                                   <div>
                                     <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-300 group">
@@ -507,6 +557,48 @@ const EditApplication = () => {
                                             <option key={index} value={option}>{option}</option>
                                           ))}
                                         </select>
+                                      ) : field.type === 'checkbox' ? (
+                                        <div className="space-y-2">
+                                          {field.options && field.options.map((option, index) => {
+                                            const isChecked = currentValue.includes(option);
+                                            return (
+                                              <label key={index} className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isChecked}
+                                                  onChange={(e) => {
+                                                    const values = currentValue ? currentValue.split(',').filter(v => v) : [];
+                                                    if (e.target.checked) {
+                                                      values.push(option);
+                                                    } else {
+                                                      const idx = values.indexOf(option);
+                                                      if (idx > -1) values.splice(idx, 1);
+                                                    }
+                                                    handleAnswerChange(field._id, values.join(','), applicantIndex);
+                                                  }}
+                                                  className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
+                                                />
+                                                <span className="text-gray-700 text-sm">{option}</span>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      ) : field.type === 'radio' ? (
+                                        <div className="space-y-2">
+                                          {field.options && field.options.map((option, index) => (
+                                            <label key={index} className="flex items-center gap-2 cursor-pointer">
+                                              <input
+                                                type="radio"
+                                                name={`${field.name}-${applicantIndex}`}
+                                                value={option}
+                                                checked={currentValue === option}
+                                                onChange={(e) => handleAnswerChange(field._id, e.target.value, applicantIndex)}
+                                                className="w-4 h-4 text-blue-600 border-2 border-gray-300 focus:ring-blue-500"
+                                              />
+                                              <span className="text-gray-700 text-sm">{option}</span>
+                                            </label>
+                                          ))}
+                                        </div>
                                       ) : field.type === 'file' ? (
                                         <div>
                                           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">

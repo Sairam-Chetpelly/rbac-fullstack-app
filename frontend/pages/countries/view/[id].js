@@ -77,7 +77,16 @@ export default function ViewCountry() {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Name</label>
                 <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900 flex items-center gap-2">
-                  {country.flagEmoji} {country.name}
+                  {country.placeImage ? (
+                    <img 
+                      src={`http://localhost:5000/uploads/countries/${country.placeImage}`} 
+                      alt={country.name}
+                      className="w-8 h-8 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <span>🏞️</span>
+                  )}
+                  {country.name}
                 </div>
               </div>
 

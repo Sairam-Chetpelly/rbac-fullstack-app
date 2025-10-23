@@ -87,8 +87,17 @@ export default function ViewCountryTermsConditions() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
-                <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                  {terms.country?.flagEmoji} {terms.country?.name}
+                <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900 flex items-center gap-2">
+                  {terms.country?.placeImage ? (
+                    <img 
+                      src={`http://localhost:5000/uploads/countries/${terms.country.placeImage}`} 
+                      alt={terms.country?.name}
+                      className="w-6 h-6 object-cover rounded"
+                    />
+                  ) : (
+                    <span>🏞️</span>
+                  )}
+                  {terms.country?.name}
                 </div>
               </div>
 

@@ -1454,8 +1454,16 @@ const VisaApplicationForm = () => {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-3xl">{country?.flagEmoji || '🌍'}</span>
+                <div className="w-100 h-100 rounded-2xl flex items-center justify-center shadow-lg">
+                  {country?.placeImage ? (
+                    <img 
+                      src={`http://localhost:5000/uploads/countries/${country.placeImage}`} 
+                      alt={country?.name}
+                      className="w-12 h-12 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <span className="text-3xl">🌍</span>
+                  )}
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">

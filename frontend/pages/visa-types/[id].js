@@ -84,7 +84,15 @@ const CountryVisaTypes = () => {
                 Back
               </Button> */}
               <div className="flex items-center gap-3">
-                <span className="text-4xl">{country?.flagEmoji || '🌍'}</span>
+                {country?.placeImage ? (
+                  <img 
+                    src={`http://localhost:5000/uploads/countries/${country.placeImage}`} 
+                    alt={country?.name}
+                    className="w-12 h-12 object-cover rounded-lg"
+                  />
+                ) : (
+                  <span className="text-4xl">🌍</span>
+                )}
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">{country?.name} Visa Types</h1>
                   <p className="text-gray-600">Choose the visa type that best fits your travel purpose</p>

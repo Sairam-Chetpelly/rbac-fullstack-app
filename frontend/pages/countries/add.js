@@ -11,12 +11,13 @@ export default function AddCountry() {
     slug: '',
     description: '',
     code: '',
-    flagEmoji: '',
     status: '',
     continent: '',
     processingTimeMin: '',
     processingTimeMax: ''
   });
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [statuses, setStatuses] = useState([]);
   const [continents, setContinents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -45,11 +46,35 @@ export default function AddCountry() {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/countries', formData);
+      const formDataToSend = new FormData();
+      Object.keys(formData).forEach(key => {
+        formDataToSend.append(key, formData[key]);
+      });
+      if (selectedImage) {
+        formDataToSend.append('placeImage', selectedImage);
+      }
+      
+      await api.post('/countries', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       toast.success('Country created successfully!');
       setTimeout(() => router.push('/countries'), 1000);
     } catch (error) {
@@ -71,17 +96,17 @@ export default function AddCountry() {
             Back to Countries
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">🏳️ Add New Country</h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">🏞️ Add New Country</h1>
             <p className="text-sm sm:text-base text-gray-600">Create a new country with detailed information</p>
           </div>
         </div>
 
-        <Card title="Country Information" icon="🏳️">
+        <Card title="Country Information" icon="🏞️">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div>
                 <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                  🏳️ Country Name
+                  🏞️ Country Name
                 </label>
                 <input
                   type="text"
@@ -123,15 +148,23 @@ export default function AddCountry() {
 
               <div>
                 <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                  🎨 Flag Emoji
+                  🖼️ Place Image
                 </label>
                 <input
-                  type="text"
-                  value={formData.flagEmoji}
-                  onChange={(e) => setFormData({...formData, flagEmoji: e.target.value})}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
-                  placeholder="Enter flag emoji (🇺🇸)"
                 />
+                {imagePreview && (
+                  <div className="mt-2">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="lg:col-span-2">

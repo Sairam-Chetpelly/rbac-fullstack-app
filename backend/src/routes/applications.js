@@ -11,6 +11,7 @@ const auth = require('../middleware/auth');
 const role = require('../middleware/role');
 const { sendEmail, sendAdminNotification } = require('../services/emailService');
 const { fromIST } = require('../utils/dateUtils');
+const { uploads } = require('../middleware/universalUpload');
 
 const router = express.Router();
 
@@ -105,7 +106,7 @@ router.put('/:id/assign', auth, role(['admin', 'manager']), async (req, res) => 
       path: 'countryVisaType',
       populate: {
         path: 'country',
-        select: 'name flagEmoji'
+        select: 'name placeImage'
       }
     });
     
@@ -191,7 +192,7 @@ router.get('/assigned/payments', auth, role(['employee']), async (req, res) => {
           path: 'countryVisaType',
           populate: {
             path: 'country',
-            select: 'name flagEmoji'
+            select: 'name placeImage'
           }
         }
       })
@@ -223,7 +224,7 @@ router.get('/assigned', auth, role(['employee']), async (req, res) => {
         path: 'countryVisaType',
         populate: {
           path: 'country',
-          select: 'name flagEmoji'
+          select: 'name placeImage'
         }
       })
       .sort({ createdAt: -1 })
@@ -262,7 +263,7 @@ router.get('/', auth, role(['admin', 'manager']), async (req, res) => {
         path: 'countryVisaType',
         populate: {
           path: 'country',
-          select: 'name flagEmoji'
+          select: 'name placeImage'
         }
       })
       .sort({ createdAt: -1 })
@@ -296,7 +297,7 @@ router.get('/:id', auth, role(['admin', 'manager', 'employee']), async (req, res
       .populate({
         path: 'countryVisaType',
         populate: [
-          { path: 'country', select: 'name flagEmoji' },
+          { path: 'country', select: 'name placeImage' },
           { path: 'visaType', select: 'name' }
         ]
       })

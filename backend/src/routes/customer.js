@@ -9,7 +9,7 @@ const role = require('../middleware/role');
 const { sendEmail } = require('../services/emailService');
 
 // Get customer dashboard stats
-router.get('/dashboard-stats', auth, role(['customer']), async (req, res) => {
+router.get('/dashboard-stats', auth, role(['customer', 'admin']), async (req, res) => {
   try {
     const userId = req.user._id;
     
@@ -34,7 +34,7 @@ router.get('/dashboard-stats', auth, role(['customer']), async (req, res) => {
 });
 
 // Get customer applications
-router.get('/applications', auth, role(['customer']), async (req, res) => {
+router.get('/applications', auth, role(['customer', 'admin']), async (req, res) => {
   try {
     const applications = await Application.find({ 
       user: req.user._id, 
@@ -44,7 +44,7 @@ router.get('/applications', auth, role(['customer']), async (req, res) => {
     .populate({
       path: 'countryVisaType',
       populate: [
-        { path: 'country', select: 'name flagEmoji' },
+        { path: 'country', select: 'name placeImage' },
         { path: 'visaType', select: 'name' }
       ]
     })
@@ -59,7 +59,7 @@ router.get('/applications', auth, role(['customer']), async (req, res) => {
 });
 
 // Get customer payments
-router.get('/payments', auth, role(['customer']), async (req, res) => {
+router.get('/payments', auth, role(['customer', 'admin']), async (req, res) => {
   try {
     const payments = await Payment.find({ 
       user: req.user._id, 
@@ -77,7 +77,7 @@ router.get('/payments', auth, role(['customer']), async (req, res) => {
 });
 
 // Get draft application details with form data
-router.get('/draft/:id', auth, role(['customer']), async (req, res) => {
+router.get('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => {
   try {
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const FormField = require('../models/FormField');
@@ -96,7 +96,7 @@ router.get('/draft/:id', auth, role(['customer']), async (req, res) => {
     }).populate({
       path: 'countryVisaType',
       populate: [
-        { path: 'country', select: 'name flagEmoji' },
+        { path: 'country', select: 'name placeImage' },
         { path: 'visaType', select: 'name' }
       ]
     });
@@ -177,7 +177,7 @@ router.get('/draft/:id', auth, role(['customer']), async (req, res) => {
 });
 
 // Update draft application (save changes without changing status)
-router.put('/draft/:id', auth, role(['customer']), async (req, res) => {
+router.put('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => {
   try {
     const { formData, applicationType, numberOfApplicants, relationships } = req.body;
     const ApplicationAnswer = require('../models/ApplicationAnswer');
@@ -293,7 +293,7 @@ router.put('/draft/:id', auth, role(['customer']), async (req, res) => {
 });
 
 // Get single application details for customer
-router.get('/application/:id', auth, role(['customer']), async (req, res) => {
+router.get('/application/:id', auth, role(['customer', 'admin']), async (req, res) => {
   try {
     const ApplicationAnswer = require('../models/ApplicationAnswer');
     const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
@@ -308,7 +308,7 @@ router.get('/application/:id', auth, role(['customer']), async (req, res) => {
     .populate({
       path: 'countryVisaType',
       populate: [
-        { path: 'country', select: 'name flagEmoji' },
+        { path: 'country', select: 'name placeImage' },
         { path: 'visaType', select: 'name' }
       ]
     })
@@ -349,7 +349,7 @@ router.get('/application/:id', auth, role(['customer']), async (req, res) => {
 });
 
 // Update customer profile
-router.put('/profile', auth, role(['customer']), async (req, res) => {
+router.put('/profile', auth, role(['customer', 'admin']), async (req, res) => {
   try {
     const { name } = req.body;
     

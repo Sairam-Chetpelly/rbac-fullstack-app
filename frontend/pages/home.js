@@ -167,28 +167,41 @@ const VisaFlowHomepage = () => {
                       : '15-30 days'
                     
                     const hasVisaTypes = destination.visa_types && destination.visa_types.length > 0
-                    const isPopular = hasVisaTypes && destination.visa_types.some(vt => vt.fee && vt.fee < 100)
+                    // const isPopular = hasVisaTypes && destination.visa_types.some(vt => vt.fee && vt.fee < 100)
                     
                     return (
                       <div key={destination.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105">
                         <div className="relative">
-                          <div className="w-full h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                            <div className="text-center text-white">
-                              <span className="text-4xl mb-2 block">
-                                {destination.flag_emoji || destination.flagEmoji || '🌍'}
-                              </span>
-                              <h3 className="text-lg font-semibold">{destination.name}</h3>
+                          {destination.placeImage ? (
+                            <div className="relative w-full h-48 overflow-hidden">
+                              <img 
+                                src={`http://localhost:5000/uploads/countries/${destination.placeImage}`} 
+                                alt={destination.name}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                                <div className="text-center text-white">
+                                  {/* <h3 className="text-lg font-semibold">{destination.name}</h3> */}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          {isPopular && (
+                          ) : (
+                            <div className="w-full h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                              <div className="text-center text-white">
+                                <span className="text-4xl mb-2 block">🌍</span>
+                                <h3 className="text-lg font-semibold">{destination.name}</h3>
+                              </div>
+                            </div>
+                          )}
+                          {/* {isPopular && (
                             <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-semibold flex items-center">
                               <Star className="h-3 w-3 mr-1" />
                               Popular
                             </div>
-                          )}
-                          <div className="absolute top-4 left-4 px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                          )} */}
+                          {/* <div className="absolute top-4 left-4 px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                             Visa Available
-                          </div>
+                          </div> */}
                         </div>
                         <div className="p-6">
                           <h3 className="text-xl font-bold text-gray-900 mb-2">{destination.name}</h3>
@@ -205,7 +218,7 @@ const VisaFlowHomepage = () => {
                               </span>
                             )}
                           </div>
-                          {hasVisaTypes && (
+                          {/* {hasVisaTypes && (
                             <div className="mb-4">
                               <p className="text-xs text-gray-500 mb-2">Available visa types:</p>
                               <div className="flex flex-wrap gap-1">
@@ -221,7 +234,7 @@ const VisaFlowHomepage = () => {
                                 )}
                               </div>
                             </div>
-                          )}
+                          )} */}
                           <Link href={`/visatypes/${destination.id}`}>
                             <Button className="w-full bg-gradient-to-r from-blue-400 to-purple-500 text-white hover:from-blue-500 hover:to-purple-600 transition-all text-sm font-semibold">
                               Apply Now

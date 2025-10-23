@@ -10,12 +10,14 @@ export default function EditCountry() {
     slug: '',
     description: '',
     code: '',
-    flagEmoji: '',
     status: '',
     continent: '',
     processingTimeMin: '',
     processingTimeMax: ''
   });
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [currentImage, setCurrentImage] = useState(null);
   const [statuses, setStatuses] = useState([]);
   const [continents, setContinents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -40,12 +42,12 @@ export default function EditCountry() {
           slug: country.slug,
           description: country.description,
           code: country.code,
-          flagEmoji: country.flagEmoji || '',
           status: country.status._id,
           continent: country.continent._id,
           processingTimeMin: country.processingTimeMin,
           processingTimeMax: country.processingTimeMax
         });
+        setCurrentImage(country.placeImage);
       }
     } catch (error) {
       console.error('Error fetching country:', error);
@@ -70,11 +72,35 @@ export default function EditCountry() {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.put(`/countries/${id}`, formData);
+      const formDataToSend = new FormData();
+      Object.keys(formData).forEach(key => {
+        formDataToSend.append(key, formData[key]);
+      });
+      if (selectedImage) {
+        formDataToSend.append('placeImage', selectedImage);
+      }
+      
+      await api.put(`/countries/${id}`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       router.push('/countries');
     } catch (error) {
       console.error('Error updating country:', error);
@@ -100,12 +126,12 @@ export default function EditCountry() {
           </div>
         </div>
 
-        <Card title="Country Information" icon="🏳️">
+        <Card title="Country Information" icon="🏞️">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div>
                 <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                  🏳️ Country Name
+                  🏞️ Country Name
                 </label>
                 <input
                   type="text"
@@ -147,15 +173,36 @@ export default function EditCountry() {
 
               <div>
                 <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                  🎨 Flag Emoji
+                  🖼️ Place Image
                 </label>
                 <input
-                  type="text"
-                  value={formData.flagEmoji}
-                  onChange={(e) => setFormData({...formData, flagEmoji: e.target.value})}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
-                  placeholder="Enter flag emoji (🇺🇸)"
                 />
+                <div className="mt-2 flex gap-2">
+                  {imagePreview && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">New Image:</p>
+                      <img 
+                        src={imagePreview} 
+                        alt="New Preview" 
+                        className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                      />
+                    </div>
+                  )}
+                  {currentImage && !imagePreview && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Current Image:</p>
+                      <img 
+                        src={`http://localhost:5000/uploads/countries/${currentImage}`} 
+                        alt="Current" 
+                        className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="lg:col-span-2">
