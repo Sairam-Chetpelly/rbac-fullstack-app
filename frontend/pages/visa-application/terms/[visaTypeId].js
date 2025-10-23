@@ -96,7 +96,7 @@ const VisaTermsAndConditions = () => {
                   <p className="text-gray-600">
                     {visaType?.name} - {country?.name} {country?.placeImage ? (
                       <img 
-                        src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${country.placeImage}`} 
+                        src={`${process.env.API_BASE_URL || 'http://localhost:5000'}/uploads/countries/${country.placeImage}`} 
                         alt={country?.name}
                         className="inline w-6 h-6 object-cover rounded ml-1"
                       />

@@ -40,7 +40,7 @@ export default function ViewApplication() {
   };
 
   const handleFileView = (fileName, filePath, fileType) => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000';
+    const baseUrl = process.env.API_BASE_URL || 'http://localhost:5000';
     const url = `${baseUrl}/uploads/applications/${filePath}`;
     
     // Detect file type from extension if not provided
@@ -55,7 +55,7 @@ export default function ViewApplication() {
   };
 
   const handleFileDownload = async (fileName, filePath) => {
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api', '')}/uploads/applications/${filePath}`;
+    const url = `${process.env.API_BASE_URL.replace('/api', '')}/uploads/applications/${filePath}`;
     try {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -133,7 +133,7 @@ export default function ViewApplication() {
             <div className="flex items-center gap-4">
               {application.countryVisaType?.country?.placeImage ? (
                 <img 
-                  src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${application.countryVisaType.country.placeImage}`} 
+                  src={`${process.env.API_BASE_URL || 'http://localhost:5000'}/uploads/countries/${application.countryVisaType.country.placeImage}`} 
                   alt={application.countryVisaType?.country?.name}
                   className="w-12 h-12 object-cover rounded-lg"
                 />

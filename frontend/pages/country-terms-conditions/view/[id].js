@@ -90,7 +90,7 @@ export default function ViewCountryTermsConditions() {
                 <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900 flex items-center gap-2">
                   {terms.country?.placeImage ? (
                     <img 
-                      src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${terms.country.placeImage}`} 
+                      src={`${process.env.API_BASE_URL || 'http://localhost:5000'}/uploads/countries/${terms.country.placeImage}`} 
                       alt={terms.country?.name}
                       className="w-6 h-6 object-cover rounded"
                     />

@@ -196,7 +196,7 @@ export default function EditCountry() {
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Current Image:</p>
                       <img 
-                        src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${currentImage}`} 
+                        src={`${process.env.API_BASE_URL || 'http://localhost:5000'}/uploads/countries/${currentImage}`} 
                         alt="Current" 
                         className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                       />
