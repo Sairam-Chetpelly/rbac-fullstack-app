@@ -31,37 +31,24 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
           { name: 'Roles', href: '/roles', permission: 'roles', icon: '🔐' }
         ]
       },
-      { name: 'Reports', href: '/reports', permission: 'dashboard', icon: '📊' },
       {
-        name: 'Location Management',
-        icon: '🗺️',
+        name: 'System Configuration',
+        icon: '⚙️',
         children: [
           { name: 'Continents', href: '/continents', permission: 'continents', icon: '🌍' },
-          { name: 'Countries', href: '/countries', permission: 'countries', icon: '🏳️' }
-        ]
-      },
-      {
-        name: 'Visa Management',
-        icon: '📄',
-        children: [
+          { name: 'Countries', href: '/countries', permission: 'countries', icon: '🏳️' },
           { name: 'Visa Types', href: '/visa-types', permission: 'visa-types', icon: '📋' },
           { name: 'Country Visas', href: '/country-visa-types', permission: 'country-visa-types', icon: '🎫' },
           { name: 'Country Terms', href: '/country-terms-conditions', permission: 'country-terms-conditions', icon: '📜' },
-          { name: 'Visa Terms', href: '/visa-terms-conditions', permission: 'visa-terms-conditions', icon: '📃' }
-        ]
-      },
-      {
-        name: 'Form Management',
-        icon: '📝',
-        children: [
+          { name: 'Visa Terms', href: '/visa-terms-conditions', permission: 'visa-terms-conditions', icon: '📃' },
           { name: 'Form Builder', href: '/form-builder', permission: 'form-sections', icon: '🏗️' },
           { name: 'Form Sections', href: '/form-sections', permission: 'form-sections', icon: '📑' },
-          { name: 'Form Fields', href: '/form-fields', permission: 'form-fields', icon: '📄' }
+          { name: 'Form Fields', href: '/form-fields', permission: 'form-fields', icon: '📄' },
+          { name: 'Status', href: '/status', permission: 'status', icon: '⚡' },
+          { name: 'Notifications', href: '/notification-settings', permission: 'settings', icon: '🔔' }
         ]
       },
-      { name: 'Status', href: '/status', permission: 'status', icon: '⚡' },
-      { name: 'Notifications', href: '/notification-settings', permission: 'settings', icon: '🔔' },
-      // { name: 'Settings', href: '/settings', permission: 'settings', icon: '⚙️' }
+      { name: 'Reports', href: '/reports', permission: 'dashboard', icon: '📊' }
     ];
   };
   

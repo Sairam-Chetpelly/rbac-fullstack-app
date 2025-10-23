@@ -13,9 +13,23 @@ export default function Applications() {
   const [applications, setApplications] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [visaTypes, setVisaTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [filters, setFilters] = useState({
+    status: 'all',
+    country: 'all',
+    visaType: 'all',
+    paymentStatus: 'all',
+    assignedTo: 'all',
+    applicationType: 'all',
+    dateFrom: '',
+    dateTo: '',
+    submittedFrom: '',
+    submittedTo: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
   const [statusModal, setStatusModal] = useState({ isOpen: false, applicationId: null, currentStatus: null });
   const [assignModal, setAssignModal] = useState({ isOpen: false, applicationId: null, currentEmployee: null });
   const [paymentModal, setPaymentModal] = useState({ isOpen: false, applicationId: null, payment: null });
@@ -27,6 +41,8 @@ export default function Applications() {
   useEffect(() => {
     fetchApplications(currentPage);
     fetchStatuses();
+    fetchCountries();
+    fetchVisaTypes();
     if (user?.role === 'admin' || user?.role === 'manager') {
       fetchEmployees();
     }
@@ -81,6 +97,24 @@ export default function Applications() {
       setStatuses(response.data);
     } catch (error) {
       console.error('Error fetching statuses:', error);
+    }
+  };
+
+  const fetchCountries = async () => {
+    try {
+      const response = await api.get('/countries');
+      setCountries(response.data);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+    }
+  };
+
+  const fetchVisaTypes = async () => {
+    try {
+      const response = await api.get('/country-visa-types');
+      setVisaTypes(response.data);
+    } catch (error) {
+      console.error('Error fetching visa types:', error);
     }
   };
 
@@ -145,9 +179,46 @@ export default function Applications() {
     const matchesSearch = app.applicationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          app.user?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          app.user?.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || app.status?._id === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    const matchesStatus = filters.status === 'all' || app.status?._id === filters.status;
+    const matchesCountry = filters.country === 'all' || app.countryVisaType?.country?._id === filters.country;
+    const matchesVisaType = filters.visaType === 'all' || app.countryVisaType?._id === filters.visaType;
+    const matchesPayment = filters.paymentStatus === 'all' || app.paymentStatus === filters.paymentStatus;
+    const matchesAssigned = filters.assignedTo === 'all' || 
+                           (filters.assignedTo === 'unassigned' && !app.assignedTo) ||
+                           app.assignedTo?._id === filters.assignedTo;
+    const matchesAppType = filters.applicationType === 'all' || app.applicationType === filters.applicationType;
+    
+    const createdDate = new Date(app.createdAt);
+    const submittedDate = app.submittedAt ? new Date(app.submittedAt) : null;
+    
+    const matchesDateFrom = !filters.dateFrom || createdDate >= new Date(filters.dateFrom);
+    const matchesDateTo = !filters.dateTo || createdDate <= new Date(filters.dateTo + 'T23:59:59');
+    const matchesSubmittedFrom = !filters.submittedFrom || (submittedDate && submittedDate >= new Date(filters.submittedFrom));
+    const matchesSubmittedTo = !filters.submittedTo || (submittedDate && submittedDate <= new Date(filters.submittedTo + 'T23:59:59'));
+    
+    return matchesSearch && matchesStatus && matchesCountry && matchesVisaType && 
+           matchesPayment && matchesAssigned && matchesAppType && 
+           matchesDateFrom && matchesDateTo && matchesSubmittedFrom && matchesSubmittedTo;
   });
+
+  const clearFilters = () => {
+    setFilters({
+      status: 'all',
+      country: 'all',
+      visaType: 'all',
+      paymentStatus: 'all',
+      assignedTo: 'all',
+      applicationType: 'all',
+      dateFrom: '',
+      dateTo: '',
+      submittedFrom: '',
+      submittedTo: ''
+    });
+    setSearchTerm('');
+  };
+
+  const activeFiltersCount = Object.values(filters).filter(value => value !== 'all' && value !== '').length + (searchTerm ? 1 : 0);
 
   const getStatusColor = (status) => {
     if (!status?.color) return 'bg-gray-100 text-gray-800';
@@ -328,33 +399,193 @@ export default function Applications() {
       </div>
 
       <Card className="mb-6">
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="🔍 Search by application number, name, or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-            />
+        <div className="space-y-4">
+          {/* Search and Quick Filters */}
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="🔍 Search by application number, name, or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+              />
+            </div>
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  showFilters ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🔧 Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+              </button>
+              {activeFiltersCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200"
+                >
+                  Clear
+                </button>
+              )}
+              <span className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
+                Total: {filteredApplications.length}
+              </span>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Status</option>
-              {statuses.map(status => (
-                <option key={status._id} value={status._id}>
-                  {status.name}
-                </option>
-              ))}
-            </select>
-            <span className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
-              Total: {filteredApplications.length}
-            </span>
-          </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="border-t pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {/* Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => setFilters({...filters, status: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Status</option>
+                    {statuses.map(status => (
+                      <option key={status._id} value={status._id}>
+                        {status.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Country Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <select
+                    value={filters.country}
+                    onChange={(e) => setFilters({...filters, country: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Countries</option>
+                    {countries.map(country => (
+                      <option key={country._id} value={country._id}>
+                        {country.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Visa Type Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Visa Type</label>
+                  <select
+                    value={filters.visaType}
+                    onChange={(e) => setFilters({...filters, visaType: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Visa Types</option>
+                    {visaTypes.map(visa => (
+                      <option key={visa._id} value={visa._id}>
+                        {visa.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Payment Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                  <select
+                    value={filters.paymentStatus}
+                    onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Payments</option>
+                    <option value="pending">Pending</option>
+                    <option value="success">Success</option>
+                    <option value="failed">Failed</option>
+                    <option value="refunded">Refunded</option>
+                  </select>
+                </div>
+
+                {/* Assigned To Filter (Admin/Manager only) */}
+                {(user?.role === 'admin' || user?.role === 'manager') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                    <select
+                      value={filters.assignedTo}
+                      onChange={(e) => setFilters({...filters, assignedTo: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="all">All Assignments</option>
+                      <option value="unassigned">Unassigned</option>
+                      {employees.map(employee => (
+                        <option key={employee._id} value={employee._id}>
+                          {employee.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Application Type Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Application Type</label>
+                  <select
+                    value={filters.applicationType}
+                    onChange={(e) => setFilters({...filters, applicationType: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="individual">Individual</option>
+                    <option value="family">Family</option>
+                    <option value="group">Group</option>
+                  </select>
+                </div>
+
+                {/* Created Date From */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Created From</label>
+                  <input
+                    type="date"
+                    value={filters.dateFrom}
+                    onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Created Date To */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Created To</label>
+                  <input
+                    type="date"
+                    value={filters.dateTo}
+                    onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Submitted Date From */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Submitted From</label>
+                  <input
+                    type="date"
+                    value={filters.submittedFrom}
+                    onChange={(e) => setFilters({...filters, submittedFrom: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Submitted Date To */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Submitted To</label>
+                  <input
+                    type="date"
+                    value={filters.submittedTo}
+                    onChange={(e) => setFilters({...filters, submittedTo: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
