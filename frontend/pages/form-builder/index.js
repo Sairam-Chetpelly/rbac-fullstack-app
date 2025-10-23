@@ -377,7 +377,7 @@ export default function FormBuilder() {
                     <div className="flex items-center space-x-3">
                       {selectedVisa.country?.placeImage ? (
                         <img 
-                          src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${selectedVisa.country.placeImage}`} 
+                          src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000' }/uploads/countries/${selectedVisa.country.placeImage}`} 
                           alt={selectedVisa.country?.name}
                           className="w-6 h-6 object-cover rounded"
                         />
@@ -426,7 +426,7 @@ export default function FormBuilder() {
                         <div className="flex items-center space-x-3">
                           {visa.country?.placeImage ? (
                             <img 
-                              src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${visa.country.placeImage}`} 
+                              src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000' }/uploads/countries/${visa.country.placeImage}`} 
                               alt={visa.country?.name}
                               className="w-6 h-6 object-cover rounded"
                             />

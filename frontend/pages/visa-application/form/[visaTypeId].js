@@ -316,7 +316,7 @@ const VisaApplicationForm = () => {
     }
     
     const { fileName, fileType, fileUrl, filePath } = fileData;
-    const url = fileUrl || `${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api', '')}/uploads/applications/${filePath}`;
+    const url = fileUrl || `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000'.replace('/api', '')}/uploads/applications/${filePath}`;
     
     setFileModal({
       show: true,
@@ -336,7 +336,7 @@ const VisaApplicationForm = () => {
     }
     
     const { fileName, filePath } = fileData;
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api', '')}/uploads/applications/${filePath}`;
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000'.replace('/api', '')}/uploads/applications/${filePath}`;
     
     try {
       const response = await fetch(url);
@@ -387,7 +387,7 @@ const VisaApplicationForm = () => {
         {isImage ? (
           <div>
             <img 
-              src={fileUrl || `${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api', '')}/uploads/applications/${filePath}`}
+              src={fileUrl || `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000'.replace('/api', '')}/uploads/applications/${filePath}`}
               alt={fileName}
               className="w-full max-w-xs h-32 object-cover rounded-lg border border-gray-200 cursor-pointer"
               onClick={() => handleFileView(fileData)}
@@ -1457,7 +1457,7 @@ const VisaApplicationForm = () => {
                 <div className="w-100 h-100 rounded-2xl flex items-center justify-center shadow-lg">
                   {country?.placeImage ? (
                     <img 
-                      src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${country.placeImage}`} 
+                      src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000' }/uploads/countries/${country.placeImage}`} 
                       alt={country?.name}
                       className="w-12 h-12 object-cover rounded-lg"
                     />
