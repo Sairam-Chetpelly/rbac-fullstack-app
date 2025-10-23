@@ -77,7 +77,7 @@ export default function CountryVisaTypes() {
         <div className="flex items-center gap-2">
           {item.country?.placeImage ? (
             <img 
-              src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${item.country.placeImage}`} 
+              src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'https://api.oneworldvisa.in'}/uploads/countries/${item.country.placeImage}`} 
               alt={item.country?.name}
               className="w-6 h-6 object-cover rounded"
             />

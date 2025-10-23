@@ -177,7 +177,7 @@ const VisaFlowHomepage = () => {
                               <img 
                                 src={destination.placeImage.startsWith('http') 
                                   ? destination.placeImage 
-                                  : `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/uploads/countries/${destination.placeImage}`
+                                  : `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.oneworldvisa.in'}/uploads/countries/${destination.placeImage}`
                                 } 
                                 alt={destination.name}
                                 className="w-full h-full object-cover"

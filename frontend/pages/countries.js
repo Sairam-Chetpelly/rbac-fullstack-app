@@ -60,7 +60,7 @@ export default function Countries() {
           <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-white text-lg overflow-hidden">
             {item.placeImage ? (
               <img 
-                src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${item.placeImage}`} 
+                src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'https://api.oneworldvisa.in'}/uploads/countries/${item.placeImage}`} 
                 alt={value}
                 className="w-full h-full object-cover rounded-lg"
               />

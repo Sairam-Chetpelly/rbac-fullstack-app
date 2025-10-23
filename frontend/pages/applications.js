@@ -184,7 +184,7 @@ export default function Applications() {
         <div className="flex items-center gap-2">
           {value?.country?.placeImage ? (
             <img 
-              src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${value.country.placeImage}`} 
+              src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'https://api.oneworldvisa.in'}/uploads/countries/${value.country.placeImage}`} 
               alt={value?.country?.name}
               className="w-8 h-8 object-cover rounded-lg"
             />
@@ -401,7 +401,7 @@ export default function Applications() {
                     <div className="flex items-center gap-2">
                       {app.countryVisaType?.country?.placeImage ? (
                         <img 
-                          src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${app.countryVisaType.country.placeImage}`} 
+                          src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'https://api.oneworldvisa.in'}/uploads/countries/${app.countryVisaType.country.placeImage}`} 
                           alt={app.countryVisaType?.country?.name}
                           className="w-8 h-8 object-cover rounded-lg"
                         />

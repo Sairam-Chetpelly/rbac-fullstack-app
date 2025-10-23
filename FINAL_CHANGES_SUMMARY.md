@@ -108,7 +108,7 @@ const storage = multer.diskStorage({
 // Frontend image display
 {country.placeImage ? (
   <img 
-    src={`http://localhost:5000/uploads/countries/${country.placeImage}`} 
+    src={`https://api.oneworldvisa.in/uploads/countries/${country.placeImage}`} 
     alt={country.name}
     className="w-8 h-8 object-cover rounded-lg"
   />
