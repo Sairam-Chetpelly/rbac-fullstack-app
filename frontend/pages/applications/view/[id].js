@@ -54,7 +54,17 @@ export default function AdminViewApplication() {
 
   const handleFileView = (fileName, filePath, fileType) => {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
-    const url = `${baseUrl}/uploads/applications/${filePath}`;
+    console.log('baseUrl ', baseUrl);
+    let url;
+    
+    // Handle different file path formats
+    if (filePath.startsWith('http')) {
+      url = filePath;
+    } else if (filePath.includes('/uploads/')) {
+      url = `${baseUrl}${filePath}`;
+    } else {
+      url = `${baseUrl}/uploads/applications/${filePath}`;
+    }
     
     // Detect file type from extension if not provided
     let detectedType = fileType;
@@ -64,6 +74,7 @@ export default function AdminViewApplication() {
       else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) detectedType = 'image/' + (ext === 'jpg' ? 'jpeg' : ext);
     }
     
+    console.log('File view:', { fileName, filePath, url, detectedType });
     setFileModal({ show: true, url, fileName, type: detectedType });
   };
 
@@ -255,6 +266,7 @@ export default function AdminViewApplication() {
                     if (answer.field?.type === 'file' && (answer.answerFile || answer.answerText)) {
                       let fileName = '';
                       let filePath = '';
+                      let fileType = '';
                       
                       if (answer.answerFile) {
                         fileName = answer.answerFile.split('/').pop();
@@ -263,7 +275,8 @@ export default function AdminViewApplication() {
                         try {
                           const fileData = JSON.parse(answer.answerText);
                           fileName = fileData.fileName || 'Unknown file';
-                          filePath = fileData.filePath || '';
+                          filePath = fileData.filePath || fileData.url || '';
+                          fileType = fileData.fileType || '';
                         } catch (e) {
                           fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
                           filePath = answer.answerText;
@@ -275,7 +288,7 @@ export default function AdminViewApplication() {
                           <FileText className="h-4 w-4 text-blue-600" />
                           <span className="text-sm">{fileName}</span>
                           <button 
-                            onClick={() => handleFileView(fileName, filePath)}
+                            onClick={() => handleFileView(fileName, filePath, fileType)}
                             className="text-blue-600 hover:text-blue-800"
                           >
                             <Eye className="h-4 w-4" />
@@ -329,6 +342,7 @@ export default function AdminViewApplication() {
                             if (answer.field?.type === 'file' && (answer.answerFile || answer.answerText)) {
                               let fileName = '';
                               let filePath = '';
+                              let fileType = '';
                               
                               if (answer.answerFile) {
                                 fileName = answer.answerFile.split('/').pop();
@@ -337,7 +351,8 @@ export default function AdminViewApplication() {
                                 try {
                                   const fileData = JSON.parse(answer.answerText);
                                   fileName = fileData.fileName || 'Unknown file';
-                                  filePath = fileData.filePath || '';
+                                  filePath = fileData.filePath || fileData.url || '';
+                                  fileType = fileData.fileType || '';
                                 } catch (e) {
                                   fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
                                   filePath = answer.answerText;
@@ -349,7 +364,7 @@ export default function AdminViewApplication() {
                                   <FileText className="h-4 w-4 text-blue-600" />
                                   <span className="text-sm">{fileName}</span>
                                   <button 
-                                    onClick={() => handleFileView(fileName, filePath)}
+                                    onClick={() => handleFileView(fileName, filePath, fileType)}
                                     className="text-blue-600 hover:text-blue-800"
                                   >
                                     <Eye className="h-3 w-3" />
@@ -488,6 +503,11 @@ export default function AdminViewApplication() {
                     src={fileModal.url} 
                     alt={fileModal.fileName}
                     className="w-full h-auto max-h-full object-contain"
+                    onError={(e) => {
+                      console.error('Image load error:', fileModal.url);
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
                   />
                 ) : fileModal.type === 'application/pdf' || fileModal.fileName?.toLowerCase().endsWith('.pdf') ? (
                   <iframe 
@@ -495,12 +515,18 @@ export default function AdminViewApplication() {
                     className="w-full h-[70vh] border-0"
                     title={fileModal.fileName}
                     allow="fullscreen"
+                    onError={() => console.error('PDF load error:', fileModal.url)}
                   />
                 ) : (
                   <div className="text-center py-12">
                     <p className="text-gray-600">Preview not available for this file type</p>
+                    <p className="text-xs text-gray-500 mt-2">URL: {fileModal.url}</p>
                   </div>
                 )}
+                <div className="text-center py-12" style={{display: 'none'}}>
+                  <p className="text-red-600">Failed to load file</p>
+                  <p className="text-xs text-gray-500 mt-2">URL: {fileModal.url}</p>
+                </div>
               </div>
             </div>
           </div>
