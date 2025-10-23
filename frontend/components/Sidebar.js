@@ -21,7 +21,8 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
     
     return [
       { name: 'Dashboard', href: '/dashboard', permission: 'dashboard', icon: '🏠' },
-      { name: 'Reports', href: '/reports', permission: 'dashboard', icon: '📊' },
+      { name: 'Applications', href: '/applications', permission: 'applications', icon: '📋' },
+      { name: 'Payments', href: '/payments', permission: 'payments', icon: '💳' },
       {
         name: 'User Management',
         icon: '👥',
@@ -30,6 +31,7 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
           { name: 'Roles', href: '/roles', permission: 'roles', icon: '🔐' }
         ]
       },
+      { name: 'Reports', href: '/reports', permission: 'dashboard', icon: '📊' },
       {
         name: 'Location Management',
         icon: '🗺️',
@@ -57,11 +59,9 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
           { name: 'Form Fields', href: '/form-fields', permission: 'form-fields', icon: '📄' }
         ]
       },
-      { name: 'Applications', href: '/applications', permission: 'applications', icon: '📋' },
-      { name: 'Payments', href: '/payments', permission: 'payments', icon: '💳' },
       { name: 'Status', href: '/status', permission: 'status', icon: '⚡' },
       { name: 'Notifications', href: '/notification-settings', permission: 'settings', icon: '🔔' },
-      { name: 'Settings', href: '/settings', permission: 'settings', icon: '⚙️' }
+      // { name: 'Settings', href: '/settings', permission: 'settings', icon: '⚙️' }
     ];
   };
   

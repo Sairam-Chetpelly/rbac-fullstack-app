@@ -175,10 +175,21 @@ const VisaFlowHomepage = () => {
                           {destination.placeImage ? (
                             <div className="relative w-full h-48 overflow-hidden">
                               <img 
-                                src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/countries/${destination.placeImage}`} 
+                                src={destination.placeImage.startsWith('http') 
+                                  ? destination.placeImage 
+                                  : `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '') || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/uploads/countries/${destination.placeImage}`
+                                } 
                                 alt={destination.name}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none'
+                                  e.target.nextSibling.style.display = 'flex'
+                                }}
                               />
+                              <div className="w-full h-48 bg-gradient-to-br from-blue-400 to-purple-500 items-center justify-center text-center text-white" style={{display: 'none'}}>
+                                <span className="text-4xl mb-2 block">🌍</span>
+                                <h3 className="text-lg font-semibold">{destination.name}</h3>
+                              </div>
                               <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
                                 <div className="text-center text-white">
                                   {/* <h3 className="text-lg font-semibold">{destination.name}</h3> */}
