@@ -39,6 +39,24 @@ const applicationSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  visaDetails: {
+    visaNumber: {
+      type: String,
+      default: null
+    },
+    dateOfIssuance: {
+      type: Date,
+      default: null
+    },
+    dateOfExpiry: {
+      type: Date,
+      default: null
+    },
+    additionalDetails: {
+      type: String,
+      default: null
+    }
+  },
   submittedAt: {
     type: Date,
     default: null

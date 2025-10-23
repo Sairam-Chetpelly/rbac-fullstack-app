@@ -84,14 +84,24 @@ export default function Applications() {
     }
   };
 
-  const handleStatusChange = async (newStatusId, remarks, embassyVisitDateTime) => {
+  const handleStatusChange = async (newStatusId, remarks, embassyVisitDateTime, visaDetails) => {
     try {
-      await api.put(`/applications/${statusModal.applicationId}/status`, {
+      const updateData = {
         status: newStatusId,
         remarks,
         embassyVisitDateTime
-      });
+      };
+      
+      if (visaDetails) {
+        updateData.visaDetails = visaDetails;
+      }
+      
+      await api.put(`/applications/${statusModal.applicationId}/status`, updateData);
       fetchApplications();
+      
+      if (visaDetails) {
+        alert('Status updated successfully! Visa issuance notification has been sent to the applicant.');
+      }
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Failed to update status');

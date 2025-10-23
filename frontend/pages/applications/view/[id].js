@@ -97,15 +97,25 @@ export default function AdminViewApplication() {
     }
   };
 
-  const handleStatusChange = async (newStatusId, remarks, embassyVisitDateTime) => {
+  const handleStatusChange = async (newStatusId, remarks, embassyVisitDateTime, visaDetails) => {
     try {
-      await api.put(`/applications/${id}/status`, {
+      const updateData = {
         status: newStatusId,
         remarks,
         embassyVisitDateTime
-      });
+      };
       
-      alert('Status updated successfully');
+      if (visaDetails) {
+        updateData.visaDetails = visaDetails;
+      }
+      
+      await api.put(`/applications/${id}/status`, updateData);
+      
+      if (visaDetails) {
+        alert('Status updated successfully! Visa issuance notification has been sent to the applicant.');
+      } else {
+        alert('Status updated successfully');
+      }
       fetchApplicationDetails();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -423,6 +433,45 @@ export default function AdminViewApplication() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Visa Details */}
+        {application.visaDetails && (
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">📋 Visa Issuance Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-green-50 p-4 rounded-lg">
+                <dt className="text-sm font-medium text-gray-700 mb-1">Visa Number</dt>
+                <dd className="text-lg font-bold text-green-600">{application.visaDetails.visaNumber}</dd>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <dt className="text-sm font-medium text-gray-700 mb-1">Date of Issuance</dt>
+                <dd className="text-sm font-semibold text-blue-800">
+                  {new Date(application.visaDetails.dateOfIssuance).toLocaleDateString()}
+                </dd>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <dt className="text-sm font-medium text-gray-700 mb-1">Date of Expiry</dt>
+                <dd className="text-sm font-semibold text-purple-800">
+                  {new Date(application.visaDetails.dateOfExpiry).toLocaleDateString()}
+                </dd>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <dt className="text-sm font-medium text-gray-700 mb-1">Validity</dt>
+                <dd className="text-sm text-gray-900">
+                  {Math.ceil((new Date(application.visaDetails.dateOfExpiry) - new Date(application.visaDetails.dateOfIssuance)) / (1000 * 60 * 60 * 24))} days
+                </dd>
+              </div>
+            </div>
+            {application.visaDetails.additionalDetails && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <dt className="text-sm font-medium text-gray-700 mb-2">Additional Details</dt>
+                <dd className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">
+                  {application.visaDetails.additionalDetails}
+                </dd>
+              </div>
+            )}
           </div>
         )}
 

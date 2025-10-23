@@ -453,6 +453,99 @@ const emailTemplates = {
     `, '#22c55e', '💳')
   }),
 
+  visaIssued: (userName, applicationId, countryName, visaNumber, dateOfIssuance, dateOfExpiry, additionalDetails, remarks) => ({
+    subject: '🎉 VISA ISSUED - Your Visa is Ready!',
+    html: createEmailTemplate('Visa Issued', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 28px; font-weight: 700;">🎉 Congratulations ${userName}!</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 18px; font-weight: 600;">
+        Your ${countryName} visa has been successfully issued! 🌟
+      </p>
+      
+      <div style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; padding: 24px; margin: 30px 0; color: white;">
+        <h3 style="color: white; margin: 0 0 16px 0; font-size: 20px; font-weight: 600;">📋 Visa Details</h3>
+        <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin: 16px 0;">
+          <p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Application ID: <span style="font-weight: 600; font-family: monospace;">${applicationId}</span></p>
+          <p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Visa Number: <span style="font-weight: 700; font-family: monospace; font-size: 18px;">${visaNumber}</span></p>
+          <p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Date of Issuance: <span style="font-weight: 600;">${dateOfIssuance}</span></p>
+          <p style="color: white; margin: 0; font-size: 16px;">Date of Expiry: <span style="font-weight: 600;">${dateOfExpiry}</span></p>
+        </div>
+      </div>
+      
+      ${additionalDetails ? `
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">📝 Additional Details:</p>
+        <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.6;">${additionalDetails}</p>
+      </div>
+      ` : ''}
+      
+      ${remarks ? `
+      <div style="background: rgba(249, 115, 22, 0.05); border-left: 4px solid rgba(249, 115, 22, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #ea580c; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">💬 Important Notes:</p>
+        <p style="color: #ea580c; margin: 0; font-size: 14px; line-height: 1.6;">${remarks}</p>
+      </div>
+      ` : ''}
+      
+      <table role="presentation" style="margin: 30px 0;">
+        <tr>
+          <td style="text-align: center;">
+            <a href="${process.env.FRONTEND_URL}/customer/applications" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; padding: 18px 36px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+              View Visa Details
+            </a>
+          </td>
+        </tr>
+      </table>
+      
+      <div style="background: rgba(34, 197, 94, 0.05); border-left: 4px solid rgba(34, 197, 94, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">🎯 Next Steps:</p>
+        <p style="color: #166534; margin: 0; font-size: 14px; line-height: 1.6;">
+          • Print your visa confirmation<br>
+          • Check visa validity dates before travel<br>
+          • Ensure passport validity (6+ months)<br>
+          • Contact us for any travel assistance
+        </p>
+      </div>
+      
+      <div style="text-align: center; margin: 40px 0; padding: 20px; background: rgba(59, 130, 246, 0.02); border-radius: 8px;">
+        <p style="color: #1f2937; margin: 0; font-size: 18px; font-weight: 600;">🌟 Thank you for choosing Options Travel Services! 🌟</p>
+        <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px;">Wishing you safe and happy travels!</p>
+      </div>
+    `, '#10b981', '🎉')
+  }),
+
+  adminVisaIssued: (applicationId, userName, countryName, visaNumber, updatedBy) => ({
+    subject: '✅ VISA ISSUED - Admin Notification',
+    html: createEmailTemplate('Admin Visa Issued', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">✅ Visa Successfully Issued</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        A visa has been successfully issued and the customer has been notified.
+      </p>
+      
+      <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 6px; padding: 16px; margin: 20px 0;">
+        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Application ID: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${applicationId}</span></p>
+        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Customer: <span style="color: #1f2937; font-weight: 600;">${userName}</span></p>
+        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Country: <span style="color: #059669; font-weight: 600;">${countryName}</span></p>
+        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Visa Number: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${visaNumber}</span></p>
+        <p style="color: #166534; margin: 0; font-size: 15px;">Issued by: <span style="color: #1f2937; font-weight: 600;">${updatedBy}</span></p>
+      </div>
+      
+      <table role="presentation" style="margin: 30px 0;">
+        <tr>
+          <td style="text-align: center;">
+            <a href="${process.env.FRONTEND_URL}/applications" style="display: inline-block; background: rgba(34, 197, 94, 0.9); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);">
+              View Application Details
+            </a>
+          </td>
+        </tr>
+      </table>
+      
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0; font-size: 14px; font-weight: 500;">
+          📧 Customer notification email has been sent automatically with visa details.
+        </p>
+      </div>
+    `, '#22c55e', '✅')
+  }),
+
 
 };
 
@@ -508,6 +601,12 @@ const sendEmail = async (to, template, data = {}) => {
         break;
       case 'paymentConfirmed':
         emailContent = emailTemplates.paymentConfirmed(data.userName, data.applicationNumber, data.amount, data.transactionId);
+        break;
+      case 'visaIssued':
+        emailContent = emailTemplates.visaIssued(data.userName, data.applicationId, data.countryName, data.visaNumber, data.dateOfIssuance, data.dateOfExpiry, data.additionalDetails, data.remarks);
+        break;
+      case 'adminVisaIssued':
+        emailContent = emailTemplates.adminVisaIssued(data.applicationId, data.userName, data.countryName, data.visaNumber, data.updatedBy);
         break;
       default:
         throw new Error(`Unknown email template: ${template}`);

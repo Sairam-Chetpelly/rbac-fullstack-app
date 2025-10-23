@@ -385,7 +385,7 @@ router.put('/:id', auth, role(['admin', 'employee']), async (req, res) => {
 // Update application status (admin only)
 router.put('/:id/status', auth, role(['admin','employee']), async (req, res) => {
   try {
-    const { status, remarks, embassyVisitDateTime } = req.body;
+    const { status, remarks, embassyVisitDateTime, visaDetails } = req.body;
     
     const Status = require('../models/Status');
     const statusDoc = await Status.findById(status);
@@ -395,17 +395,28 @@ router.put('/:id/status', auth, role(['admin','employee']), async (req, res) => 
     
     const application = await Application.findById(req.params.id)
       .populate('user', 'name email')
-      .populate('status', 'name');
+      .populate('status', 'name')
+      .populate({
+        path: 'countryVisaType',
+        populate: {
+          path: 'country',
+          select: 'name'
+        }
+      });
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }
 
     const oldStatus = application.status;
+    const isVisaIssued = statusDoc.name.toLowerCase().includes('visa issued') || statusDoc.name.toLowerCase().includes('issued');
     
     // Update application status and embassy visit date
     application.status = status;
     if (embassyVisitDateTime) {
       application.embassyVisitDateTime = embassyVisitDateTime;
+    }
+    if (visaDetails && isVisaIssued) {
+      application.visaDetails = visaDetails;
     }
     await application.save();
 
@@ -421,22 +432,45 @@ router.put('/:id/status', auth, role(['admin','employee']), async (req, res) => 
     const User = require('../models/User');
     const updatedBy = await User.findById(req.user._id);
     
-    // Email to customer
-    sendEmail(application.user.email, 'statusUpdate', {
-      userName: application.user.name,
-      applicationId: application.applicationNumber,
-      status: statusDoc.name,
-      remarks: remarks
-    });
-    
-    // Email to admin
-    sendAdminNotification('adminStatusUpdate', {
-      applicationId: application.applicationNumber,
-      userName: application.user.name,
-      oldStatus: oldStatus?.name || 'Unknown',
-      newStatus: statusDoc.name,
-      updatedBy: updatedBy.name
-    });
+    if (isVisaIssued && visaDetails) {
+      // Send visa issuance email with details
+      sendEmail(application.user.email, 'visaIssued', {
+        userName: application.user.name,
+        applicationId: application.applicationNumber,
+        countryName: application.countryVisaType?.country?.name || 'Unknown',
+        visaNumber: visaDetails.visaNumber,
+        dateOfIssuance: new Date(visaDetails.dateOfIssuance).toLocaleDateString(),
+        dateOfExpiry: new Date(visaDetails.dateOfExpiry).toLocaleDateString(),
+        additionalDetails: visaDetails.additionalDetails || '',
+        remarks: remarks
+      });
+      
+      // Email to admin about visa issuance
+      sendAdminNotification('adminVisaIssued', {
+        applicationId: application.applicationNumber,
+        userName: application.user.name,
+        countryName: application.countryVisaType?.country?.name || 'Unknown',
+        visaNumber: visaDetails.visaNumber,
+        updatedBy: updatedBy.name
+      });
+    } else {
+      // Regular status update email
+      sendEmail(application.user.email, 'statusUpdate', {
+        userName: application.user.name,
+        applicationId: application.applicationNumber,
+        status: statusDoc.name,
+        remarks: remarks
+      });
+      
+      // Email to admin
+      sendAdminNotification('adminStatusUpdate', {
+        applicationId: application.applicationNumber,
+        userName: application.user.name,
+        oldStatus: oldStatus?.name || 'Unknown',
+        newStatus: statusDoc.name,
+        updatedBy: updatedBy.name
+      });
+    }
 
     // Send embassy visit notification if date is set
     if (embassyVisitDateTime) {
