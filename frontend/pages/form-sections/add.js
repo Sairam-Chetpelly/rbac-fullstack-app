@@ -123,7 +123,7 @@ export default function AddFormSection() {
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Select Visa Type</option>
+                  <option disabled value="">Select Visa Type</option>
                   {countryVisaTypes.map((cvt) => (
                     <option key={cvt._id} value={cvt._id}>
                       {cvt.name} - {cvt.country?.name}
@@ -143,12 +143,17 @@ export default function AddFormSection() {
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Select Status</option>
-                  {statuses.map((status) => (
+                  <option disabled value="">Select Status</option>
+                  {/* {statuses.map((status) => (
                     <option key={status._id} value={status._id}>
                       {status.name}
                     </option>
-                  ))}
+                  ))} */}
+                  {statuses.filter(status => status.category === "System").map(status => (
+                  <option key={status._id} value={status._id}>
+                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
+                  </option>
+                ))}
                 </select>
               </div>
 

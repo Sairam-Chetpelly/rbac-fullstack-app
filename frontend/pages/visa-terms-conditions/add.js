@@ -91,7 +91,7 @@ export default function AddVisaTermsConditions() {
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  <option value="">Select Country Visa Type</option>
+                  <option disabled value="">Select Country Visa Type</option>
                   {countryVisaTypes.map(cvt => (
                     <option key={cvt._id} value={cvt._id}>{cvt.name}</option>
                   ))}
@@ -110,7 +110,6 @@ export default function AddVisaTermsConditions() {
               </div>
 
               <div className="lg:col-span-2">
-                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-3">
                 <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
                   ⚡ Status
                 </label>
@@ -120,12 +119,17 @@ export default function AddVisaTermsConditions() {
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  <option value="">Select Status</option>
-                  {statuses.map(status => (
+                  <option disabled value="">Select Status</option>
+                  {/* {statuses.map(status => (
                     <option key={status._id} value={status._id}>
                       {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                     </option>
-                  ))}
+                  ))} */}
+                  {statuses.filter(status => status.category === "System").map(status => (
+                  <option key={status._id} value={status._id}>
+                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
+                  </option>
+                ))}
                 </select>
               </div>
             </div>

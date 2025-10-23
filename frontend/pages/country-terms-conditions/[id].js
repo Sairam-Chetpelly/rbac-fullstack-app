@@ -109,7 +109,7 @@ export default function EditCountryTermsConditions() {
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  <option value="">Select Country</option>
+                  <option disabled value="">Select Country</option>
                   {countries.map(country => (
                     <option key={country._id} value={country._id}>{country.name}</option>
                   ))}

@@ -104,12 +104,6 @@ export default function CountryTermsConditions() {
       }
     },
     {
-      key: 'status.name',
-      label: 'Status',
-      type: 'status',
-      sortable: true
-    },
-    {
       key: 'createdAt',
       label: 'Created',
       type: 'date',
@@ -126,16 +120,6 @@ export default function CountryTermsConditions() {
         value: name,
         label: name
       }))
-    },
-    {
-      key: 'status.name',
-      label: 'Status',
-      type: 'select',
-      options: [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' },
-        { value: 'pending', label: 'Pending' }
-      ]
     }
   ];
 

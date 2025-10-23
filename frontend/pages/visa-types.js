@@ -70,48 +70,6 @@ export default function VisaTypes() {
       )
     },
     {
-      key: 'code',
-      label: 'Code',
-      sortable: true,
-      render: (value) => (
-        <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-mono">
-          {value || 'N/A'}
-        </span>
-      )
-    },
-    {
-      key: 'category',
-      label: 'Category',
-      sortable: true,
-      render: (value) => (
-        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
-          {value || 'General'}
-        </span>
-      )
-    },
-    {
-      key: 'validityPeriod',
-      label: 'Validity',
-      render: (value) => (
-        <span className="text-sm text-gray-600">
-          {value || 'N/A'}
-        </span>
-      )
-    },
-    {
-      key: 'entryType',
-      label: 'Entry Type',
-      render: (value) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          value === 'Multiple' ? 'bg-green-100 text-green-800' :
-          value === 'Single' ? 'bg-blue-100 text-blue-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {value || 'N/A'}
-        </span>
-      )
-    },
-    {
       key: 'status.name',
       label: 'Status',
       type: 'status',
@@ -125,36 +83,7 @@ export default function VisaTypes() {
     }
   ];
 
-  const filters = [
-    {
-      key: 'category',
-      label: 'Category',
-      type: 'select',
-      options: [...new Set(visaTypes.map(v => v.category).filter(Boolean))].map(cat => ({
-        value: cat,
-        label: cat
-      }))
-    },
-    {
-      key: 'entryType',
-      label: 'Entry Type',
-      type: 'select',
-      options: [
-        { value: 'Single', label: 'Single Entry' },
-        { value: 'Multiple', label: 'Multiple Entry' }
-      ]
-    },
-    {
-      key: 'status.name',
-      label: 'Status',
-      type: 'select',
-      options: [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' },
-        { value: 'pending', label: 'Pending' }
-      ]
-    }
-  ];
+  const filters = [];
 
   const stats = {
     total: visaTypes.length,
@@ -168,7 +97,7 @@ export default function VisaTypes() {
       data={visaTypes}
       columns={columns}
       loading={loading}
-      searchPlaceholder="🔍 Search visa types by name, category, or description..."
+      searchPlaceholder="🔍 Search visa types by name, description..."
       onView={handleView}
       onEdit={handleEdit}
       onDelete={handleDelete}

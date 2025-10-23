@@ -166,8 +166,7 @@ export default function CountryVisaTypes() {
       type: 'select',
       options: [
         { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' },
-        { value: 'pending', label: 'Pending' }
+        { value: 'inactive', label: 'Inactive' }
       ]
     }
   ];

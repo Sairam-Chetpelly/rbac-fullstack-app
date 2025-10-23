@@ -198,7 +198,7 @@ export default function AddUser() {
                 onChange={handleChange}
                 className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
               >
-                <option value="">Select Role</option>
+                <option disabled value="">Select Role</option>
                 {getRoleOptions().map(role => (
                   <option key={role._id} value={role._id}>
                     {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
@@ -218,8 +218,8 @@ export default function AddUser() {
                 className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                 required
               >
-                <option value="">Select Status</option>
-                {statuses.map(status => (
+                <option disabled value="">Select Status</option>
+                {statuses.filter(status => status.category === "System").map(status => (
                   <option key={status._id} value={status._id}>
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>

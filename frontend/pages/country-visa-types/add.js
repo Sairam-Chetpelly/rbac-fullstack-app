@@ -100,7 +100,7 @@ export default function AddCountryVisaType() {
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  <option value="">Select Country</option>
+                  <option disabled value="">Select Country</option>
                   {countries.map(country => (
                     <option key={country._id} value={country._id}>{country.name}</option>
                   ))}
@@ -117,7 +117,7 @@ export default function AddCountryVisaType() {
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  <option value="">Select Visa Type</option>
+                  <option disabled value="">Select Visa Type</option>
                   {visaTypes.map(visaType => (
                     <option key={visaType._id} value={visaType._id}>{visaType.name}</option>
                   ))}
@@ -198,12 +198,18 @@ export default function AddCountryVisaType() {
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  <option value="">Select Status</option>
+                  {/* <option value="">Select Status</option>
                   {statuses.map(status => (
                     <option key={status._id} value={status._id}>
                       {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                     </option>
-                  ))}
+                  ))} */}
+                <option disabled value="">Select Status</option>
+                {statuses.filter(status => status.category === "System").map(status => (
+                  <option key={status._id} value={status._id}>
+                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
+                  </option>
+                ))}
                 </select>
               </div>
             </div>

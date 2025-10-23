@@ -206,7 +206,7 @@ export default function EditUser() {
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
                 required
               >
-                <option value="">Select Role</option>
+                <option disabled value="">Select Role</option>
                 {getRoleOptions().map(role => (
                   <option key={role._id} value={role._id}>
                     {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
@@ -226,8 +226,13 @@ export default function EditUser() {
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
                 required
               >
-                <option value="">Select Status</option>
-                {statuses.map(status => (
+                <option disabled value="">Select Status</option>
+                {/* {statuses.map(status => (
+                  <option key={status._id} value={status._id}>
+                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
+                  </option>
+                ))} */}
+                {statuses.filter(status => status.category === "System").map(status => (
                   <option key={status._id} value={status._id}>
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>

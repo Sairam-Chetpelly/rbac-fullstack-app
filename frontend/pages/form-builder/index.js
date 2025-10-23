@@ -153,6 +153,7 @@ export default function FormBuilder() {
   };
 
   const saveSectionForm = async () => {
+    const scrollPosition = window.pageYOffset;
     try {
       const sectionData = {
         ...sectionForm,
@@ -168,7 +169,8 @@ export default function FormBuilder() {
       }
       
       setShowSectionModal(false);
-      fetchVisaForm(selectedVisa._id);
+      await fetchVisaForm(selectedVisa._id);
+      setTimeout(() => window.scrollTo(0, scrollPosition), 0);
     } catch (error) {
       toast.error('Failed to save section');
     }
@@ -183,10 +185,12 @@ export default function FormBuilder() {
 
   const deleteSection = async (sectionId) => {
     if (confirm('Are you sure you want to delete this section?')) {
+      const scrollPosition = window.pageYOffset;
       try {
         await api.delete(`/form-sections/${sectionId}`);
         toast.success('Section deleted successfully!');
-        fetchVisaForm(selectedVisa._id);
+        await fetchVisaForm(selectedVisa._id);
+        setTimeout(() => window.scrollTo(0, scrollPosition), 0);
       } catch (error) {
         toast.error('Failed to delete section');
       }
@@ -233,6 +237,7 @@ export default function FormBuilder() {
   };
 
   const saveFieldForm = async () => {
+    const scrollPosition = window.pageYOffset;
     try {
       const fieldData = {
         ...fieldForm,
@@ -249,7 +254,8 @@ export default function FormBuilder() {
       }
       
       setShowFieldModal(false);
-      fetchVisaForm(selectedVisa._id);
+      await fetchVisaForm(selectedVisa._id);
+      setTimeout(() => window.scrollTo(0, scrollPosition), 0);
     } catch (error) {
       toast.error('Failed to save field');
     }
@@ -304,10 +310,12 @@ export default function FormBuilder() {
 
   const deleteField = async (fieldId) => {
     if (confirm('Are you sure you want to delete this field?')) {
+      const scrollPosition = window.pageYOffset;
       try {
         await api.delete(`/form-fields/${fieldId}`);
         toast.success('Field deleted successfully!');
-        fetchVisaForm(selectedVisa._id);
+        await fetchVisaForm(selectedVisa._id);
+        setTimeout(() => window.scrollTo(0, scrollPosition), 0);
       } catch (error) {
         toast.error('Failed to delete field');
       }
@@ -802,12 +810,17 @@ export default function FormBuilder() {
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Select Status</option>
-                  {statuses.map((status) => (
+                  <option disabled value="">Select Status</option>
+                  {/* {statuses.map((status) => (
                     <option key={status._id} value={status._id}>
                       {status.name}
                     </option>
-                  ))}
+                  ))} */}
+                  {statuses.filter(status => status.category === "System").map(status => (
+                  <option key={status._id} value={status._id}>
+                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
+                  </option>
+                ))}
                 </select>
               </div>
 
@@ -895,7 +908,7 @@ export default function FormBuilder() {
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Select Field Type</option>
+                  <option disabled value="">Select Field Type</option>
                   {fieldTypes.map((type) => (
                     <option key={type.value} value={type.value}>
                       {type.label}
@@ -926,7 +939,7 @@ export default function FormBuilder() {
                   onChange={handleFieldChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Select Form Section</option>
+                  <option disabled value="">Select Form Section</option>
                   {formSections.map((section) => (
                     <option key={section._id} value={section._id}>
                       {section.name} - {section.countryVisaType?.name || 'No Visa'}
@@ -944,12 +957,17 @@ export default function FormBuilder() {
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Select Status</option>
-                  {statuses.map((status) => (
+                  <option disabled value="">Select Status</option>
+                  {/* {statuses.map((status) => (
                     <option key={status._id} value={status._id}>
                       {status.name}
                     </option>
-                  ))}
+                  ))} */}
+                  {statuses.filter(status => status.category === "System").map(status => (
+                  <option key={status._id} value={status._id}>
+                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
+                  </option>
+                ))}
                 </select>
               </div>
 
