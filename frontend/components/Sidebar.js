@@ -31,6 +31,7 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
           { name: 'Roles', href: '/roles', permission: 'roles', icon: '🔐' }
         ]
       },
+      { name: 'Reports', href: '/reports', permission: 'dashboard', icon: '📊' },
       {
         name: 'System Configuration',
         icon: '⚙️',
@@ -48,23 +49,30 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
           { name: 'Notifications', href: '/notification-settings', permission: 'settings', icon: '🔔' }
         ]
       },
-      { name: 'Reports', href: '/reports', permission: 'dashboard', icon: '📊' }
     ];
   };
   
   const menuGroups = getMenuGroups();
 
   const toggleGroup = (groupName) => {
-    setExpandedGroups(prev => {
-      const newState = {};
-      // Close all other groups
-      Object.keys(prev).forEach(key => {
-        newState[key] = false;
+    if (isCollapsed) {
+      // When collapsed, expand sidebar first
+      onToggle();
+      setTimeout(() => {
+        setExpandedGroups({ [groupName]: true });
+      }, 100);
+    } else {
+      setExpandedGroups(prev => {
+        const newState = {};
+        // Close all other groups
+        Object.keys(prev).forEach(key => {
+          newState[key] = false;
+        });
+        // Toggle the clicked group
+        newState[groupName] = !prev[groupName];
+        return newState;
       });
-      // Toggle the clicked group
-      newState[groupName] = !prev[groupName];
-      return newState;
-    });
+    }
   };
 
   const isGroupExpanded = (groupName) => expandedGroups[groupName];
@@ -89,12 +97,12 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
   }, [router.pathname]);
 
   return (
-    <div className={`bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen shadow-2xl transition-all duration-300 fixed left-0 top-0 z-30 ${
+    <div className={`bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white h-screen shadow-2xl transition-all duration-300 fixed left-0 top-0 z-30 flex flex-col ${
       isMobile 
         ? (isCollapsed ? '-translate-x-full w-72' : 'translate-x-0 w-72')
         : (isCollapsed ? 'w-20' : 'w-72')
     }`}>
-      <div className="p-3 lg:p-6">
+      <div className="p-3 lg:p-6 flex-shrink-0">
         <div className="flex justify-between items-center mb-4 lg:mb-8">
           {!isCollapsed && (
             <div className="flex items-center gap-3 p-3 lg:p-4 bg-white/10 rounded-2xl backdrop-blur-sm">
@@ -115,7 +123,9 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
           </button>
         </div>
         
-        <nav className="space-y-1">
+      </div>
+      
+      <nav className="space-y-1 flex-1 overflow-y-auto sidebar-scroll px-3 lg:px-6">
           {visibleGroups.map((group) => {
             if (group.children) {
               const isExpanded = isGroupExpanded(group.name);
@@ -123,7 +133,7 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
               return (
                 <div key={group.name} className="mb-1">
                   <button
-                    onClick={() => !isCollapsed && toggleGroup(group.name)}
+                    onClick={() => toggleGroup(group.name)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                       hasActiveChild || isExpanded
                         ? 'bg-blue-600/20 text-blue-300 border-l-4 border-blue-500'
@@ -184,17 +194,15 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
               );
             }
           })}
-        </nav>
-        
-        {!isCollapsed && (
-          <div className="mt-8 lg:mt-12 p-4 lg:p-6 bg-white/5 rounded-2xl backdrop-blur-sm border border-white/10">
-            <div className="text-center">
-              <img src="/optionslogo.png" alt="Logo" className="w-100 lg:w-100  mx-auto mb-2" />
-
-            </div>
+      </nav>
+      
+      {!isCollapsed && (
+        <div className="mt-4 p-4 lg:p-6 bg-white/5 rounded-2xl backdrop-blur-sm border border-white/10 flex-shrink-0 mx-3 lg:mx-6">
+          <div className="text-center">
+            <img src="/optionslogo.png" alt="Logo" className="w-100 lg:w-100 mx-auto mb-2" />
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

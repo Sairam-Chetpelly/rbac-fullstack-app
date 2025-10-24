@@ -454,11 +454,11 @@ const emailTemplates = {
   }),
 
   visaIssued: (userName, applicationId, countryName, visaNumber, dateOfIssuance, dateOfExpiry, additionalDetails, remarks) => ({
-    subject: '🎉 VISA ISSUED - Your Visa is Ready!',
-    html: createEmailTemplate('Visa Issued', `
+    subject: '🎉 VISA Ppproved - Your Visa is Ready!',
+    html: createEmailTemplate('Visa Approved', `
       <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 28px; font-weight: 700;">🎉 Congratulations ${userName}!</h2>
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 18px; font-weight: 600;">
-        Your ${countryName} visa has been successfully issued! 🌟
+        Your ${countryName} visa has been successfully Approved! 🌟
       </p>
       
       <div style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; padding: 24px; margin: 30px 0; color: white;">
@@ -513,11 +513,11 @@ const emailTemplates = {
   }),
 
   adminVisaIssued: (applicationId, userName, countryName, visaNumber, updatedBy) => ({
-    subject: '✅ VISA ISSUED - Admin Notification',
-    html: createEmailTemplate('Admin Visa Issued', `
-      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">✅ Visa Successfully Issued</h2>
+    subject: '✅ VISA Approved - Admin Notification',
+    html: createEmailTemplate('Admin Visa Approved', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">✅ Visa Successfully Approved</h2>
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
-        A visa has been successfully issued and the customer has been notified.
+        A visa has been successfully approved and the customer has been notified.
       </p>
       
       <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 6px; padding: 16px; margin: 20px 0;">
@@ -525,7 +525,7 @@ const emailTemplates = {
         <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Customer: <span style="color: #1f2937; font-weight: 600;">${userName}</span></p>
         <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Country: <span style="color: #059669; font-weight: 600;">${countryName}</span></p>
         <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Visa Number: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${visaNumber}</span></p>
-        <p style="color: #166534; margin: 0; font-size: 15px;">Issued by: <span style="color: #1f2937; font-weight: 600;">${updatedBy}</span></p>
+        <p style="color: #166534; margin: 0; font-size: 15px;">Approved by: <span style="color: #1f2937; font-weight: 600;">${updatedBy}</span></p>
       </div>
       
       <table role="presentation" style="margin: 30px 0;">

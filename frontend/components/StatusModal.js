@@ -31,10 +31,10 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
     if (!selectedStatus) return;
     
     const statusName = statuses.find(s => s._id === selectedStatus)?.name || 'Unknown';
-    const isVisaIssued = statusName.toLowerCase().includes('visa issued') || statusName.toLowerCase().includes('issued');
+    const isVisaIssued = statusName.toLowerCase().includes('visa-approved') || statusName.toLowerCase().includes('approved');
     
     if (isVisaIssued && (!visaDetails.visaNumber || !visaDetails.dateOfIssuance || !visaDetails.dateOfExpiry)) {
-      alert('Please fill all visa details for visa issued status');
+      alert('Please fill all visa details for visa approved status');
       return;
     }
     
@@ -77,7 +77,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
             </select>
           </div>
 
-          {statuses.find(s => s._id === selectedStatus)?.name?.toLowerCase().includes('interview') && (
+          {statuses.find(s => s._id === selectedStatus)?.name?.toLowerCase().includes('scheduled') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Embassy Visit Date & Time (Optional)
@@ -91,8 +91,8 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
             </div>
           )}
 
-          {(statuses.find(s => s._id === selectedStatus)?.name?.toLowerCase().includes('visa issued') || 
-            statuses.find(s => s._id === selectedStatus)?.name?.toLowerCase().includes('issued')) && (
+          {(statuses.find(s => s._id === selectedStatus)?.name?.toLowerCase().includes('visa-approved') || 
+            statuses.find(s => s._id === selectedStatus)?.name?.toLowerCase().includes('approved')) && (
             <div className="space-y-4 p-4 bg-green-50 rounded-lg border border-green-200">
               <h4 className="font-semibold text-green-800">📋 Visa Issuance Details</h4>
               

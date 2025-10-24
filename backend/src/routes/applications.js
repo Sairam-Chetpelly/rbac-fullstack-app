@@ -408,7 +408,7 @@ router.put('/:id/status', auth, role(['admin','employee']), async (req, res) => 
     }
 
     const oldStatus = application.status;
-    const isVisaIssued = statusDoc.name.toLowerCase().includes('visa issued') || statusDoc.name.toLowerCase().includes('issued');
+    const isVisaIssued = statusDoc.name.toLowerCase().includes('visa-approved') || statusDoc.name.toLowerCase().includes('approved');
     
     // Update application status and embassy visit date
     application.status = status;
