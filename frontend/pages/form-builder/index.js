@@ -239,10 +239,29 @@ export default function FormBuilder() {
   const saveFieldForm = async () => {
     const scrollPosition = window.pageYOffset;
     try {
+      const sectionId = fieldForm.formSection || selectedSectionId;
+      const selectedSection = formSections.find(s => s._id === sectionId);
+      const sectionPrefix = selectedSection ? selectedSection.name.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') : 'section';
+      const baseName = fieldForm.label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+      let uniqueName = fieldForm.name || `${sectionPrefix}_${baseName}`;
+      
+      // Check for duplicate names within the same section
+      const sectionFields = getFieldsBySection(sectionId);
+      const existingNames = sectionFields
+        .filter(f => !editingField || f._id !== editingField._id)
+        .map(f => f.name);
+      
+      let counter = 1;
+      let originalName = uniqueName;
+      while (existingNames.includes(uniqueName)) {
+        uniqueName = `${originalName}_${counter}`;
+        counter++;
+      }
+      
       const fieldData = {
         ...fieldForm,
-        formSection: fieldForm.formSection || selectedSectionId,
-        name: fieldForm.name || fieldForm.label.toLowerCase().replace(/\s+/g, '_')
+        formSection: sectionId,
+        name: uniqueName
       };
 
       if (editingField) {
@@ -265,9 +284,26 @@ export default function FormBuilder() {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
     
-    // Auto-generate name from label
+    // Auto-generate name from label with section prefix and duplicate prevention
     if (name === 'label' && newValue) {
-      const autoName = newValue.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+      const baseName = newValue.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+      const selectedSection = formSections.find(s => s._id === (fieldForm.formSection || selectedSectionId));
+      const sectionPrefix = selectedSection ? selectedSection.name.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') : 'section';
+      let autoName = `${sectionPrefix}_${baseName}`;
+      
+      // Check for duplicates in the same section
+      const sectionFields = getFieldsBySection(fieldForm.formSection || selectedSectionId);
+      const existingNames = sectionFields
+        .filter(f => !editingField || f._id !== editingField._id)
+        .map(f => f.name);
+      
+      let counter = 1;
+      let originalName = autoName;
+      while (existingNames.includes(autoName)) {
+        autoName = `${originalName}_${counter}`;
+        counter++;
+      }
+      
       setFieldForm({
         ...fieldForm,
         [name]: newValue,
@@ -664,12 +700,13 @@ export default function FormBuilder() {
                                   
                                   {field.type === 'textarea' ? (
                                     <textarea
+                                      name={field.name}
                                       placeholder={field.placeholder}
                                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                       rows={3}
                                     />
                                   ) : field.type === 'select' ? (
-                                    <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <select name={field.name} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                       <option disabled value="">Select {field.label}</option>
                                       {field.options && field.options.map((option, index) => (
                                         <option key={index} value={option}>
@@ -679,6 +716,7 @@ export default function FormBuilder() {
                                     </select>
                                   ) : field.type === 'file' ? (
                                     <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
+                                      <input type="file" name={field.name} className="hidden" />
                                       <div className="text-2xl mb-2">📎</div>
                                       <div className="text-sm text-gray-600">Click to upload {field.label}</div>
                                     </div>
@@ -688,6 +726,7 @@ export default function FormBuilder() {
                                         <label key={index} className="flex items-center space-x-3 cursor-pointer">
                                           <input
                                             type="checkbox"
+                                            name={`${field.name}_${index}`}
                                             value={option}
                                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                           />
@@ -712,6 +751,7 @@ export default function FormBuilder() {
                                   ) : (
                                     <input
                                       type={field.type}
+                                      name={field.name}
                                       placeholder={field.placeholder}
                                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
