@@ -25,7 +25,7 @@ const createEmailTemplate = (title, content, primaryColor = '#3b82f6', icon = '�
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${title} - Options Travel Services</title>
+      <title>${title} - One World Visa</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
       <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -36,7 +36,7 @@ const createEmailTemplate = (title, content, primaryColor = '#3b82f6', icon = '�
               <tr>
                 <td style="padding: 40px 30px; text-align: center; background: rgba(59, 130, 246, 0.1); border-bottom: 1px solid rgba(59, 130, 246, 0.2);">
                   <div style="font-size: 48px; margin-bottom: 10px;">${icon}</div>
-                  <h1 style="color: #1e40af; margin: 0; font-size: 28px; font-weight: 600;">Options Travel Services</h1>
+                  <h1 style="color: #1e40af; margin: 0; font-size: 28px; font-weight: 600;">One World Visa</h1>
                   <p style="color: #3b82f6; margin: 8px 0 0 0; font-size: 16px;">Your Trusted Visa Partner</p>
                 </td>
               </tr>
@@ -51,11 +51,16 @@ const createEmailTemplate = (title, content, primaryColor = '#3b82f6', icon = '�
               <!-- Footer -->
               <tr>
                 <td style="background: rgba(59, 130, 246, 0.02); padding: 30px; text-align: center; border-top: 1px solid rgba(59, 130, 246, 0.1);">
-                  <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 14px;">
-                    Options Travel Services
+                  <p style="color: #6b7280; margin: 0 0 15px 0; font-size: 14px;">
+                    One World Visa
                   </p>
+                  <div style="background: rgba(59, 130, 246, 0.05); border-radius: 8px; padding: 16px; margin: 15px 0; text-align: center;">
+                    <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">📞 Need Help? Contact Our Support Team</p>
+                    <p style="color: #3b82f6; margin: 0 0 4px 0; font-size: 13px;">📧 Email: <a href="mailto:visas@oneworldvisa.in" style="color: #3b82f6; text-decoration: none; font-weight: 500;">visas@oneworldvisa.in</a></p>
+                    <p style="color: #3b82f6; margin: 0; font-size: 13px;">📱 Phone: <a href="tel:+919920198788" style="color: #3b82f6; text-decoration: none; font-weight: 500;">+91 9920198788</a></p>
+                  </div>
                   <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-                    © 2025 Options Travel Services. All rights reserved.
+                    © 2025 One World Visa. All rights reserved.
                   </p>
                 </td>
               </tr>
@@ -71,7 +76,7 @@ const createEmailTemplate = (title, content, primaryColor = '#3b82f6', icon = '�
 // Email templates
 const emailTemplates = {
   welcome: (userName) => ({
-    subject: '🎉 Welcome to Options Travel Services - Your Journey Begins!',
+    subject: '🎉 Welcome to One World Visa - Your Journey Begins!',
     html: createEmailTemplate('Welcome', `
       <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Welcome aboard, ${userName}! 🎉</h2>
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
@@ -103,7 +108,7 @@ const emailTemplates = {
   accountCreated: (userName, email, password) => ({
     subject: '🔐 Your Account Has Been Created - Login Details Inside',
     html: createEmailTemplate('Account Created', `
-      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Welcome to Options Travel Services, ${userName}! 🎉</h2>
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Welcome to One World Visa, ${userName}! 🎉</h2>
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
         Your account has been successfully created by our admin team. Below are your login credentials to access the system.
       </p>
@@ -146,11 +151,11 @@ const emailTemplates = {
   }),
 
   forgotPassword: (userName, resetToken) => ({
-    subject: '🔐 Reset Your Password - Options Travel Services',
+    subject: '🔐 Reset Your Password - One World Visa',
     html: createEmailTemplate('Password Reset', `
       <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Hello ${userName}!</h2>
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
-        We received a request to reset your password for your Options Travel Services account. Click the button below to create a new password:
+        We received a request to reset your password for your One World Visa account. Click the button below to create a new password:
       </p>
       
       <table role="presentation" style="margin: 30px 0;">
@@ -506,7 +511,7 @@ const emailTemplates = {
       </div>
       
       <div style="text-align: center; margin: 40px 0; padding: 20px; background: rgba(59, 130, 246, 0.02); border-radius: 8px;">
-        <p style="color: #1f2937; margin: 0; font-size: 18px; font-weight: 600;">🌟 Thank you for choosing Options Travel Services! 🌟</p>
+        <p style="color: #1f2937; margin: 0; font-size: 18px; font-weight: 600;">🌟 Thank you for choosing One World Visa! 🌟</p>
         <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px;">Wishing you safe and happy travels!</p>
       </div>
     `, '#10b981', '🎉')
@@ -613,7 +618,7 @@ const sendEmail = async (to, template, data = {}) => {
     }
     
     const mailOptions = {
-      from: process.env.EMAIL_FROM || `"Options Travel Services" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_FROM || `"One World Visa" <${process.env.EMAIL_USER}>`,
       to: to,
       subject: emailContent.subject,
       html: emailContent.html
@@ -626,7 +631,7 @@ const sendEmail = async (to, template, data = {}) => {
     const adminEmail = process.env.ADMIN_EMAIL;
     if (adminEmail && to !== adminEmail && ['welcome', 'draftCreated', 'applicationSubmitted', 'statusUpdate'].includes(template)) {
       const adminMailOptions = {
-        from: process.env.EMAIL_FROM || `"Options Travel Services" <${process.env.EMAIL_USER}>`,
+        from: process.env.EMAIL_FROM || `"One World Visa" <${process.env.EMAIL_USER}>`,
         to: adminEmail,
         subject: `[ADMIN COPY] ${emailContent.subject}`,
         html: emailContent.html

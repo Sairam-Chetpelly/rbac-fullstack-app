@@ -55,7 +55,7 @@ export default function ForgotPassword() {
       >
         {/* Logo - Centered */}
         <div className="mb-8">
-          <img src="/optionslogo.png" alt="Options Travel Services" className="h-16 w-auto mx-auto" />
+          <img src="/optionslogo.png" alt="One World Visa" className="h-16 w-auto mx-auto" />
         </div>
 
         {/* Main Image */}
@@ -76,7 +76,7 @@ export default function ForgotPassword() {
       <div className="flex-1 bg-white flex flex-col justify-center items-center p-8">
         {/* Mobile Logo - Only visible on mobile */}
         <div className="md:hidden mb-8 text-center">
-          <img src="/optionslogo.png" alt="Options Travel Services" className="h-16 w-auto mx-auto" />
+          <img src="/optionslogo.png" alt="One World Visa" className="h-16 w-auto mx-auto" />
           <p className="mt-4 text-sm text-gray-600">Trusted Visa Assistance for Global Travel Needs</p>
         </div>
         
@@ -132,7 +132,7 @@ export default function ForgotPassword() {
       {/* WhatsApp Button */}
       <div className="fixed bottom-6 right-6 z-50">
         <a 
-          href="https://wa.me/919226166606" 
+          href="https://wa.me/919920198788" 
           target="_blank" 
           rel="noopener noreferrer"
           className="flex items-center justify-center w-14 h-14 bg-green-500/80 backdrop-blur-sm border border-white/20 rounded-full shadow-lg hover:bg-green-600/80 transition-all duration-300 hover:scale-110"

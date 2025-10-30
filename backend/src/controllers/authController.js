@@ -65,7 +65,7 @@ const register = async (req, res) => {
     const populatedUser = await User.findById(user._id).populate('role').populate('status');
     
     // Send welcome notifications (email & WhatsApp based on settings)
-    const welcomeMessage = `Welcome to Options Travel Services, ${name}! 🎉\n\nThank you for registering with us. We're here to help you with all your visa and travel needs.\n\nFor any assistance, contact us anytime.\n\nHappy Travels! ✈️`;
+    const welcomeMessage = `Welcome to One World Visa, ${name}! 🎉\n\nThank you for registering with us. We're here to help you with all your visa and travel needs.\n\nFor any assistance, contact us anytime.\n\nHappy Travels! ✈️`;
     sendNotifications(email, mobile, 'welcome', { userName: name }, welcomeMessage);
     
     res.status(201).json({

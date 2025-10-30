@@ -1,7 +1,7 @@
 {
-  "name": "options-travel-backend",
+  "name": "oneworldvisa-backend",
   "version": "1.0.0",
-  "description": "Options Travel Services Backend API",
+  "description": "One World Visa Backend API",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

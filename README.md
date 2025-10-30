@@ -1,4 +1,4 @@
-# Options Travel Services
+# One World Visa
 
 A complete visa application management system with React/Next.js frontend and Node.js/Express backend.
 
@@ -149,5 +149,5 @@ npm start
 4. Test thoroughly
 5. Submit a pull request
 
-## Options Travel Services
+## One World Visa
 Trusted Visa Assistance for Global Travel Needs

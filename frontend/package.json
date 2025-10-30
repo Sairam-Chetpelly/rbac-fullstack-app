@@ -1,5 +1,5 @@
 {
-  "name": "options-travel-frontend",
+  "name": "oneworldvisa-frontend",
   "version": "1.0.0",
   "scripts": {
     "dev": "node start-dev.js",

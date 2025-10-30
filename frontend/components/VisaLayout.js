@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { ArrowLeft, Mail, Phone, MapPin, Shield, Plane } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Shield, Plane, Clock } from 'lucide-react';
 import Button from './Button';
 import { useAuth } from '../context/AuthContext';
 
@@ -46,11 +46,11 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
             {/* Logo - left on homepage, center on other pages */}
             {isHomePage ? (
               <div className="flex items-center space-x-2">
-                <img src="/optionslogo.png" alt="VisaFlow Logo" className="" />
+                <img src="/optionslogo.png" alt="One World Visa Logo" className="" />
               </div>
             ) : (
               <div className="absolute left-1/2 transform -translate-x-1/2">
-                <img src="/optionslogo.png" alt="VisaFlow Logo" className="" />
+                <img src="/optionslogo.png" alt="One World Visa Logo" className="" />
               </div>
             )}
             
@@ -143,8 +143,8 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
                     <span>Visa-free countries</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Shield className="h-5 w-5" />
-                    <span>COVID-19 travel rules</span>
+                    <Clock className="h-5 w-5" />
+                    <span>24/7 service msg</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Phone className="h-5 w-5" />
@@ -178,7 +178,7 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
-                <img src="/optionslogo.png" alt="VisaFlow Logo" className="" />
+                <img src="/optionslogo.png" alt="One World Visa Logo" className="" />
               </div>
               <p className="text-black-400 mb-4 text-sm sm:text-base">
                 Travel helps companies manage payments easily.
@@ -210,18 +210,18 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
               <ul className="space-y-1 sm:space-y-2 text-black-400 text-sm">
                 <li className="flex items-center">
                   <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                  support@visaflow.com
+                  visas@oneworldvisa.in
                 </li>
                 <li className="flex items-center">
                   <Phone className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                  +91 92261 66606
+                  +91 9920198788
                 </li>
                 <li>24/7 Support</li>
               </ul>
             </div>
           </div>
           <div className="border-t border-black-800 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-black-400 text-sm">
-            <p>&copy; 2025 VisaFlow. All rights reserved.</p>
+            <p>&copy; 2025 One World Visa. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -229,7 +229,7 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
       {/* WhatsApp Button */}
       <div className="fixed bottom-6 right-6 z-50">
         <a 
-          href="https://wa.me/919226166606" 
+          href="https://wa.me/919920198788" 
           target="_blank" 
           rel="noopener noreferrer"
           className="flex items-center justify-center w-14 h-14 bg-green-500/80 backdrop-blur-sm border border-white/20 rounded-full shadow-lg hover:bg-green-600/80 transition-all duration-300 hover:scale-110"

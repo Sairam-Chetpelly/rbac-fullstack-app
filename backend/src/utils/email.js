@@ -32,16 +32,16 @@ const sendPasswordResetEmail = async (email, resetToken) => {
   }
   
   const mailOptions = {
-    from: process.env.EMAIL_FROM || `"Options Travel Services" <${process.env.EMAIL_USER}>`,
+    from: process.env.EMAIL_FROM || `"One World Visa" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: 'Password Reset Request - Options Travel Services',
+    subject: 'Password Reset Request - One World Visa',
     html: `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Password Reset - Options Travel Services</title>
+        <title>Password Reset - One World Visa</title>
       </head>
       <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
         <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -51,7 +51,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
                 <!-- Header -->
                 <tr>
                   <td style="padding: 40px 30px; text-align: center; background: rgba(59, 130, 246, 0.1); border-bottom: 1px solid rgba(59, 130, 246, 0.2);">
-                    <img src="${process.env.FRONTEND_URL}/optionslogo.png" alt="Options Travel Services" style="height: 60px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;" />
+                    <img src="${process.env.FRONTEND_URL}/optionslogo.png" alt="One World Visa" style="height: 60px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;" />
                     <h1 style="color: #1e40af; margin: 0; font-size: 28px; font-weight: 600;">Password Reset</h1>
                     <p style="color: #3b82f6; margin: 8px 0 0 0; font-size: 16px;">Secure your account access</p>
                   </td>
@@ -62,7 +62,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
                   <td style="padding: 40px 30px;">
                     <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Hello!</h2>
                     <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
-                      We received a request to reset your password for your Options Travel Services account. Click the button below to create a new password:
+                      We received a request to reset your password for your One World Visa account. Click the button below to create a new password:
                     </p>
                     
                     <!-- Button -->
@@ -95,11 +95,16 @@ const sendPasswordResetEmail = async (email, resetToken) => {
                 <!-- Footer -->
                 <tr>
                   <td style="background: rgba(59, 130, 246, 0.02); padding: 30px; text-align: center; border-top: 1px solid rgba(59, 130, 246, 0.1);">
-                    <p style="color: #6b7280; margin: 0 0 10px 0; font-size: 14px;">
-                      Options Travel Services
+                    <p style="color: #6b7280; margin: 0 0 15px 0; font-size: 14px;">
+                      One World Visa
                     </p>
+                    <div style="background: rgba(59, 130, 246, 0.05); border-radius: 8px; padding: 16px; margin: 15px 0; text-align: center;">
+                      <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">📞 Need Help? Contact Our Support Team</p>
+                      <p style="color: #3b82f6; margin: 0 0 4px 0; font-size: 13px;">📧 Email: <a href="mailto:visas@oneworldvisa.in" style="color: #3b82f6; text-decoration: none; font-weight: 500;">visas@oneworldvisa.in</a></p>
+                      <p style="color: #3b82f6; margin: 0; font-size: 13px;">📱 Phone: <a href="tel:+919920198788" style="color: #3b82f6; text-decoration: none; font-weight: 500;">+91 9920198788</a></p>
+                    </div>
                     <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-                      © 2025 Options Travel Services. All rights reserved.
+                      © 2025 One World Visa. All rights reserved.
                     </p>
                   </td>
                 </tr>

@@ -62,7 +62,7 @@ module.exports = updateApplicationStatus;
 if (require.main === module) {
   const dbConfig = require('../config/db');
   
-  mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/options-travel')
+  mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/oneworldvisa')
     .then(() => {
       console.log('Connected to MongoDB');
       return updateApplicationStatus();

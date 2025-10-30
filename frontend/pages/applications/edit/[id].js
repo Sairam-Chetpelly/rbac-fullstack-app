@@ -254,7 +254,7 @@ const EditApplication = () => {
   return (
     <div>
       <Head>
-        <title>Edit Application - Options Travel Services</title>
+        <title>Edit Application - One World Visa</title>
       </Head>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
         {/* Header */}

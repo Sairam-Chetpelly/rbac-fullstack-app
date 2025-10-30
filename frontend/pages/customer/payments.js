@@ -39,7 +39,7 @@ export default function CustomerPayments() {
   const downloadInvoice = (payment) => {
     const doc = {
       content: [
-        { text: 'Options Travel Services', style: 'header' },
+        { text: 'One World Visa', style: 'header' },
         { text: 'Payment Invoice', style: 'subheader' },
         { text: '\n' },
         {
