@@ -12,6 +12,7 @@ export default function ViewUser() {
   const { id } = router.query;
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fileViewer, setFileViewer] = useState({ show: false, url: '', type: '' });
 
   useEffect(() => {
     if (!user || !canAccess(user.role, 'users')) {
@@ -55,6 +56,12 @@ export default function ViewUser() {
       pending: 'bg-yellow-100 text-yellow-800 border-yellow-200'
     };
     return colors[statusName] || 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
+  const viewFile = (filename) => {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/uploads/agents/${filename}`;
+    const type = filename.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
+    setFileViewer({ show: true, url, type });
   };
 
   if (loading) {
@@ -122,6 +129,11 @@ export default function ViewUser() {
                 <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(userData.status)}`}>
                   ⚡ {(userData.status?.name || userData.status || '').toUpperCase()}
                 </span>
+                {userData.isAgent && (
+                  <span className="px-4 py-2 rounded-full text-sm font-semibold border bg-orange-100 text-orange-800 border-orange-200">
+                    🏢 AGENT
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -147,6 +159,13 @@ export default function ViewUser() {
                   })}
                 </p>
               </div>
+              
+              {userData.nationality && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-500 mb-1">Nationality</label>
+                  <p className="text-gray-900">{userData.nationality}</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -172,6 +191,100 @@ export default function ViewUser() {
               </div>
             </div>
           </div>
+          
+          {userData.isAgent && (
+            <div className="pt-6 border-t border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">🏢 Agent Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  {userData.companyName && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-500 mb-1">Company Name</label>
+                      <p className="text-gray-900">{userData.companyName}</p>
+                    </div>
+                  )}
+                  
+                  {userData.companyAddress && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-500 mb-1">Company Address</label>
+                      <div className="text-gray-900 space-y-1">
+                        {userData.companyAddress.line1 && <p>{userData.companyAddress.line1}</p>}
+                        {userData.companyAddress.line2 && <p>{userData.companyAddress.line2}</p>}
+                        <p>
+                          {[userData.companyAddress.city, userData.companyAddress.state, userData.companyAddress.pin].filter(Boolean).join(', ')}
+                        </p>
+                        {userData.companyAddress.country && <p>{userData.companyAddress.country}</p>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-4">
+                  {userData.panCardNumber && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-500 mb-1">PAN Card Number</label>
+                      <p className="text-gray-900 font-mono">{userData.panCardNumber}</p>
+                      {userData.panCardPhoto && (
+                        <button
+                          onClick={() => viewFile(userData.panCardPhoto)}
+                          className="text-blue-600 hover:underline text-sm cursor-pointer"
+                        >
+                          📄 View PAN Card
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  
+                  {userData.gstNumber && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-500 mb-1">GST Number</label>
+                      <p className="text-gray-900 font-mono">{userData.gstNumber}</p>
+                      {userData.gstFile && (
+                        <button
+                          onClick={() => viewFile(userData.gstFile)}
+                          className="text-blue-600 hover:underline text-sm cursor-pointer"
+                        >
+                          📄 View GST Certificate
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {fileViewer.show && (
+            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl max-w-4xl max-h-[90vh] w-full overflow-hidden">
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h3 className="text-lg font-semibold text-gray-900">Document Viewer</h3>
+                  <button 
+                    onClick={() => setFileViewer({ show: false, url: '', type: '' })}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors flex items-center gap-1"
+                  >
+                    ✕ Close
+                  </button>
+                </div>
+                <div className="p-4 max-h-[calc(90vh-80px)] overflow-auto">
+                  {fileViewer.type === 'pdf' || fileViewer.url.toLowerCase().includes('.pdf') ? (
+                    <iframe 
+                      src={`${fileViewer.url}#toolbar=1&navpanes=1&scrollbar=1`}
+                      className="w-full h-[70vh] border-0"
+                      title="Document Viewer"
+                      allow="fullscreen"
+                    />
+                  ) : (
+                    <img 
+                      src={fileViewer.url} 
+                      alt="Document"
+                      className="w-full h-auto max-h-full object-contain"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-4 pt-6 border-t border-gray-100">
             <Button 

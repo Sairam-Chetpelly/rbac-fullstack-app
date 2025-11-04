@@ -11,7 +11,7 @@ export default function App({ Component, pageProps }) {
   const router = useRouter();
   
   // Pages that don't require authentication
-  const publicPages = ['/login', '/register', '/forgot-password', '/reset-password'];
+  const publicPages = ['/login', '/register', '/agent-register', '/forgot-password', '/reset-password'];
   
   // Pages that don't use Layout (home, customer, and 404 pages)
   const noLayoutPages = ['/', '/home', '/404'];

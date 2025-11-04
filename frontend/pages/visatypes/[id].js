@@ -3,11 +3,13 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Clock, DollarSign, FileText, ArrowLeft, ChevronRight } from 'lucide-react';
 import Button from '../../components/Button';
+import { useAuth } from '../../context/AuthContext';
 
 import api from '../../lib/api';
 
 const CountryVisaTypes = () => {
   const router = useRouter();
+  const { user } = useAuth();
   const { id: countryId } = router.query;
   const [country, setCountry] = useState(null);
   const [visaTypes, setVisaTypes] = useState([]);
@@ -32,7 +34,21 @@ const CountryVisaTypes = () => {
       ]);
 
       setCountry(countryResponse.data);
-      setVisaTypes(visaTypesResponse.data);
+      
+      // Process visa types to show user-specific pricing
+      const processedVisaTypes = visaTypesResponse.data.map(visaType => {
+        const isAgent = user?.isAgent || false;
+        console.log('User is agent:', isAgent);
+        const displayAmount = isAgent ? visaType.agentDiscount : visaType.totalAmount;
+        
+        return {
+          ...visaType,
+          displayAmount,
+          isAgentPrice: isAgent && visaType.agentDiscount
+        };
+      });
+      
+      setVisaTypes(processedVisaTypes);
     } catch (err) {
       console.error('Error fetching visa types:', err);
       setError('Failed to load visa types');
@@ -139,15 +155,16 @@ const CountryVisaTypes = () => {
                     {/* Pricing Information */}
                     <div className="space-y-2 mb-4">
                       <div className="flex justify-between">
-                        <span className="font-semibold text-gray-900">Total Amount:</span>
-                        <span className="font-bold text-lg text-green-600">₹{visaType.totalAmount}</span>
+                        <span className="font-semibold text-gray-900">
+                          {visaType.isAgentPrice ? 'Agent Price:' : 'Total Amount:'}
+                        </span>
+                        <span className="font-bold text-lg text-green-600">₹{visaType.displayAmount}</span>
                       </div>
-                      {/* {visaType.agentDiscount && visaType.agentDiscount !== '0' && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Agent Discount:</span>
-                          <span className="font-medium text-blue-600">₹{visaType.agentDiscount}</span>
+                      {visaType.isAgentPrice && (
+                        <div className="text-xs text-orange-600 font-medium text-right">
+                          🏢 Special Agent Pricing
                         </div>
-                      )} */}
+                      )}
                     </div>
 
                     {/* Apply Button */}

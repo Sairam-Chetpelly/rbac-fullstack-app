@@ -83,7 +83,14 @@ export default function CustomerProfile() {
               <User className="w-12 h-12 text-gray-500" />
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold">{user?.name}</h3>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-xl font-semibold">{user?.name}</h3>
+                {user?.isAgent && (
+                  <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">
+                    🏢 Agent
+                  </span>
+                )}
+              </div>
               <p className="text-gray-600">{user?.email}</p>
               <p className="text-sm text-gray-500">Role: {user?.role}</p>
             </div>

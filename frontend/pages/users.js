@@ -150,7 +150,10 @@ export default function Users() {
                           {value.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-semibold">{value}</div>
+                          <div className="font-semibold flex items-center gap-2">
+                            {value}
+                            {row.isAgent && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">AGENT</span>}
+                          </div>
                           <div className="text-sm text-gray-600">{row.email}</div>
                           {row.mobile && <div className="text-xs text-gray-500">📱 {row.mobile}</div>}
                         </div>
@@ -221,7 +224,10 @@ export default function Users() {
                         {userData.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 truncate">{userData.name}</h3>
+                        <h3 className="font-bold text-gray-900 truncate flex items-center gap-2">
+                          {userData.name}
+                          {userData.isAgent && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">AGENT</span>}
+                        </h3>
                         <p className="text-sm text-gray-600 truncate">{userData.email}</p>
                         {userData.mobile && <p className="text-xs text-gray-500 truncate">📱 {userData.mobile}</p>}
                       </div>

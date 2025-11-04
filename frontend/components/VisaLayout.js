@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { ArrowLeft, Mail, Phone, MapPin, Shield, Plane, Clock } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Plane, Clock, Globe } from 'lucide-react';
 import Button from './Button';
 import { useAuth } from '../context/AuthContext';
 
@@ -153,6 +153,10 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
                   <div className="flex items-center space-x-2">
                     <Plane className="h-5 w-5" />
                     <span>Travel insurance recommendations</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Globe className="h-5 w-5" />
+                    <span>End-to-end visa services available</span>
                   </div>
                 </div>
                 <Button 

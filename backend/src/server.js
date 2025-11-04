@@ -6,6 +6,7 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 
 const authRoutes = require('./routes/auth');
+const agentRoutes = require('./routes/agents');
 const userRoutes = require('./routes/users');
 const roleRoutes = require('./routes/roles');
 const statusRoutes = require('./routes/status');
@@ -45,6 +46,7 @@ app.use('/api/uploads', express.static('uploads'));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/agents', agentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/status', statusRoutes);

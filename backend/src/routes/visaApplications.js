@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 const { sendEmail, sendAdminNotification } = require('../services/emailService');
 const compressImage = require('../middleware/imageCompression');
 const compressMultipleImages = require('../middleware/imageCompressionMultiple');
+const User = require('../models/User');
 
 const router = express.Router();
 
@@ -398,9 +399,15 @@ router.post('/visa-applications/submit-without-payment', auth, async (req, res) 
     const CountryVisaType = require('../models/CountryVisaType');
     const Payment = require('../models/Payment');
     const visaTypeData = await CountryVisaType.findById(visaTypeId);
+    const userData = await User.findById(req.user._id);
     
     if (visaTypeData) {
-      const totalAmount = (visaTypeData.totalAmount || 0) * numberOfApplicants;
+      // Use agent discount if user is agent, otherwise use regular amount
+      const unitAmount = userData.isAgent ? 
+        (visaTypeData.agentDiscount || visaTypeData.totalAmount) : 
+        visaTypeData.totalAmount;
+      const totalAmount = (unitAmount || 0) * numberOfApplicants;
+      
       await Payment.create({
         application: application._id,
         user: req.user._id,
@@ -412,8 +419,7 @@ router.post('/visa-applications/submit-without-payment', auth, async (req, res) 
     }
     
     // Send application submission emails
-    const User = require('../models/User');
-    const user = await User.findById(req.user._id);
+    const user = userData;
     
     // Email to customer
     sendEmail(user.email, 'applicationSubmitted', { 
@@ -525,7 +531,13 @@ router.post('/visa-applications/submit', auth, upload.any(), compressMultipleIma
       return res.status(404).json({ message: 'Visa type not found' });
     }
     
-    const totalAmount = (visaType.totalAmount || 0) * numberOfApplicants;
+    const userData = await User.findById(req.user._id);
+    
+    // Use agent discount if user is agent, otherwise use regular amount
+    const unitAmount = userData.isAgent ? 
+      (visaType.agentDiscount || visaType.totalAmount) : 
+      visaType.totalAmount;
+    const totalAmount = (unitAmount || 0) * numberOfApplicants;
     const payment = new Payment({
       application: application._id,
       user: req.user._id,
@@ -633,6 +645,45 @@ router.get('/customer/payments', auth, async (req, res) => {
   } catch (error) {
     console.error('Error fetching customer payments:', error);
     res.status(500).json({ message: 'Error fetching payments', error: error.message });
+  }
+});
+
+// Get visa type with user-specific pricing
+router.get('/visa-types/:id', auth, async (req, res) => {
+  try {
+    const CountryVisaType = require('../models/CountryVisaType');
+    
+    const visaType = await CountryVisaType.findById(req.params.id)
+      .populate('country', 'name placeImage')
+      .populate('visaType', 'name')
+      .lean();
+
+    if (!visaType) {
+      return res.status(404).json({ message: 'Visa type not found' });
+    }
+
+    const userData = await User.findById(req.user._id);
+    
+    // Return agent-specific pricing
+    const finalAmount = userData.isAgent ? 
+      (visaType.agentDiscount || visaType.totalAmount) : 
+      visaType.totalAmount;
+
+    res.json({
+      visaType: {
+        _id: visaType._id,
+        name: visaType.name,
+        description: visaType.description,
+        processingTimeMin: visaType.processingTimeMin,
+        processingTimeMax: visaType.processingTimeMax,
+        totalAmount: finalAmount,
+        agentDiscount: visaType.agentDiscount
+      },
+      country: visaType.country
+    });
+  } catch (error) {
+    console.error('Error fetching visa type:', error);
+    res.status(500).json({ message: 'Error fetching visa type', error: error.message });
   }
 });
 

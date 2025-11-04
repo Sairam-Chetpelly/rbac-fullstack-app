@@ -80,7 +80,7 @@ const VisaApplicationForm = () => {
       console.log('Fetching form data for visa type:', visaTypeId);
       
       const [visaTypeResponse, formResponse] = await Promise.all([
-        api.get(`/public/visa-types/${visaTypeId}`),
+        api.get(`/visa-types/${visaTypeId}`),
         api.get(`/public/visa-types/${visaTypeId}/form`)
       ]);
 
@@ -1237,6 +1237,12 @@ const VisaApplicationForm = () => {
   };
 
   const renderPayment = () => {
+    const isAgent = user?.isAgent;
+    const regularAmount = parseFloat(visaType?.totalAmount || 0);
+    const agentAmount = parseFloat(visaType?.agentDiscount || 0);
+    const finalAmount = isAgent ? agentAmount : regularAmount;
+    const totalAmount = finalAmount * numberOfApplicants;
+    
     return (
       <div className="animate-fadeIn">
         {/* Pricing Summary */}
@@ -1246,11 +1252,12 @@ const VisaApplicationForm = () => {
             <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
               <span className="text-3xl">💰</span>
               Payment Details
+              {isAgent && <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-bold">🏢 Agent Pricing</span>}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="text-center bg-white/80 backdrop-blur-sm rounded-xl p-6 border-2 border-blue-300">
-                <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">₹{visaType?.totalAmount * numberOfApplicants}</div>
-                <div className="text-sm font-bold text-gray-700 mt-2">Total Amount {numberOfApplicants > 1 ? `(×${numberOfApplicants})` : ''}</div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">₹{totalAmount}</div>
+                <div className="text-sm font-bold text-gray-700 mt-2">{isAgent ? 'Agent Price' : 'Total Amount'} {numberOfApplicants > 1 ? `(×${numberOfApplicants})` : ''}</div>
               </div>
               <div className="text-center bg-white/80 backdrop-blur-sm rounded-xl p-6 border-2 border-green-300">
                 <div className="text-2xl font-bold text-green-600">{visaType?.name}</div>
@@ -1265,9 +1272,9 @@ const VisaApplicationForm = () => {
             <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
               <span className="text-3xl text-white">📞</span>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-3">Our Agent Will Connect With You Shortly</h3>
+            <h3 className="text-3xl font-bold text-gray-900 mb-3">Will Connect With You Shortly</h3>
             <p className="text-gray-600 text-lg">
-              Our agent will contact you for payment details and further processing.
+              will contact you for payment details and further processing.
             </p>
           </div>
           
@@ -1289,7 +1296,7 @@ const VisaApplicationForm = () => {
                 </div>
                 <div className="flex justify-between items-center py-3 bg-white rounded-lg px-4 border-2 border-green-300">
                   <span className="font-bold text-gray-800">Total Amount:</span>
-                  <span className="text-2xl font-bold text-green-600">₹{visaType?.totalAmount * numberOfApplicants}</span>
+                  <span className="text-2xl font-bold text-green-600">₹{totalAmount}</span>
                 </div>
               </div>
             </div>

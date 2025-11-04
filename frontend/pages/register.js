@@ -241,6 +241,12 @@ export default function Register() {
             >
               {loading ? "Creating Account..." : "Sign Up"}
             </Button>
+            
+            <div className="text-center">
+              <Link href="/agent-register" className="text-sm text-blue-600 hover:underline">
+                Want to become an agent? Register here
+              </Link>
+            </div>
           </form>
         </div>
       </div>

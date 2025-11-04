@@ -124,6 +124,25 @@ const updateUser = async (req, res) => {
     const { id } = req.params;
     const updates = { ...req.body };
     
+    // Parse companyAddress if it's a string
+    if (updates.companyAddress && typeof updates.companyAddress === 'string') {
+      try {
+        updates.companyAddress = JSON.parse(updates.companyAddress);
+      } catch (e) {
+        return res.status(400).json({ message: 'Invalid company address format' });
+      }
+    }
+    
+    // Handle file uploads
+    if (req.files) {
+      if (req.files.panCardPhoto) {
+        updates.panCardPhoto = req.files.panCardPhoto[0].filename;
+      }
+      if (req.files.gstFile) {
+        updates.gstFile = req.files.gstFile[0].filename;
+      }
+    }
+    
     // Convert role and status names to IDs if provided
     if (updates.role) {
       const roleDoc = await Role.findOne({ 
@@ -153,12 +172,42 @@ const updateUser = async (req, res) => {
       }
     }
 
+    // Get original user for comparison
+    const originalUser = await User.findById(id).populate('status');
+    
     const user = await User.findByIdAndUpdate(id, updates, { new: true })
       .select('-password')
       .populate('role')
       .populate('status');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Send email notifications for agent status changes
+    if (user.isAgent && originalUser && originalUser.status && user.status) {
+      const oldStatus = originalUser.status.name;
+      const newStatus = user.status.name;
+      
+      if (oldStatus !== newStatus) {
+        try {
+          if (oldStatus === 'inactive' && newStatus === 'active') {
+            // Agent activated
+            sendEmail(user.email, 'agentActivated', {
+              userName: user.name,
+              companyName: user.companyName
+            });
+          } else if (oldStatus === 'active' && newStatus === 'inactive') {
+            // Agent deactivated
+            sendEmail(user.email, 'agentDeactivated', {
+              userName: user.name,
+              companyName: user.companyName,
+              reason: 'Account deactivated by administrator'
+            });
+          }
+        } catch (emailError) {
+          console.error('Failed to send agent status change email:', emailError);
+        }
+      }
     }
 
     res.json({ message: 'User updated successfully', user });

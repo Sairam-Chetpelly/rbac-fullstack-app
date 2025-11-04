@@ -551,6 +551,106 @@ const emailTemplates = {
     `, '#22c55e', '✅')
   }),
 
+  agentRegistration: (userName, companyName) => ({
+    subject: '🏢 Agent Registration Received - Under Review',
+    html: createEmailTemplate('Agent Registration', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Thank you for registering as an Agent! 🏢</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        Hello ${userName}, we have received your agent registration for <strong>${companyName}</strong>.
+      </p>
+      
+      <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 25px 0;">
+        <p style="color: #92400e; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">📋 What happens next?</p>
+        <div style="color: #92400e; font-size: 14px; line-height: 1.6;">
+          • Our team will review your application and documents<br>
+          • We will verify your company details and credentials<br>
+          • You will receive an email notification once approved<br>
+          • Processing typically takes 1-2 business days
+        </div>
+      </div>
+      
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">📄 Documents Submitted:</p>
+        <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.6;">
+          • Company registration details<br>
+          • PAN card information<br>
+          • GST certificate (if applicable)
+        </p>
+      </div>
+      
+      <p style="color: #6b7280; line-height: 1.6; margin: 25px 0 0 0; font-size: 14px;">
+        If you have any questions during the review process, please contact our support team.
+      </p>
+    `, '#f59e0b', '🏢')
+  }),
+
+  agentActivated: (userName, companyName) => ({
+    subject: '🎉 Agent Account Activated - Welcome to One World Visa!',
+    html: createEmailTemplate('Agent Activated', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Congratulations ${userName}! 🎉</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        Your agent account for <strong>${companyName}</strong> has been successfully activated!
+      </p>
+      
+      <div style="background: #f0fdf4; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin: 25px 0;">
+        <p style="color: #166534; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">✅ Account Status: ACTIVE</p>
+        <p style="color: #166534; margin: 0; font-size: 14px; line-height: 1.6;">
+          You can now access all agent features and start managing visa applications.
+        </p>
+      </div>
+      
+      <table role="presentation" style="margin: 30px 0;">
+        <tr>
+          <td style="text-align: center;">
+            <a href="${process.env.FRONTEND_URL}/login" style="display: inline-block; background: rgba(34, 197, 94, 0.9); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);">
+              Login to Your Account
+            </a>
+          </td>
+        </tr>
+      </table>
+      
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">🌟 Agent Benefits:</p>
+        <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.6;">
+          • Access to agent dashboard<br>
+          • Manage customer applications<br>
+          • Commission tracking<br>
+          • Priority support
+        </p>
+      </div>
+      
+      <p style="color: #6b7280; line-height: 1.6; margin: 25px 0 0 0; font-size: 14px;">
+        Welcome to the One World Visa agent network! We look forward to working with you.
+      </p>
+    `, '#22c55e', '🎉')
+  }),
+
+  agentDeactivated: (userName, companyName, reason) => ({
+    subject: '⚠️ Agent Account Deactivated - Important Notice',
+    html: createEmailTemplate('Agent Deactivated', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Account Status Update</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        Hello ${userName}, your agent account for <strong>${companyName}</strong> has been deactivated.
+      </p>
+      
+      <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 20px; margin: 25px 0;">
+        <p style="color: #dc2626; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">⚠️ Account Status: DEACTIVATED</p>
+        ${reason ? `<p style="color: #dc2626; margin: 0; font-size: 14px; line-height: 1.6;">Reason: ${reason}</p>` : ''}
+      </div>
+      
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">📞 Need Help?</p>
+        <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.6;">
+          If you believe this is an error or would like to discuss reactivation, please contact our support team immediately.
+        </p>
+      </div>
+      
+      <p style="color: #6b7280; line-height: 1.6; margin: 25px 0 0 0; font-size: 14px;">
+        Thank you for your understanding. Our support team is available to assist you.
+      </p>
+    `, '#ef4444', '⚠️')
+  }),
+
 
 };
 
@@ -612,6 +712,15 @@ const sendEmail = async (to, template, data = {}) => {
         break;
       case 'adminVisaIssued':
         emailContent = emailTemplates.adminVisaIssued(data.applicationId, data.userName, data.countryName, data.visaNumber, data.updatedBy);
+        break;
+      case 'agentRegistration':
+        emailContent = emailTemplates.agentRegistration(data.userName, data.companyName);
+        break;
+      case 'agentActivated':
+        emailContent = emailTemplates.agentActivated(data.userName, data.companyName);
+        break;
+      case 'agentDeactivated':
+        emailContent = emailTemplates.agentDeactivated(data.userName, data.companyName, data.reason);
         break;
       default:
         throw new Error(`Unknown email template: ${template}`);

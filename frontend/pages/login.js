@@ -153,7 +153,10 @@ export default function Login() {
               {loading ? "Signing In..." : "Login"}
             </Button>
             
-            <div className="text-right">
+            <div className="flex justify-between items-center">
+              <Link href="/agent-register" className="text-sm text-blue-600 hover:underline">
+                Register as Agent
+              </Link>
               <Link href="/forgot-password" className="text-sm text-orange-600 hover:underline">
                 Forgot password?
               </Link>

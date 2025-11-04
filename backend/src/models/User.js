@@ -16,7 +16,22 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Status',
     required: true
-  }
+  },
+  // Agent fields
+  isAgent: { type: Boolean, default: null },
+  companyName: { type: String, default: null },
+  companyAddress: {
+    line1: { type: String, default: null },
+    line2: { type: String, default: null },
+    city: { type: String, default: null },
+    pin: { type: String, default: null },
+    state: { type: String, default: null },
+    country: { type: String, default: null }
+  },
+  panCardNumber: { type: String, default: null },
+  panCardPhoto: { type: String, default: null },
+  gstNumber: { type: String, default: null },
+  gstFile: { type: String, default: null }
 }, { timestamps: true });
 
 userSchema.pre('save', async function(next) {
