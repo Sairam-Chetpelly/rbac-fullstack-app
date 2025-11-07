@@ -127,6 +127,16 @@ router.put('/:id/assign', auth, role(['admin', 'manager']), async (req, res) => 
         customerEmail: application.user.email,
         visaType: application.countryVisaType?.country?.name || 'Visa Application'
       });
+      
+      // Send notification to customer about assigned agent
+      sendEmail(application.user.email, 'agentAssigned', {
+        userName: application.user.name,
+        applicationNumber: application.applicationNumber,
+        agentName: employee.name,
+        agentEmail: employee.email,
+        agentMobile: employee.mobile || 'Not provided',
+        visaType: application.countryVisaType?.country?.name || 'Visa Application'
+      });
     }
     
     res.json({ message: 'Application assigned successfully' });
@@ -366,6 +376,9 @@ router.put('/:id', auth, role(['admin', 'employee']), async (req, res) => {
         if (answer.answerFile !== undefined) {
           updateData.answerFile = answer.answerFile;
         }
+        if (answer.answerFiles !== undefined) {
+          updateData.answerFiles = answer.answerFiles;
+        }
         
         await ApplicationAnswer.findByIdAndUpdate(
           answer._id,
@@ -383,9 +396,27 @@ router.put('/:id', auth, role(['admin', 'employee']), async (req, res) => {
 });
 
 // Update application status (admin only)
-router.put('/:id/status', auth, role(['admin','employee']), async (req, res) => {
+router.put('/:id/status', auth, role(['admin','employee']), upload.fields([{ name: 'visaFiles', maxCount: 10 }, { name: 'courierFiles', maxCount: 10 }]), async (req, res) => {
   try {
-    const { status, remarks, embassyVisitDateTime, visaDetails } = req.body;
+    const { status, remarks, embassyVisitDateTime } = req.body;
+    let visaDetails = null;
+    let courierDetails = null;
+    
+    if (req.body.visaDetails) {
+      try {
+        visaDetails = JSON.parse(req.body.visaDetails);
+      } catch (e) {
+        visaDetails = req.body.visaDetails;
+      }
+    }
+    
+    if (req.body.courierDetails) {
+      try {
+        courierDetails = JSON.parse(req.body.courierDetails);
+      } catch (e) {
+        courierDetails = req.body.courierDetails;
+      }
+    }
     
     const Status = require('../models/Status');
     const statusDoc = await Status.findById(status);
@@ -409,6 +440,7 @@ router.put('/:id/status', auth, role(['admin','employee']), async (req, res) => 
 
     const oldStatus = application.status;
     const isVisaIssued = statusDoc.name.toLowerCase().includes('visa-approved') || statusDoc.name.toLowerCase().includes('approved');
+    const isVisaInTransit = statusDoc.name.toLowerCase().includes('visa-in-transit') || statusDoc.name.toLowerCase().includes('in-transit');
     
     // Update application status and embassy visit date
     application.status = status;
@@ -418,6 +450,45 @@ router.put('/:id/status', auth, role(['admin','employee']), async (req, res) => 
     if (visaDetails && isVisaIssued) {
       application.visaDetails = visaDetails;
     }
+    
+    // Handle visa files upload
+    const visaFiles = req.files?.visaFiles || [];
+    const courierFiles = req.files?.courierFiles || [];
+    
+    if (visaFiles.length > 0) {
+      const visaFileData = visaFiles.map(file => ({
+        filename: file.filename,
+        originalName: file.originalname,
+        path: file.path,
+        size: file.size,
+        uploadedAt: new Date()
+      }));
+      
+      if (!application.visaFiles) {
+        application.visaFiles = [];
+      }
+      application.visaFiles.push(...visaFileData);
+    }
+    
+    if (isVisaInTransit && courierDetails) {
+      application.courierDetails = courierDetails;
+      
+      if (courierFiles.length > 0) {
+        const courierFileData = courierFiles.map(file => ({
+          filename: file.filename,
+          originalName: file.originalname,
+          path: file.path,
+          size: file.size,
+          uploadedAt: new Date()
+        }));
+        
+        if (!application.courierFiles) {
+          application.courierFiles = [];
+        }
+        application.courierFiles.push(...courierFileData);
+      }
+    }
+    
     await application.save();
 
     // Create status history entry
@@ -432,27 +503,67 @@ router.put('/:id/status', auth, role(['admin','employee']), async (req, res) => 
     const User = require('../models/User');
     const updatedBy = await User.findById(req.user._id);
     
-    if (isVisaIssued && visaDetails) {
-      // Send visa issuance email with details
+    if (isVisaIssued && (visaDetails || visaFiles.length > 0)) {
+      // Prepare attachments for email
+      const emailAttachments = visaFiles.map(file => ({
+        filename: file.originalname,
+        path: file.path,
+        contentType: file.mimetype
+      }));
+      
+      // Send visa issuance email with details and attachments
       sendEmail(application.user.email, 'visaIssued', {
         userName: application.user.name,
         applicationId: application.applicationNumber,
         countryName: application.countryVisaType?.country?.name || 'Unknown',
-        visaNumber: visaDetails.visaNumber,
-        dateOfIssuance: new Date(visaDetails.dateOfIssuance).toLocaleDateString(),
-        dateOfExpiry: new Date(visaDetails.dateOfExpiry).toLocaleDateString(),
-        additionalDetails: visaDetails.additionalDetails || '',
-        remarks: remarks
-      });
+        visaNumber: visaDetails?.visaNumber || '',
+        dateOfIssuance: visaDetails?.dateOfIssuance ? new Date(visaDetails.dateOfIssuance).toLocaleDateString() : '',
+        dateOfExpiry: visaDetails?.dateOfExpiry ? new Date(visaDetails.dateOfExpiry).toLocaleDateString() : '',
+        additionalDetails: visaDetails?.additionalDetails || '',
+        remarks: remarks,
+        hasVisaFiles: visaFiles.length > 0
+      }, emailAttachments);
       
-      // Email to admin about visa issuance
+      // Email to admin about visa issuance (with attachments)
       sendAdminNotification('adminVisaIssued', {
         applicationId: application.applicationNumber,
         userName: application.user.name,
         countryName: application.countryVisaType?.country?.name || 'Unknown',
-        visaNumber: visaDetails.visaNumber,
-        updatedBy: updatedBy.name
-      });
+        visaNumber: visaDetails?.visaNumber || '',
+        updatedBy: updatedBy.name,
+        hasVisaFiles: visaFiles.length > 0
+      }, emailAttachments);
+    } else if (isVisaInTransit && courierDetails) {
+      // Prepare courier attachments for email
+      const courierAttachments = courierFiles.map(file => ({
+        filename: file.originalname,
+        path: file.path,
+        contentType: file.mimetype
+      }));
+      
+      // Send visa in transit email with courier details
+      sendEmail(application.user.email, 'visaInTransit', {
+        userName: application.user.name,
+        applicationId: application.applicationNumber,
+        countryName: application.countryVisaType?.country?.name || 'Unknown',
+        visaNumber: courierDetails.visaNumber || '',
+        courierName: courierDetails.courierName || '',
+        shipmentRefNumber: courierDetails.shipmentRefNumber || '',
+        shipmentDate: courierDetails.shipmentDate || '',
+        remarks: remarks,
+        hasCourierFiles: courierFiles.length > 0
+      }, courierAttachments);
+      
+      // Email to admin about visa in transit
+      sendAdminNotification('adminVisaInTransit', {
+        applicationId: application.applicationNumber,
+        userName: application.user.name,
+        countryName: application.countryVisaType?.country?.name || 'Unknown',
+        courierName: courierDetails.courierName || '',
+        shipmentRefNumber: courierDetails.shipmentRefNumber || '',
+        updatedBy: updatedBy.name,
+        hasCourierFiles: courierFiles.length > 0
+      }, courierAttachments);
     } else {
       // Regular status update email
       sendEmail(application.user.email, 'statusUpdate', {

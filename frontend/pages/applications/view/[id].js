@@ -54,15 +54,15 @@ export default function AdminViewApplication() {
 
   const handleFileView = (fileName, filePath, fileType) => {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
-    console.log('baseUrl ', baseUrl);
     let url;
     
     // Handle different file path formats
     if (filePath.startsWith('http')) {
       url = filePath;
-    } else if (filePath.includes('/uploads/')) {
-      url = `${baseUrl}${filePath}`;
+    } else if (filePath.startsWith('uploads/')) {
+      url = `${baseUrl}/${filePath}`;
     } else {
+      // For legacy format (just filename), construct full path
       url = `${baseUrl}/uploads/applications/${filePath}`;
     }
     
@@ -80,7 +80,18 @@ export default function AdminViewApplication() {
 
   const handleFileDownload = async (fileName, filePath) => {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
-    const url = `${baseUrl}/uploads/applications/${filePath}`;
+    let url;
+    
+    // Handle different file path formats
+    if (filePath.startsWith('http')) {
+      url = filePath;
+    } else if (filePath.startsWith('uploads/')) {
+      url = `${baseUrl}/${filePath}`;
+    } else {
+      // For legacy format (just filename), construct full path
+      url = `${baseUrl}/uploads/applications/${filePath}`;
+    }
+    
     try {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -269,42 +280,65 @@ export default function AdminViewApplication() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {answers.map((answer) => {
                   const renderAnswerContent = () => {
-                    if (!answer.answerText && !answer.answerFile) {
+                    if (!answer.answerText && !answer.answerFile && (!answer.answerFiles || answer.answerFiles.length === 0)) {
                       return <span className="text-gray-500 italic">No answer provided</span>;
                     }
                     
-                    if (answer.field?.type === 'file' && (answer.answerFile || answer.answerText)) {
-                      let fileName = '';
-                      let filePath = '';
-                      let fileType = '';
-                      
-                      if (answer.answerFile) {
-                        fileName = answer.answerFile.split('/').pop();
-                        filePath = answer.answerFile;
-                      } else if (answer.answerText) {
-                        try {
-                          const fileData = JSON.parse(answer.answerText);
-                          fileName = fileData.fileName || 'Unknown file';
-                          filePath = fileData.filePath || fileData.url || '';
-                          fileType = fileData.fileType || '';
-                        } catch (e) {
-                          fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
-                          filePath = answer.answerText;
-                        }
+                    if (answer.field?.type === 'file') {
+                      // Handle multiple files
+                      if (answer.answerFiles && answer.answerFiles.length > 0) {
+                        return (
+                          <div className="space-y-2">
+                            {answer.answerFiles.map((file, fileIndex) => (
+                              <div key={fileIndex} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                                <FileText className="h-4 w-4 text-blue-600" />
+                                <span className="text-sm flex-1">{file.originalName}</span>
+                                <button 
+                                  onClick={() => handleFileView(file.originalName, file.path || file.filename, file.mimetype)}
+                                  className="text-blue-600 hover:text-blue-800"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        );
                       }
                       
-                      return (
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm">{fileName}</span>
-                          <button 
-                            onClick={() => handleFileView(fileName, filePath, fileType)}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                        </div>
-                      );
+                      // Handle single file (legacy)
+                      if (answer.answerFile || answer.answerText) {
+                        let fileName = '';
+                        let filePath = '';
+                        let fileType = '';
+                        
+                        if (answer.answerFile) {
+                          fileName = answer.answerFile.split('/').pop();
+                          filePath = answer.answerFile;
+                        } else if (answer.answerText) {
+                          try {
+                            const fileData = JSON.parse(answer.answerText);
+                            fileName = fileData.fileName || 'Unknown file';
+                            filePath = fileData.filePath || fileData.url || '';
+                            fileType = fileData.fileType || '';
+                          } catch (e) {
+                            fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
+                            filePath = answer.answerText;
+                          }
+                        }
+                        
+                        return (
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm">{fileName}</span>
+                            <button 
+                              onClick={() => handleFileView(fileName, filePath, fileType)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          </div>
+                        );
+                      }
                     }
                     
                     return <span className="text-sm text-gray-900">{answer.answerText}</span>;
@@ -345,42 +379,65 @@ export default function AdminViewApplication() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {applicantAnswers.map((answer) => {
                           const renderAnswerContent = () => {
-                            if (!answer.answerText && !answer.answerFile) {
+                            if (!answer.answerText && !answer.answerFile && (!answer.answerFiles || answer.answerFiles.length === 0)) {
                               return <span className="text-gray-500 italic">No answer provided</span>;
                             }
                             
-                            if (answer.field?.type === 'file' && (answer.answerFile || answer.answerText)) {
-                              let fileName = '';
-                              let filePath = '';
-                              let fileType = '';
-                              
-                              if (answer.answerFile) {
-                                fileName = answer.answerFile.split('/').pop();
-                                filePath = answer.answerFile;
-                              } else if (answer.answerText) {
-                                try {
-                                  const fileData = JSON.parse(answer.answerText);
-                                  fileName = fileData.fileName || 'Unknown file';
-                                  filePath = fileData.filePath || fileData.url || '';
-                                  fileType = fileData.fileType || '';
-                                } catch (e) {
-                                  fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
-                                  filePath = answer.answerText;
-                                }
+                            if (answer.field?.type === 'file') {
+                              // Handle multiple files
+                              if (answer.answerFiles && answer.answerFiles.length > 0) {
+                                return (
+                                  <div className="space-y-1">
+                                    {answer.answerFiles.map((file, fileIndex) => (
+                                      <div key={fileIndex} className="flex items-center gap-2 p-1 bg-gray-50 rounded">
+                                        <FileText className="h-3 w-3 text-blue-600" />
+                                        <span className="text-xs flex-1">{file.originalName}</span>
+                                        <button 
+                                          onClick={() => handleFileView(file.originalName, file.path || file.filename, file.mimetype)}
+                                          className="text-blue-600 hover:text-blue-800"
+                                        >
+                                          <Eye className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
                               }
                               
-                              return (
-                                <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4 text-blue-600" />
-                                  <span className="text-sm">{fileName}</span>
-                                  <button 
-                                    onClick={() => handleFileView(fileName, filePath, fileType)}
-                                    className="text-blue-600 hover:text-blue-800"
-                                  >
-                                    <Eye className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              );
+                              // Handle single file (legacy)
+                              if (answer.answerFile || answer.answerText) {
+                                let fileName = '';
+                                let filePath = '';
+                                let fileType = '';
+                                
+                                if (answer.answerFile) {
+                                  fileName = answer.answerFile.split('/').pop();
+                                  filePath = answer.answerFile;
+                                } else if (answer.answerText) {
+                                  try {
+                                    const fileData = JSON.parse(answer.answerText);
+                                    fileName = fileData.fileName || 'Unknown file';
+                                    filePath = fileData.filePath || fileData.url || '';
+                                    fileType = fileData.fileType || '';
+                                  } catch (e) {
+                                    fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
+                                    filePath = answer.answerText;
+                                  }
+                                }
+                                
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4 text-blue-600" />
+                                    <span className="text-sm">{fileName}</span>
+                                    <button 
+                                      onClick={() => handleFileView(fileName, filePath, fileType)}
+                                      className="text-blue-600 hover:text-blue-800"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                );
+                              }
                             }
                             
                             return <span className="text-sm text-gray-900">{answer.answerText}</span>;
@@ -441,28 +498,36 @@ export default function AdminViewApplication() {
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">📋 Visa Issuance Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-green-50 p-4 rounded-lg">
-                <dt className="text-sm font-medium text-gray-700 mb-1">Visa Number</dt>
-                <dd className="text-lg font-bold text-green-600">{application.visaDetails.visaNumber}</dd>
-              </div>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <dt className="text-sm font-medium text-gray-700 mb-1">Date of Issuance</dt>
-                <dd className="text-sm font-semibold text-blue-800">
-                  {new Date(application.visaDetails.dateOfIssuance).toLocaleDateString()}
-                </dd>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <dt className="text-sm font-medium text-gray-700 mb-1">Date of Expiry</dt>
-                <dd className="text-sm font-semibold text-purple-800">
-                  {new Date(application.visaDetails.dateOfExpiry).toLocaleDateString()}
-                </dd>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <dt className="text-sm font-medium text-gray-700 mb-1">Validity</dt>
-                <dd className="text-sm text-gray-900">
-                  {Math.ceil((new Date(application.visaDetails.dateOfExpiry) - new Date(application.visaDetails.dateOfIssuance)) / (1000 * 60 * 60 * 24))} days
-                </dd>
-              </div>
+              {application.visaDetails.visaNumber && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Visa Number</dt>
+                  <dd className="text-lg font-bold text-green-600">{application.visaDetails.visaNumber}</dd>
+                </div>
+              )}
+              {application.visaDetails.dateOfIssuance && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Date of Issuance</dt>
+                  <dd className="text-sm font-semibold text-blue-800">
+                    {new Date(application.visaDetails.dateOfIssuance).toLocaleDateString()}
+                  </dd>
+                </div>
+              )}
+              {application.visaDetails.dateOfExpiry && (
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Date of Expiry</dt>
+                  <dd className="text-sm font-semibold text-purple-800">
+                    {new Date(application.visaDetails.dateOfExpiry).toLocaleDateString()}
+                  </dd>
+                </div>
+              )}
+              {application.visaDetails.dateOfIssuance && application.visaDetails.dateOfExpiry && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Validity</dt>
+                  <dd className="text-sm text-gray-900">
+                    {Math.ceil((new Date(application.visaDetails.dateOfExpiry) - new Date(application.visaDetails.dateOfIssuance)) / (1000 * 60 * 60 * 24))} days
+                  </dd>
+                </div>
+              )}
             </div>
             {application.visaDetails.additionalDetails && (
               <div className="mt-4 pt-4 border-t border-gray-200">
@@ -472,6 +537,119 @@ export default function AdminViewApplication() {
                 </dd>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Visa Files */}
+        {application.visaFiles && application.visaFiles.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">📎 Visa Documents</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {application.visaFiles.map((file, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-8 w-8 text-blue-600" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{file.originalName}</p>
+                      <p className="text-xs text-gray-500">
+                        {file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : ''} • 
+                        {new Date(file.uploadedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <button 
+                      onClick={() => handleFileView(file.originalName, file.path || file.filename, file.fileType)}
+                      className="flex-1 px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Eye className="h-3 w-3" />
+                      View
+                    </button>
+                    <button 
+                      onClick={() => handleFileDownload(file.originalName, file.path || file.filename)}
+                      className="flex-1 px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Courier Details */}
+        {application.courierDetails && (
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">🚚 Courier Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {application.courierDetails.visaNumber && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Visa Number</dt>
+                  <dd className="text-lg font-bold text-blue-600">{application.courierDetails.visaNumber}</dd>
+                </div>
+              )}
+              {application.courierDetails.courierName && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Courier Company</dt>
+                  <dd className="text-sm font-semibold text-green-800">{application.courierDetails.courierName}</dd>
+                </div>
+              )}
+              {application.courierDetails.shipmentRefNumber && (
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Tracking Number</dt>
+                  <dd className="text-sm font-mono font-semibold text-purple-800">{application.courierDetails.shipmentRefNumber}</dd>
+                </div>
+              )}
+              {application.courierDetails.shipmentDate && (
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <dt className="text-sm font-medium text-gray-700 mb-1">Shipment Date</dt>
+                  <dd className="text-sm font-semibold text-orange-800">
+                    {new Date(application.courierDetails.shipmentDate).toLocaleDateString()}
+                  </dd>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Courier Files */}
+        {application.courierFiles && application.courierFiles.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">📦 Courier Documents</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {application.courierFiles.map((file, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-8 w-8 text-orange-600" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{file.originalName}</p>
+                      <p className="text-xs text-gray-500">
+                        {file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : ''} • 
+                        {new Date(file.uploadedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <button 
+                      onClick={() => handleFileView(file.originalName, file.path || file.filename, file.fileType)}
+                      className="flex-1 px-3 py-1 bg-orange-100 text-orange-700 rounded text-sm hover:bg-orange-200 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Eye className="h-3 w-3" />
+                      View
+                    </button>
+                    <button 
+                      onClick={() => handleFileDownload(file.originalName, file.path || file.filename)}
+                      className="flex-1 px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -559,13 +737,29 @@ export default function AdminViewApplication() {
                     }}
                   />
                 ) : fileModal.type === 'application/pdf' || fileModal.fileName?.toLowerCase().endsWith('.pdf') ? (
-                  <iframe 
-                    src={`${fileModal.url}#toolbar=1&navpanes=1&scrollbar=1`}
-                    className="w-full h-[70vh] border-0"
-                    title={fileModal.fileName}
-                    allow="fullscreen"
-                    onError={() => console.error('PDF load error:', fileModal.url)}
-                  />
+                  <div className="w-full h-[70vh] flex flex-col">
+                    <iframe 
+                      src={`${fileModal.url}#toolbar=1&navpanes=1&scrollbar=1`}
+                      className="w-full h-full border-0"
+                      title={fileModal.fileName}
+                      allow="fullscreen"
+                      onLoad={() => console.log('PDF loaded successfully:', fileModal.url)}
+                      onError={(e) => {
+                        console.error('PDF load error:', fileModal.url);
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'block';
+                      }}
+                    />
+                    <div className="text-center py-12 hidden">
+                      <p className="text-red-600 mb-4">Failed to load PDF document.</p>
+                      <button 
+                        onClick={() => window.open(fileModal.url, '_blank')}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        Open in New Tab
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="text-center py-12">
                     <p className="text-gray-600">Preview not available for this file type</p>

@@ -125,7 +125,9 @@ router.get('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => 
       formData = {};
       answers.forEach(answer => {
         if (answer.field && answer.field.name) {
-          if (answer.answerFile) {
+          if (answer.answerFiles && answer.answerFiles.length > 0) {
+            formData[answer.field.name] = answer.answerFiles;
+          } else if (answer.answerFile) {
             try {
               formData[answer.field.name] = JSON.parse(answer.answerFile);
             } catch {
@@ -149,7 +151,9 @@ router.get('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => 
         
         applicantAnswers.forEach(answer => {
           if (answer.field && answer.field.name) {
-            if (answer.answerFile) {
+            if (answer.answerFiles && answer.answerFiles.length > 0) {
+              applicantData[answer.field.name] = answer.answerFiles;
+            } else if (answer.answerFile) {
               try {
                 applicantData[answer.field.name] = JSON.parse(answer.answerFile);
               } catch {
@@ -244,8 +248,12 @@ router.put('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => 
                 field: fieldMap[fieldName]
               };
               
-              if (field && field.type === 'file' && typeof value === 'string') {
-                answer.answerFile = value;
+              if (field && field.type === 'file') {
+                if (Array.isArray(value)) {
+                  answer.answerFiles = value;
+                } else if (typeof value === 'string') {
+                  answer.answerFile = value;
+                }
               } else {
                 answer.answerText = typeof value === 'string' ? value : JSON.stringify(value);
               }
@@ -265,8 +273,12 @@ router.put('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => 
               field: fieldMap[fieldName]
             };
             
-            if (field && field.type === 'file' && typeof value === 'string') {
-              answer.answerFile = value;
+            if (field && field.type === 'file') {
+              if (Array.isArray(value)) {
+                answer.answerFiles = value;
+              } else if (typeof value === 'string') {
+                answer.answerFile = value;
+              }
             } else {
               answer.answerText = typeof value === 'string' ? value : JSON.stringify(value);
             }
@@ -312,7 +324,8 @@ router.get('/application/:id', auth, role(['customer', 'admin']), async (req, re
         { path: 'visaType', select: 'name' }
       ]
     })
-    .populate('user', 'name email');
+    .populate('user', 'name email')
+    .populate('assignedTo', 'name email mobile');
     
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });

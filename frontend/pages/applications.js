@@ -118,23 +118,44 @@ export default function Applications() {
     }
   };
 
-  const handleStatusChange = async (newStatusId, remarks, embassyVisitDateTime, visaDetails) => {
+  const handleStatusChange = async (newStatusId, remarks, embassyVisitDateTime, visaDetails, visaFiles, courierDetails, courierFiles) => {
     try {
-      const updateData = {
-        status: newStatusId,
-        remarks,
-        embassyVisitDateTime
-      };
-      
-      if (visaDetails) {
-        updateData.visaDetails = visaDetails;
+      const formData = new FormData();
+      formData.append('status', newStatusId);
+      formData.append('remarks', remarks);
+      if (embassyVisitDateTime) {
+        formData.append('embassyVisitDateTime', embassyVisitDateTime);
       }
       
-      await api.put(`/applications/${statusModal.applicationId}/status`, updateData);
+      if (visaDetails) {
+        formData.append('visaDetails', JSON.stringify(visaDetails));
+      }
+      
+      if (visaFiles && visaFiles.length > 0) {
+        visaFiles.forEach((file, index) => {
+          formData.append('visaFiles', file);
+        });
+      }
+      
+      if (courierDetails) {
+        formData.append('courierDetails', JSON.stringify(courierDetails));
+      }
+      
+      if (courierFiles && courierFiles.length > 0) {
+        courierFiles.forEach((file, index) => {
+          formData.append('courierFiles', file);
+        });
+      }
+      
+      await api.put(`/applications/${statusModal.applicationId}/status`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       fetchApplications();
       
-      if (visaDetails) {
-        alert('Status updated successfully! Visa issuance notification has been sent to the applicant.');
+      if (visaDetails || (visaFiles && visaFiles.length > 0) || courierDetails || (courierFiles && courierFiles.length > 0)) {
+        alert('Status updated successfully! Notification has been sent to the applicant.');
       }
     } catch (error) {
       console.error('Error updating status:', error);

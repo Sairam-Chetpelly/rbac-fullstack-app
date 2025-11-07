@@ -266,40 +266,50 @@ const VisaApplicationForm = () => {
   const handleFileUpload = async (fieldName, files) => {
     if (!files || files.length === 0) return;
     
-    const file = files[0]; // Only take the first file
     const maxSize = 5 * 1024 * 1024; // 5MB
+    const filesToUpload = Array.from(files);
     
-    if (file.size > maxSize) {
-      alert(`File size exceeds 5MB limit. Please select a smaller file.`);
-      return;
+    // Check file sizes
+    for (const file of filesToUpload) {
+      if (file.size > maxSize) {
+        alert(`File "${file.name}" exceeds 5MB limit. Please select smaller files.`);
+        return;
+      }
     }
     
     try {
       setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
       
       const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
-      uploadFormData.append('fieldName', fieldName);
+      filesToUpload.forEach(file => {
+        uploadFormData.append('files', file);
+      });
       
-      const response = await api.post('/visa-applications/upload-single', uploadFormData, {
+      const response = await api.post('/visa-applications/upload-multiple', uploadFormData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
-      const uploadedFile = {
-        filePath: response.data.filePath,
-        fileName: response.data.originalName,
-        fileType: file.type,
-        fileUrl: URL.createObjectURL(file),
-        size: response.data.size
-      };
+      const uploadedFiles = response.data.files.map(file => ({
+        filename: file.filename,
+        originalName: file.originalName,
+        path: file.path,
+        size: file.size,
+        mimetype: file.mimetype,
+        uploadedAt: file.uploadedAt
+      }));
       
-      handleInputChange(fieldName, uploadedFile);
+      // Get existing files and append new ones
+      const currentValue = getFieldValue(fieldName);
+      const existingFiles = Array.isArray(currentValue) ? currentValue : [];
+      const allFiles = [...existingFiles, ...uploadedFiles];
+      
+      handleInputChange(fieldName, allFiles);
       
     } catch (error) {
-      console.error('Error uploading file:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to upload file';
+      console.error('Error uploading files:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to upload files';
       alert(`Upload Error: ${errorMessage}`);
     } finally {
       setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
@@ -354,13 +364,104 @@ const VisaApplicationForm = () => {
     }
   };
 
-  const handleFileRemove = (fieldName) => {
-    handleInputChange(fieldName, null);
+  const handleFileRemove = (fieldName, fileIndex = null) => {
+    if (fileIndex !== null) {
+      // Remove specific file from array
+      const currentValue = getFieldValue(fieldName);
+      if (Array.isArray(currentValue)) {
+        const newFiles = currentValue.filter((_, index) => index !== fileIndex);
+        handleInputChange(fieldName, newFiles.length > 0 ? newFiles : []);
+      }
+    } else {
+      // Remove all files
+      handleInputChange(fieldName, []);
+    }
   };
 
   const renderFilePreview = (fileData, fieldName) => {
     if (!fileData) return null;
     
+    // Handle array of files
+    if (Array.isArray(fileData)) {
+      if (fileData.length === 0) return null;
+      
+      return (
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">{fileData.length} file(s) uploaded</span>
+            <button
+              type="button"
+              onClick={() => handleFileRemove(fieldName)}
+              className="text-xs text-red-600 hover:text-red-800 font-medium"
+            >
+              Remove All
+            </button>
+          </div>
+          {fileData.map((file, index) => {
+            const isImage = file.mimetype?.startsWith('image/');
+            const isPDF = file.mimetype === 'application/pdf';
+            const fileSize = file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : '';
+            
+            return (
+              <div key={index} className="relative group border border-gray-200 rounded-lg p-3">
+                <button
+                  type="button"
+                  onClick={() => handleFileRemove(fieldName, index)}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors z-10 opacity-0 group-hover:opacity-100"
+                >
+                  ×
+                </button>
+                
+                {isImage ? (
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/applications/${file.filename || file.path}`}
+                      alt={file.originalName}
+                      className="w-16 h-16 object-cover rounded border cursor-pointer"
+                      onClick={() => handleFileView({
+                        fileName: file.originalName,
+                        fileType: file.mimetype,
+                        filePath: file.filename || file.path
+                      })}
+                      onError={(e) => {
+                        console.error('Image load error:', e.target.src);
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{file.originalName}</p>
+                      <p className="text-xs text-gray-500">{fileSize}</p>
+                    </div>
+                  </div>
+                ) : isPDF ? (
+                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleFileView({
+                    fileName: file.originalName,
+                    fileType: file.mimetype,
+                    filePath: file.path
+                  })}>
+                    <span className="text-red-600 text-2xl">📄</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-red-800 truncate">{file.originalName}</p>
+                      <p className="text-xs text-red-600">PDF Document {fileSize && `• ${fileSize}`}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-600 text-xl">📎</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-700 truncate">{file.originalName}</p>
+                      <p className="text-xs text-gray-500">{fileSize}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    
+    // Handle single file (legacy support)
     if (typeof fileData === 'string') {
       try {
         fileData = JSON.parse(fileData);
@@ -387,11 +488,12 @@ const VisaApplicationForm = () => {
         {isImage ? (
           <div>
             <img 
-              src={fileUrl || `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000'.replace('/api', '')}/uploads/applications/${filePath}`}
+              src={fileUrl || `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/applications/${filePath}`}
               alt={fileName}
               className="w-full max-w-xs h-32 object-cover rounded-lg border border-gray-200 cursor-pointer"
               onClick={() => handleFileView(fileData)}
               onError={(e) => {
+                console.error('Image load error:', e.target.src);
                 e.target.style.display = 'none';
               }}
             />
@@ -857,11 +959,12 @@ const VisaApplicationForm = () => {
                                   type="file" 
                                   name={field.name}
                                   onChange={(e) => handleFileUpload(field.name, e.target.files)}
-                                  required={field.required && !getFieldValue(field)}
+                                  required={field.required && (!getFieldValue(field) || (Array.isArray(getFieldValue(field)) && getFieldValue(field).length === 0))}
                                   className="hidden" 
                                   id={field.name}
                                   accept="image/*,.pdf,.doc,.docx"
                                   disabled={uploadingFiles[field.name]}
+                                  multiple
                                 />
                                 <label htmlFor={field.name} className="cursor-pointer">
                                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 transition-colors">
@@ -877,7 +980,7 @@ const VisaApplicationForm = () => {
                                     ) : (
                                       <div>
                                         <div>Click to upload {field.label}</div>
-                                        <div className="text-xs text-gray-500 mt-1">Max 5MB per file</div>
+                                        <div className="text-xs text-gray-500 mt-1">Select multiple files (Max 5MB per file)</div>
                                         <div className="text-xs text-gray-500">Supported: Images, PDF, Word documents</div>
                                       </div>
                                     )}
@@ -885,11 +988,16 @@ const VisaApplicationForm = () => {
                                 </label>
                               </div>
                               
-                              {getFieldValue(field) && (
+                              {getFieldValue(field) && (Array.isArray(getFieldValue(field)) ? getFieldValue(field).length > 0 : true) && (
                                 <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
                                   <div className="flex items-center gap-2 text-green-700">
                                     <CheckCircle className="h-5 w-5" />
-                                    <span className="font-medium">File uploaded successfully</span>
+                                    <span className="font-medium">
+                                      {Array.isArray(getFieldValue(field)) 
+                                        ? `${getFieldValue(field).length} file(s) uploaded successfully`
+                                        : 'File uploaded successfully'
+                                      }
+                                    </span>
                                   </div>
                                 </div>
                               )}
@@ -1064,13 +1172,31 @@ const VisaApplicationForm = () => {
                                 </span>
                               ) : field.type === 'file' ? (
                                 <div>
-                                  <span className="text-green-600 flex items-center gap-2 mb-2">
-                                    <CheckCircle className="h-4 w-4" />
-                                    File uploaded successfully
-                                  </span>
-                                  <div className="text-sm text-gray-700 bg-gray-50 rounded px-2 py-1">
-                                    {value?.fileName || 'File uploaded'}
-                                  </div>
+                                  {Array.isArray(value) ? (
+                                    <div>
+                                      <span className="text-green-600 flex items-center gap-2 mb-2">
+                                        <CheckCircle className="h-4 w-4" />
+                                        {value.length} file(s) uploaded successfully
+                                      </span>
+                                      <div className="space-y-1">
+                                        {value.map((file, idx) => (
+                                          <div key={idx} className="text-sm text-gray-700 bg-gray-50 rounded px-2 py-1">
+                                            {file.originalName || file.fileName || `File ${idx + 1}`}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <span className="text-green-600 flex items-center gap-2 mb-2">
+                                        <CheckCircle className="h-4 w-4" />
+                                        File uploaded successfully
+                                      </span>
+                                      <div className="text-sm text-gray-700 bg-gray-50 rounded px-2 py-1">
+                                        {value?.fileName || 'File uploaded'}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               ) : field.type === 'checkbox' ? (
                                 <div className="space-y-1">
@@ -1154,13 +1280,31 @@ const VisaApplicationForm = () => {
                                       </span>
                                     ) : field.type === 'file' ? (
                                       <div>
-                                        <span className="text-green-600 flex items-center gap-2 mb-2">
-                                          <CheckCircle className="h-4 w-4" />
-                                          File uploaded successfully
-                                        </span>
-                                        <div className="text-sm text-gray-700 bg-gray-50 rounded px-2 py-1">
-                                          {value?.fileName || 'File uploaded'}
-                                        </div>
+                                        {Array.isArray(value) ? (
+                                          <div>
+                                            <span className="text-green-600 flex items-center gap-2 mb-2">
+                                              <CheckCircle className="h-4 w-4" />
+                                              {value.length} file(s) uploaded successfully
+                                            </span>
+                                            <div className="space-y-1">
+                                              {value.map((file, idx) => (
+                                                <div key={idx} className="text-sm text-gray-700 bg-gray-50 rounded px-2 py-1">
+                                                  {file.originalName || file.fileName || `File ${idx + 1}`}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div>
+                                            <span className="text-green-600 flex items-center gap-2 mb-2">
+                                              <CheckCircle className="h-4 w-4" />
+                                              File uploaded successfully
+                                            </span>
+                                            <div className="text-sm text-gray-700 bg-gray-50 rounded px-2 py-1">
+                                              {value?.fileName || 'File uploaded'}
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     ) : field.type === 'checkbox' ? (
                                       <div className="space-y-1">
@@ -1272,9 +1416,9 @@ const VisaApplicationForm = () => {
             <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
               <span className="text-3xl text-white">📞</span>
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mb-3">Will Connect With You Shortly</h3>
+            <h3 className="text-3xl font-bold text-gray-900 mb-3">We Will Contact You Shortly</h3>
             <p className="text-gray-600 text-lg">
-              will contact you for payment details and further processing.
+              We will contact you for payment details and further processing.
             </p>
           </div>
           
@@ -1310,7 +1454,7 @@ const VisaApplicationForm = () => {
               <div>
                 <h4 className="font-bold text-blue-800 mb-2">What happens next?</h4>
                 <ul className="text-blue-700 space-y-1 text-sm">
-                  <li>• Our agent will contact you shortly</li>
+                  <li>• We will contact you shortly</li>
                   <li>• Payment details and methods will be discussed</li>
                   <li>• Application processing will begin after payment</li>
                   <li>• You'll receive regular status updates via email</li>

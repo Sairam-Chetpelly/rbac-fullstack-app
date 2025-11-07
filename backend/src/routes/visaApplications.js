@@ -71,6 +71,32 @@ router.post('/visa-applications/upload-single', auth, upload.single('file'), com
   }
 });
 
+// Multiple file upload endpoint for form fields
+router.post('/visa-applications/upload-multiple', auth, upload.array('files', 10), compressMultipleImages, (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No files uploaded' });
+    }
+    
+    const uploadedFiles = req.files.map(file => ({
+      filename: file.filename,
+      originalName: file.originalname,
+      path: file.filename,
+      size: file.size,
+      mimetype: file.mimetype,
+      uploadedAt: new Date()
+    }));
+    
+    res.json({ 
+      success: true, 
+      files: uploadedFiles
+    });
+  } catch (error) {
+    console.error('Error processing uploaded files:', error);
+    res.status(500).json({ message: 'Error processing uploaded files', error: error.message });
+  }
+});
+
 // File upload endpoint - supports multiple files (legacy)
 router.post('/visa-applications/upload', auth, upload.array('files', 10), compressMultipleImages, (req, res) => {
   try {
@@ -159,12 +185,24 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
       formData.forEach((applicantData, index) => {
         for (const [fieldName, value] of Object.entries(applicantData)) {
           if (fieldMap[fieldName] && value !== '' && value !== null && value !== undefined) {
-            answers.push({
+            const field = fields.find(f => f.name === fieldName);
+            const answer = {
               application: application._id,
               applicantIndex: index,
-              field: fieldMap[fieldName],
-              answerText: typeof value === 'string' ? value : JSON.stringify(value)
-            });
+              field: fieldMap[fieldName]
+            };
+            
+            if (field && field.type === 'file') {
+              if (Array.isArray(value)) {
+                answer.answerFiles = value;
+              } else if (typeof value === 'string') {
+                answer.answerFile = value;
+              }
+            } else {
+              answer.answerText = typeof value === 'string' ? value : JSON.stringify(value);
+            }
+            
+            answers.push(answer);
           }
         }
       });
@@ -172,12 +210,24 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
       // Single applicant format
       for (const [fieldName, value] of Object.entries(formData)) {
         if (fieldMap[fieldName] && value) {
-          answers.push({
+          const field = fields.find(f => f.name === fieldName);
+          const answer = {
             application: application._id,
             applicantIndex: 0,
-            field: fieldMap[fieldName],
-            answerText: typeof value === 'string' ? value : JSON.stringify(value)
-          });
+            field: fieldMap[fieldName]
+          };
+          
+          if (field && field.type === 'file') {
+            if (Array.isArray(value)) {
+              answer.answerFiles = value;
+            } else if (typeof value === 'string') {
+              answer.answerFile = value;
+            }
+          } else {
+            answer.answerText = typeof value === 'string' ? value : JSON.stringify(value);
+          }
+          
+          answers.push(answer);
         }
       }
     }

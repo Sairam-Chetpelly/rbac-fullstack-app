@@ -57,6 +57,44 @@ const applicationSchema = new mongoose.Schema({
       default: null
     }
   },
+  visaFiles: [{
+    filename: String,
+    originalName: String,
+    path: String,
+    size: Number,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  courierDetails: {
+    visaNumber: {
+      type: String,
+      default: null
+    },
+    courierName: {
+      type: String,
+      default: null
+    },
+    shipmentRefNumber: {
+      type: String,
+      default: null
+    },
+    shipmentDate: {
+      type: Date,
+      default: null
+    }
+  },
+  courierFiles: [{
+    filename: String,
+    originalName: String,
+    path: String,
+    size: Number,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   submittedAt: {
     type: Date,
     default: null

@@ -11,6 +11,14 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
     dateOfExpiry: '',
     additionalDetails: ''
   });
+  const [visaFiles, setVisaFiles] = useState([]);
+  const [courierDetails, setCourierDetails] = useState({
+    visaNumber: '',
+    courierName: '',
+    shipmentRefNumber: '',
+    shipmentDate: ''
+  });
+  const [courierFiles, setCourierFiles] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -23,6 +31,14 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
         dateOfExpiry: '',
         additionalDetails: ''
       });
+      setVisaFiles([]);
+      setCourierDetails({
+        visaNumber: '',
+        courierName: '',
+        shipmentRefNumber: '',
+        shipmentDate: ''
+      });
+      setCourierFiles([]);
     }
   }, [isOpen, currentStatus]);
 
@@ -32,13 +48,11 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
     
     const statusName = statuses.find(s => s._id === selectedStatus)?.name || 'Unknown';
     const isVisaIssued = statusName.toLowerCase().includes('visa-approved') || statusName.toLowerCase().includes('approved');
+    const isVisaInTransit = statusName.toLowerCase().includes('visa-in-transit') || statusName.toLowerCase().includes('transit');
     
-    if (isVisaIssued && (!visaDetails.visaNumber || !visaDetails.dateOfIssuance || !visaDetails.dateOfExpiry)) {
-      alert('Please fill all visa details for visa approved status');
-      return;
-    }
+    // Visa details are now optional
     
-    onSubmit(selectedStatus, remarks || `Status changed to ${statusName}`, embassyVisitDateTime, isVisaIssued ? visaDetails : null);
+    onSubmit(selectedStatus, remarks || `Status changed to ${statusName}`, embassyVisitDateTime, isVisaIssued ? visaDetails : null, visaFiles, isVisaInTransit ? courierDetails : null, courierFiles);
     setRemarks('');
     setEmbassyVisitDateTime('');
     setVisaDetails({
@@ -47,6 +61,13 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
       dateOfExpiry: '',
       additionalDetails: ''
     });
+    setCourierDetails({
+      visaNumber: '',
+      courierName: '',
+      shipmentRefNumber: '',
+      shipmentDate: ''
+    });
+    setCourierFiles([]);
     onClose();
   };
 
@@ -98,7 +119,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Visa Number *
+                  Visa Number
                 </label>
                 <input
                   type="text"
@@ -106,34 +127,31 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                   onChange={(e) => setVisaDetails({...visaDetails, visaNumber: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter visa number"
-                  required
                 />
               </div>
               
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date of Issuance *
+                    Date of Issuance
                   </label>
                   <input
                     type="date"
                     value={visaDetails.dateOfIssuance}
                     onChange={(e) => setVisaDetails({...visaDetails, dateOfIssuance: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
                   />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date of Expiry *
+                    Date of Expiry
                   </label>
                   <input
                     type="date"
                     value={visaDetails.dateOfExpiry}
                     onChange={(e) => setVisaDetails({...visaDetails, dateOfExpiry: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
                   />
                 </div>
               </div>
@@ -149,6 +167,112 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                   rows="2"
                   placeholder="Any additional visa details..."
                 />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Visa Files (Optional)
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  onChange={(e) => setVisaFiles(Array.from(e.target.files))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Upload visa documents (PDF, Images, Word files)</p>
+                {visaFiles.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600">Selected files:</p>
+                    <ul className="text-xs text-gray-500">
+                      {visaFiles.map((file, index) => (
+                        <li key={index}>• {file.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(statuses.find(s => s._id === selectedStatus)?.name?.toLowerCase().includes('visa-in-transit') || 
+            statuses.find(s => s._id === selectedStatus)?.name?.toLowerCase().includes('in-transit')) && (
+            <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="font-semibold text-blue-800">🚚 Courier Details (Optional)</h4>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Visa Number
+                </label>
+                <input
+                  type="text"
+                  value={courierDetails.visaNumber}
+                  onChange={(e) => setCourierDetails({...courierDetails, visaNumber: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter visa number"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Courier Name
+                </label>
+                <input
+                  type="text"
+                  value={courierDetails.courierName}
+                  onChange={(e) => setCourierDetails({...courierDetails, courierName: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter courier company name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Shipment Reference Number
+                </label>
+                <input
+                  type="text"
+                  value={courierDetails.shipmentRefNumber}
+                  onChange={(e) => setCourierDetails({...courierDetails, shipmentRefNumber: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter tracking/reference number"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Shipment Date
+                </label>
+                <input
+                  type="date"
+                  value={courierDetails.shipmentDate}
+                  onChange={(e) => setCourierDetails({...courierDetails, shipmentDate: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Courier Documents (Optional)
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  onChange={(e) => setCourierFiles(Array.from(e.target.files))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Upload courier receipts, tracking documents</p>
+                {courierFiles.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600">Selected files:</p>
+                    <ul className="text-xs text-gray-500">
+                      {courierFiles.map((file, index) => (
+                        <li key={index}>• {file.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           )}

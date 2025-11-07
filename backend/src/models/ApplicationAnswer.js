@@ -28,6 +28,13 @@ const applicationAnswerSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  answerFiles: [{
+    filename: String,
+    originalName: String,
+    path: String,
+    size: Number,
+    uploadedAt: { type: Date, default: Date.now }
+  }],
   deletedAt: {
     type: Date,
     default: null

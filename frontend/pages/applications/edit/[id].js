@@ -17,6 +17,7 @@ const EditApplication = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [fileModal, setFileModal] = useState({ show: false, url: '', fileName: '', type: '' });
+  const [uploadingFiles, setUploadingFiles] = useState({});
 
   useEffect(() => {
     if (id) {
@@ -57,7 +58,7 @@ const EditApplication = () => {
     const answer = answers.find(ans => 
       ans.field?._id === fieldId && ans.applicantIndex === applicantIndex
     );
-    return answer?.answerText || answer?.answerFile || '';
+    return answer?.answerText || answer?.answerFile || answer?.answerFiles || '';
   };
 
   const handleAnswerChange = (fieldId, value, applicantIndex = 0) => {
@@ -81,26 +82,50 @@ const EditApplication = () => {
     });
   };
 
-  const handleFileUpload = async (fieldId, file, applicantIndex = 0) => {
-    if (!file) return;
+  const handleFileUpload = async (fieldId, files, applicantIndex = 0) => {
+    if (!files || files.length === 0) return;
     
-    const uploadFormData = new FormData();
-    uploadFormData.append('file', file);
-    uploadFormData.append('fieldName', 'file');
+    const fieldKey = `${fieldId}-${applicantIndex}`;
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const filesToUpload = Array.from(files);
+    
+    // Check file sizes
+    for (const file of filesToUpload) {
+      if (file.size > maxSize) {
+        alert(`File "${file.name}" exceeds 5MB limit. Please select smaller files.`);
+        return;
+      }
+    }
     
     try {
-      const response = await api.post('/visa-applications/upload', uploadFormData, {
+      setUploadingFiles(prev => ({ ...prev, [fieldKey]: true }));
+      
+      const uploadFormData = new FormData();
+      filesToUpload.forEach(file => {
+        uploadFormData.append('files', file);
+      });
+      
+      const response = await api.post('/visa-applications/upload-multiple', uploadFormData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
-      const fileData = {
-        filePath: response.data.filePath,
-        fileName: file.name,
-        fileType: file.type,
-        fileUrl: URL.createObjectURL(file)
-      };
+      const uploadedFiles = response.data.files.map(file => ({
+        filename: file.filename,
+        originalName: file.originalName,
+        path: file.path,
+        size: file.size,
+        mimetype: file.mimetype,
+        uploadedAt: file.uploadedAt
+      }));
+      
+      // Get existing files and append new ones
+      const existingAnswer = answers.find(ans => 
+        ans.field?._id === fieldId && ans.applicantIndex === applicantIndex
+      );
+      const existingFiles = existingAnswer?.answerFiles || [];
+      const allFiles = [...existingFiles, ...uploadedFiles];
       
       setAnswers(prev => {
         const existingIndex = prev.findIndex(ans => 
@@ -109,20 +134,22 @@ const EditApplication = () => {
         
         if (existingIndex >= 0) {
           const updated = [...prev];
-          updated[existingIndex] = { ...updated[existingIndex], answerFile: JSON.stringify(fileData) };
+          updated[existingIndex] = { ...updated[existingIndex], answerFiles: allFiles };
           return updated;
         } else {
           return [...prev, {
             _id: `temp-${Date.now()}-${Math.random()}`,
             field: { _id: fieldId },
             applicantIndex,
-            answerFile: JSON.stringify(fileData)
+            answerFiles: allFiles
           }];
         }
       });
     } catch (error) {
-      console.error('Error uploading file:', error);
-      alert('Failed to upload file');
+      console.error('Error uploading files:', error);
+      alert('Failed to upload files');
+    } finally {
+      setUploadingFiles(prev => ({ ...prev, [fieldKey]: false }));
     }
   };
 
@@ -137,7 +164,15 @@ const EditApplication = () => {
     
     const { fileName, fileType, fileUrl, filePath } = fileData;
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
-    const url = fileUrl || `${baseUrl}/uploads/applications/${filePath}`;
+    let url;
+    
+    if (fileUrl) {
+      url = fileUrl;
+    } else if (filePath?.startsWith('uploads/')) {
+      url = `${baseUrl}/${filePath}`;
+    } else {
+      url = `${baseUrl}/uploads/applications/${filePath}`;
+    }
     
     setFileModal({
       show: true,
@@ -147,9 +182,111 @@ const EditApplication = () => {
     });
   };
 
-  const renderFilePreview = (fileData) => {
+  const handleFileRemove = (fieldId, applicantIndex, fileIndex = null) => {
+    setAnswers(prev => {
+      const existingIndex = prev.findIndex(ans => 
+        ans.field?._id === fieldId && ans.applicantIndex === applicantIndex
+      );
+      
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        const answer = updated[existingIndex];
+        
+        if (fileIndex !== null && answer.answerFiles) {
+          // Remove specific file from array
+          const newFiles = answer.answerFiles.filter((_, index) => index !== fileIndex);
+          updated[existingIndex] = { ...answer, answerFiles: newFiles.length > 0 ? newFiles : [] };
+        } else {
+          // Remove all files
+          updated[existingIndex] = { ...answer, answerFiles: [], answerFile: null };
+        }
+        
+        return updated;
+      }
+      return prev;
+    });
+  };
+
+  const renderFilePreview = (fileData, fieldId, applicantIndex) => {
     if (!fileData) return null;
     
+    // Handle array of files
+    if (Array.isArray(fileData)) {
+      if (fileData.length === 0) return null;
+      
+      return (
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">{fileData.length} file(s) uploaded</span>
+            <button
+              type="button"
+              onClick={() => handleFileRemove(fieldId, applicantIndex)}
+              className="text-xs text-red-600 hover:text-red-800 font-medium"
+            >
+              Remove All
+            </button>
+          </div>
+          {fileData.map((file, index) => {
+            const isImage = file.mimetype?.startsWith('image/');
+            const isPDF = file.mimetype === 'application/pdf';
+            const fileSize = file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : '';
+            
+            return (
+              <div key={index} className="relative group border border-gray-200 rounded-lg p-3">
+                <button
+                  type="button"
+                  onClick={() => handleFileRemove(fieldId, applicantIndex, index)}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors z-10 opacity-0 group-hover:opacity-100"
+                >
+                  ×
+                </button>
+                
+                {isImage ? (
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000'}/${file.path}`}
+                      alt={file.originalName}
+                      className="w-16 h-16 object-cover rounded border cursor-pointer"
+                      onClick={() => handleFileView({
+                        fileName: file.originalName,
+                        fileType: file.mimetype,
+                        filePath: file.path
+                      })}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{file.originalName}</p>
+                      <p className="text-xs text-gray-500">{fileSize}</p>
+                    </div>
+                  </div>
+                ) : isPDF ? (
+                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleFileView({
+                    fileName: file.originalName,
+                    fileType: file.mimetype,
+                    filePath: file.path
+                  })}>
+                    <span className="text-red-600 text-2xl">📄</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-red-800 truncate">{file.originalName}</p>
+                      <p className="text-xs text-red-600">PDF Document • {fileSize}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-600 text-xl">📎</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-700 truncate">{file.originalName}</p>
+                      <p className="text-xs text-gray-500">{fileSize}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    
+    // Handle single file (legacy support)
     if (typeof fileData === 'string') {
       try {
         fileData = JSON.parse(fileData);
@@ -454,29 +591,43 @@ const EditApplication = () => {
                                       <input 
                                         type="file" 
                                         name={field.name}
-                                        onChange={(e) => handleFileUpload(field._id, e.target.files[0], 0)}
-                                        required={field.required}
+                                        onChange={(e) => handleFileUpload(field._id, e.target.files, 0)}
+                                        required={field.required && (!currentValue || (Array.isArray(currentValue) && currentValue.length === 0))}
                                         className="hidden" 
                                         id={field.name}
-                                        accept="image/*,.pdf"
+                                        accept="image/*,.pdf,.doc,.docx"
+                                        multiple
+                                        disabled={uploadingFiles[`${field._id}-0`]}
                                       />
                                       <label htmlFor={field.name} className="cursor-pointer">
                                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 transition-colors">
-                                          <Upload className="h-8 w-8 text-gray-400 group-hover:text-blue-500" />
+                                          {uploadingFiles[`${field._id}-0`] ? (
+                                            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                          ) : (
+                                            <Upload className="h-8 w-8 text-gray-400 group-hover:text-blue-500" />
+                                          )}
                                         </div>
                                         <div className="text-gray-600 font-medium">
-                                          {currentValue ? (
+                                          {uploadingFiles[`${field._id}-0`] ? (
+                                            <div className="text-blue-600">Uploading files...</div>
+                                          ) : currentValue && (Array.isArray(currentValue) ? currentValue.length > 0 : true) ? (
                                             <span className="text-green-600 flex items-center justify-center gap-2">
                                               <CheckCircle className="h-5 w-5" />
-                                              File uploaded successfully
+                                              {Array.isArray(currentValue) 
+                                                ? `${currentValue.length} file(s) uploaded`
+                                                : 'File uploaded successfully'
+                                              }
                                             </span>
                                           ) : (
-                                            `Click to upload ${field.label}`
+                                            <div>
+                                              <div>Click to upload {field.label}</div>
+                                              <div className="text-xs text-gray-500 mt-1">Select multiple files (Max 5MB per file)</div>
+                                            </div>
                                           )}
                                         </div>
                                       </label>
                                     </div>
-                                    {currentValue && renderFilePreview(currentValue)}
+                                    {currentValue && renderFilePreview(currentValue, field._id, 0)}
                                   </div>
                                 ) : (
                                   <input
@@ -604,19 +755,33 @@ const EditApplication = () => {
                                           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                                             <input 
                                               type="file" 
-                                              onChange={(e) => handleFileUpload(field._id, e.target.files[0], applicantIndex)}
+                                              onChange={(e) => handleFileUpload(field._id, e.target.files, applicantIndex)}
                                               className="hidden" 
                                               id={`${field.name}-${applicantIndex}`}
-                                              accept="image/*,.pdf"
+                                              accept="image/*,.pdf,.doc,.docx"
+                                              multiple
+                                              disabled={uploadingFiles[`${field._id}-${applicantIndex}`]}
                                             />
                                             <label htmlFor={`${field.name}-${applicantIndex}`} className="cursor-pointer">
-                                              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                              {uploadingFiles[`${field._id}-${applicantIndex}`] ? (
+                                                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                                              ) : (
+                                                <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                              )}
                                               <div className="text-gray-600">
-                                                {currentValue ? 'File uploaded - click to change' : `Upload ${field.label}`}
+                                                {uploadingFiles[`${field._id}-${applicantIndex}`] ? (
+                                                  'Uploading files...'
+                                                ) : currentValue && (Array.isArray(currentValue) ? currentValue.length > 0 : true) ? (
+                                                  Array.isArray(currentValue) 
+                                                    ? `${currentValue.length} file(s) uploaded - click to add more`
+                                                    : 'File uploaded - click to change'
+                                                ) : (
+                                                  `Upload ${field.label} (multiple files)`
+                                                )}
                                               </div>
                                             </label>
                                           </div>
-                                          {currentValue && renderFilePreview(currentValue)}
+                                          {currentValue && renderFilePreview(currentValue, field._id, applicantIndex)}
                                         </div>
                                       ) : (
                                         <input

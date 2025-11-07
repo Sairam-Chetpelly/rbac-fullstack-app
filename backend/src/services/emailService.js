@@ -458,8 +458,8 @@ const emailTemplates = {
     `, '#22c55e', '💳')
   }),
 
-  visaIssued: (userName, applicationId, countryName, visaNumber, dateOfIssuance, dateOfExpiry, additionalDetails, remarks) => ({
-    subject: '🎉 VISA Ppproved - Your Visa is Ready!',
+  visaIssued: (userName, applicationId, countryName, visaNumber, dateOfIssuance, dateOfExpiry, additionalDetails, remarks, hasVisaFiles) => ({
+    subject: '🎉 VISA Approved - Your Visa is Ready!',
     html: createEmailTemplate('Visa Approved', `
       <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 28px; font-weight: 700;">🎉 Congratulations ${userName}!</h2>
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 18px; font-weight: 600;">
@@ -470,9 +470,10 @@ const emailTemplates = {
         <h3 style="color: white; margin: 0 0 16px 0; font-size: 20px; font-weight: 600;">📋 Visa Details</h3>
         <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin: 16px 0;">
           <p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Application ID: <span style="font-weight: 600; font-family: monospace;">${applicationId}</span></p>
-          <p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Visa Number: <span style="font-weight: 700; font-family: monospace; font-size: 18px;">${visaNumber}</span></p>
-          <p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Date of Issuance: <span style="font-weight: 600;">${dateOfIssuance}</span></p>
-          <p style="color: white; margin: 0; font-size: 16px;">Date of Expiry: <span style="font-weight: 600;">${dateOfExpiry}</span></p>
+          ${visaNumber ? `<p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Visa Number: <span style="font-weight: 700; font-family: monospace; font-size: 18px;">${visaNumber}</span></p>` : ''}
+          ${dateOfIssuance ? `<p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Date of Issuance: <span style="font-weight: 600;">${dateOfIssuance}</span></p>` : ''}
+          ${dateOfExpiry ? `<p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Date of Expiry: <span style="font-weight: 600;">${dateOfExpiry}</span></p>` : ''}
+          ${hasVisaFiles ? `<p style="color: white; margin: 0; font-size: 16px;">📎 Visa documents are attached to this email</p>` : ''}
         </div>
       </div>
       
@@ -517,7 +518,7 @@ const emailTemplates = {
     `, '#10b981', '🎉')
   }),
 
-  adminVisaIssued: (applicationId, userName, countryName, visaNumber, updatedBy) => ({
+  adminVisaIssued: (applicationId, userName, countryName, visaNumber, updatedBy, hasVisaFiles) => ({
     subject: '✅ VISA Approved - Admin Notification',
     html: createEmailTemplate('Admin Visa Approved', `
       <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">✅ Visa Successfully Approved</h2>
@@ -529,8 +530,9 @@ const emailTemplates = {
         <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Application ID: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${applicationId}</span></p>
         <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Customer: <span style="color: #1f2937; font-weight: 600;">${userName}</span></p>
         <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Country: <span style="color: #059669; font-weight: 600;">${countryName}</span></p>
-        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Visa Number: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${visaNumber}</span></p>
-        <p style="color: #166534; margin: 0; font-size: 15px;">Approved by: <span style="color: #1f2937; font-weight: 600;">${updatedBy}</span></p>
+        ${visaNumber ? `<p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Visa Number: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${visaNumber}</span></p>` : ''}
+        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Approved by: <span style="color: #1f2937; font-weight: 600;">${updatedBy}</span></p>
+        ${hasVisaFiles ? `<p style="color: #166534; margin: 0; font-size: 15px;">📎 Visa files uploaded: Yes</p>` : ''}
       </div>
       
       <table role="presentation" style="margin: 30px 0;">
@@ -651,15 +653,157 @@ const emailTemplates = {
     `, '#ef4444', '⚠️')
   }),
 
+  visaInTransit: (userName, applicationId, countryName, visaNumber, courierName, shipmentRefNumber, shipmentDate, remarks, hasCourierFiles) => ({
+    subject: '🚚 Visa In Transit - Courier Details',
+    html: createEmailTemplate('Visa In Transit', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 28px; font-weight: 700;">🚚 Your Visa is In Transit!</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 18px; font-weight: 600;">
+        Hello ${userName}, your ${countryName} visa has been dispatched and is on its way to you! 📦
+      </p>
+      
+      <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 12px; padding: 24px; margin: 30px 0; color: white;">
+        <h3 style="color: white; margin: 0 0 16px 0; font-size: 20px; font-weight: 600;">🚚 Courier Details</h3>
+        <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin: 16px 0;">
+          <p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Application ID: <span style="font-weight: 600; font-family: monospace;">${applicationId}</span></p>
+          ${visaNumber ? `<p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Visa Number: <span style="font-weight: 700; font-family: monospace; font-size: 18px;">${visaNumber}</span></p>` : ''}
+          ${courierName ? `<p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Courier: <span style="font-weight: 600;">${courierName}</span></p>` : ''}
+          ${shipmentRefNumber ? `<p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Tracking Number: <span style="font-weight: 700; font-family: monospace;">${shipmentRefNumber}</span></p>` : ''}
+          ${shipmentDate ? `<p style="color: white; margin: 0 0 8px 0; font-size: 16px;">Shipment Date: <span style="font-weight: 600;">${shipmentDate}</span></p>` : ''}
+          ${hasCourierFiles ? `<p style="color: white; margin: 0; font-size: 16px;">📎 Courier documents are attached to this email</p>` : ''}
+        </div>
+      </div>
+      
+      ${remarks ? `
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">💬 Additional Information:</p>
+        <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.6;">${remarks}</p>
+      </div>
+      ` : ''}
+      
+      <table role="presentation" style="margin: 30px 0;">
+        <tr>
+          <td style="text-align: center;">
+            <a href="${process.env.FRONTEND_URL}/customer/applications" style="display: inline-block; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #ffffff; padding: 18px 36px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+              Track Application Status
+            </a>
+          </td>
+        </tr>
+      </table>
+      
+      <div style="background: rgba(34, 197, 94, 0.05); border-left: 4px solid rgba(34, 197, 94, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">📦 What to expect:</p>
+        <p style="color: #166534; margin: 0; font-size: 14px; line-height: 1.6;">
+          • Your visa will be delivered to your registered address<br>
+          • Please keep the tracking number for reference<br>
+          • Contact the courier for delivery updates<br>
+          • Ensure someone is available to receive the package
+        </p>
+      </div>
+      
+      <div style="text-align: center; margin: 40px 0; padding: 20px; background: rgba(59, 130, 246, 0.02); border-radius: 8px;">
+        <p style="color: #1f2937; margin: 0; font-size: 18px; font-weight: 600;">🌟 Thank you for choosing One World Visa! 🌟</p>
+        <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px;">Your visa will reach you soon!</p>
+      </div>
+    `, '#3b82f6', '🚚')
+  }),
+
+  adminVisaInTransit: (applicationId, userName, countryName, courierName, shipmentRefNumber, updatedBy, hasCourierFiles) => ({
+    subject: '🚚 Admin Alert: Visa In Transit',
+    html: createEmailTemplate('Admin Visa In Transit', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">🚚 Visa Dispatched - In Transit</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        A visa has been dispatched and courier details have been updated.
+      </p>
+      
+      <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 6px; padding: 16px; margin: 20px 0;">
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px;">Application ID: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${applicationId}</span></p>
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px;">Customer: <span style="color: #1f2937; font-weight: 600;">${userName}</span></p>
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px;">Country: <span style="color: #3b82f6; font-weight: 600;">${countryName}</span></p>
+        ${courierName ? `<p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px;">Courier: <span style="color: #1f2937; font-weight: 600;">${courierName}</span></p>` : ''}
+        ${shipmentRefNumber ? `<p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px;">Tracking: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${shipmentRefNumber}</span></p>` : ''}
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 15px;">Updated by: <span style="color: #1f2937; font-weight: 600;">${updatedBy}</span></p>
+        ${hasCourierFiles ? `<p style="color: #1e40af; margin: 0; font-size: 15px;">📎 Courier files attached: Yes</p>` : ''}
+      </div>
+      
+      <table role="presentation" style="margin: 30px 0;">
+        <tr>
+          <td style="text-align: center;">
+            <a href="${process.env.FRONTEND_URL}/applications" style="display: inline-block; background: rgba(59, 130, 246, 0.9); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);">
+              View Application Details
+            </a>
+          </td>
+        </tr>
+      </table>
+      
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0; font-size: 14px; font-weight: 500;">
+          📧 Customer notification email has been sent automatically with courier details.
+        </p>
+      </div>
+    `, '#3b82f6', '🚚')
+  }),
+
+  agentAssigned: (userName, applicationNumber, agentName, agentEmail, agentMobile, visaType) => ({
+    subject: '👨‍💼 Agent Assigned - Your Application Monitor',
+    html: createEmailTemplate('Agent Assigned', `
+      <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Hello ${userName}! 👨‍💼</h2>
+      <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+        Great news! Your visa application has been assigned to a dedicated agent who will monitor and assist you throughout the process.
+      </p>
+      
+      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0;">
+        <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Application Number: <span style="color: #3b82f6; font-weight: 600; font-family: monospace;">${applicationNumber}</span></p>
+        <p style="color: #374151; margin: 0; font-size: 15px;">Visa Type: <span style="color: #059669; font-weight: 600;">${visaType}</span></p>
+      </div>
+      
+      <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid rgba(59, 130, 246, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">👨‍💼 Your Assigned Agent</p>
+        <div style="background: #ffffff; border-radius: 6px; padding: 16px; margin: 12px 0;">
+          <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Name: <span style="color: #1f2937; font-weight: 600;">${agentName}</span></p>
+          <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Email: <span style="color: #3b82f6; font-weight: 600;">${agentEmail}</span></p>
+          <p style="color: #374151; margin: 0; font-size: 15px;">Mobile: <span style="color: #059669; font-weight: 600;">${agentMobile}</span></p>
+        </div>
+      </div>
+      
+      <div style="background: rgba(249, 115, 22, 0.05); border-left: 4px solid rgba(249, 115, 22, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #ea580c; margin: 0 0 8px 0; font-size: 15px; font-weight: 600;">📞 For Any Queries, Please Contact:</p>
+        <p style="color: #ea580c; margin: 0; font-size: 14px; line-height: 1.6;">
+          Your assigned agent ${agentName} is available to help you with:<br>
+          • Application status updates<br>
+          • Document requirements<br>
+          • Payment processing<br>
+          • Any questions or concerns
+        </p>
+      </div>
+      
+      <table role="presentation" style="margin: 30px 0;">
+        <tr>
+          <td style="text-align: center;">
+            <a href="${process.env.FRONTEND_URL}/customer/applications" style="display: inline-block; background: rgba(59, 130, 246, 0.9); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);">
+              View Application Status
+            </a>
+          </td>
+        </tr>
+      </table>
+      
+      <div style="background: rgba(34, 197, 94, 0.05); border-left: 4px solid rgba(34, 197, 94, 0.3); padding: 16px; margin: 30px 0; border-radius: 4px;">
+        <p style="color: #166534; margin: 0; font-size: 14px; font-weight: 500;">
+          📧 You will receive regular updates about your application progress via email.
+        </p>
+      </div>
+    `, '#3b82f6', '👨‍💼')
+  }),
+
 
 };
 
 // Send email function
-const sendEmail = async (to, template, data = {}) => {
+const sendEmail = async (to, template, data = {}, attachments = []) => {
   // Always show email info in console for development
   console.log(`\n=== EMAIL: ${template.toUpperCase()} ===`);
   console.log(`To: ${to}`);
   console.log(`Data:`, data);
+  console.log(`Attachments:`, attachments?.length || 0);
   console.log('============================\n');
   
   if (!emailTransporter) {
@@ -708,10 +852,10 @@ const sendEmail = async (to, template, data = {}) => {
         emailContent = emailTemplates.paymentConfirmed(data.userName, data.applicationNumber, data.amount, data.transactionId);
         break;
       case 'visaIssued':
-        emailContent = emailTemplates.visaIssued(data.userName, data.applicationId, data.countryName, data.visaNumber, data.dateOfIssuance, data.dateOfExpiry, data.additionalDetails, data.remarks);
+        emailContent = emailTemplates.visaIssued(data.userName, data.applicationId, data.countryName, data.visaNumber, data.dateOfIssuance, data.dateOfExpiry, data.additionalDetails, data.remarks, data.hasVisaFiles);
         break;
       case 'adminVisaIssued':
-        emailContent = emailTemplates.adminVisaIssued(data.applicationId, data.userName, data.countryName, data.visaNumber, data.updatedBy);
+        emailContent = emailTemplates.adminVisaIssued(data.applicationId, data.userName, data.countryName, data.visaNumber, data.updatedBy, data.hasVisaFiles);
         break;
       case 'agentRegistration':
         emailContent = emailTemplates.agentRegistration(data.userName, data.companyName);
@@ -722,6 +866,15 @@ const sendEmail = async (to, template, data = {}) => {
       case 'agentDeactivated':
         emailContent = emailTemplates.agentDeactivated(data.userName, data.companyName, data.reason);
         break;
+      case 'visaInTransit':
+        emailContent = emailTemplates.visaInTransit(data.userName, data.applicationId, data.countryName, data.visaNumber, data.courierName, data.shipmentRefNumber, data.shipmentDate, data.remarks, data.hasCourierFiles);
+        break;
+      case 'adminVisaInTransit':
+        emailContent = emailTemplates.adminVisaInTransit(data.applicationId, data.userName, data.countryName, data.courierName, data.shipmentRefNumber, data.updatedBy, data.hasCourierFiles);
+        break;
+      case 'agentAssigned':
+        emailContent = emailTemplates.agentAssigned(data.userName, data.applicationNumber, data.agentName, data.agentEmail, data.agentMobile, data.visaType);
+        break;
       default:
         throw new Error(`Unknown email template: ${template}`);
     }
@@ -730,7 +883,8 @@ const sendEmail = async (to, template, data = {}) => {
       from: process.env.EMAIL_FROM || `"One World Visa" <${process.env.EMAIL_USER}>`,
       to: to,
       subject: emailContent.subject,
-      html: emailContent.html
+      html: emailContent.html,
+      attachments: attachments || []
     };
 
     await emailTransporter.sendMail(mailOptions);
@@ -759,11 +913,11 @@ const sendEmail = async (to, template, data = {}) => {
 };
 
 // Send admin notification
-const sendAdminNotification = async (template, data = {}) => {
+const sendAdminNotification = async (template, data = {}, attachments = []) => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL;
     if (adminEmail) {
-      await sendEmail(adminEmail, template, data);
+      await sendEmail(adminEmail, template, data, attachments);
     }
   } catch (error) {
     console.error('Admin notification failed:', error);
