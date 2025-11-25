@@ -55,14 +55,29 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-      checkTokenExpiration();
-    }
-    setLoading(false);
+    const initializeAuth = () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const userData = localStorage.getItem('user');
+        
+        if (token && userData) {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+          checkTokenExpiration();
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        // Clear corrupted data
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('tokenExpiration');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   const login = (userData, tokens) => {

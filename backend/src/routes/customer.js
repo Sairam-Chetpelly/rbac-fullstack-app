@@ -33,43 +33,160 @@ router.get('/dashboard-stats', auth, role(['customer', 'admin']), async (req, re
   }
 });
 
-// Get customer applications
+// Get customer applications with pagination and search
 router.get('/applications', auth, role(['customer', 'admin']), async (req, res) => {
   try {
-    const applications = await Application.find({ 
-      user: req.user._id, 
-      deletedAt: null 
-    })
-    .populate('status', 'name color')
-    .populate({
-      path: 'countryVisaType',
-      populate: [
-        { path: 'country', select: 'name placeImage' },
-        { path: 'visaType', select: 'name' }
-      ]
-    })
-    .sort({ createdAt: -1 })
-    .lean();
-
-    res.json(applications);
+    const { page = 1, limit = 10, search = '', status = '', country = '', dateRange = '' } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build query
+    const query = { user: req.user._id, deletedAt: null };
+    
+    // Search filter
+    if (search) {
+      query.$or = [
+        { applicationNumber: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Status filter
+    if (status) {
+      const statusDoc = await Status.findOne({ name: { $regex: status, $options: 'i' } });
+      if (statusDoc) query.status = statusDoc._id;
+    }
+    
+    // Date range filter
+    if (dateRange) {
+      const now = new Date();
+      let startDate;
+      
+      switch (dateRange) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'quarter':
+          startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+          break;
+      }
+      
+      if (startDate) {
+        query.createdAt = { $gte: startDate };
+      }
+    }
+    
+    const applications = await Application.find(query)
+      .populate('status', 'name color')
+      .populate({
+        path: 'countryVisaType',
+        populate: [
+          { path: 'country', select: 'name placeImage' },
+          { path: 'visaType', select: 'name' }
+        ]
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    // Country filter (post-populate)
+    let filteredApplications = applications;
+    if (country) {
+      filteredApplications = applications.filter(app => 
+        app.countryVisaType?.country?.name?.toLowerCase().includes(country.toLowerCase())
+      );
+    }
+    
+    const total = await Application.countDocuments(query);
+    const totalPages = Math.ceil(total / parseInt(limit));
+    
+    res.json({
+      applications: filteredApplications,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalItems: total,
+        itemsPerPage: parseInt(limit)
+      }
+    });
   } catch (error) {
     console.error('Error fetching customer applications:', error);
     res.status(500).json({ message: 'Error fetching applications', error: error.message });
   }
 });
 
-// Get customer payments
+// Get customer payments with pagination and search
 router.get('/payments', auth, role(['customer', 'admin']), async (req, res) => {
   try {
-    const payments = await Payment.find({ 
-      user: req.user._id, 
-      deletedAt: null 
-    })
-    .populate('application', 'applicationNumber')
-    .sort({ createdAt: -1 })
-    .lean();
-
-    res.json(payments);
+    const { page = 1, limit = 10, search = '', status = '', dateRange = '' } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build query
+    const query = { user: req.user._id, deletedAt: null };
+    
+    // Status filter
+    if (status) {
+      query.status = status;
+    }
+    
+    // Date range filter
+    if (dateRange) {
+      const now = new Date();
+      let startDate;
+      
+      switch (dateRange) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'quarter':
+          startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+          break;
+      }
+      
+      if (startDate) {
+        query.createdAt = { $gte: startDate };
+      }
+    }
+    
+    const payments = await Payment.find(query)
+      .populate('application', 'applicationNumber')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    // Search filter (post-populate)
+    let filteredPayments = payments;
+    if (search) {
+      filteredPayments = payments.filter(payment => 
+        payment.transactionId?.toLowerCase().includes(search.toLowerCase()) ||
+        payment.application?.applicationNumber?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    const total = await Payment.countDocuments(query);
+    const totalPages = Math.ceil(total / parseInt(limit));
+    
+    res.json({
+      payments: filteredPayments,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalItems: total,
+        itemsPerPage: parseInt(limit)
+      }
+    });
   } catch (error) {
     console.error('Error fetching customer payments:', error);
     res.status(500).json({ message: 'Error fetching payments', error: error.message });

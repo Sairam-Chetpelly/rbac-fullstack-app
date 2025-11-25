@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { login as loginApi } from '../lib/auth';
 import Button from '../components/Button';
+import LoadingSpinner from '../components/LoadingSpinner';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
@@ -17,12 +18,10 @@ export default function Login() {
   useEffect(() => {
     if (user) {
       // Redirect based on user role
-      if (user.role === 'employee') {
+      if (user.role === 'admin') {
         window.location.href = '/dashboard';
-      } else if (user.role === 'customer') {
-        window.location.href = '/customer/dashboard';
       } else {
-        window.location.href = '/dashboard';
+        window.location.href = '/';
       }
     }
   }, [user]);
@@ -49,7 +48,7 @@ export default function Login() {
   };
 
   if (user) {
-    return <div>Redirecting...</div>;
+    return <LoadingSpinner size="md" message="Redirecting to dashboard..." fullScreen />;
   }
 
   return (
@@ -148,9 +147,16 @@ export default function Login() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 shadow-lg"
+              className="w-full flex items-center justify-center bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-lg transition duration-200 shadow-lg"
             >
-              {loading ? "Signing In..." : "Login"}
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  Signing In...
+                </>
+              ) : (
+                "Login"
+              )}
             </Button>
             
             <div className="space-y-4">

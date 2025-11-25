@@ -4,11 +4,22 @@ import { CreditCard } from 'lucide-react';
 import api from '../../lib/api';
 import Button from '../../components/Button';
 import CustomerLayout from '../../components/CustomerLayout';
+import SearchFilters from '../../components/SearchFilters';
+import Pagination from '../../components/Pagination';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 export default function CustomerPayments() {
   const router = useRouter();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10
+  });
+  const [filters, setFilters] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -24,16 +35,45 @@ export default function CustomerPayments() {
     fetchPayments();
   }, [router]);
 
-  const fetchPayments = async () => {
+  const fetchPayments = async (page = 1, search = '', filterParams = {}) => {
     try {
-      const response = await api.get('/customer/payments');
-      setPayments(response.data || []);
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+        search,
+        ...filterParams
+      });
+      
+      const response = await api.get(`/customer/payments?${params}`);
+      setPayments(response.data.payments || []);
+      setPagination(response.data.pagination);
     } catch (error) {
       console.error('Error fetching payments:', error);
       setPayments([]);
     } finally {
       setLoading(false);
     }
+  };
+  
+  const handleSearch = (search) => {
+    setSearchTerm(search);
+    fetchPayments(1, search, filters);
+  };
+  
+  const handleFilter = (newFilters) => {
+    setFilters(newFilters);
+    fetchPayments(1, searchTerm, newFilters);
+  };
+  
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setFilters({});
+    fetchPayments(1, '', {});
+  };
+  
+  const handlePageChange = (page) => {
+    fetchPayments(page, searchTerm, filters);
   };
 
   const downloadInvoice = (payment) => {
@@ -70,78 +110,110 @@ export default function CustomerPayments() {
     });
   };
 
-  if (loading) {
-    return (
-      <CustomerLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </CustomerLayout>
-    );
-  }
+  const filterOptions = {
+    status: [
+      { value: 'success', label: 'Success' },
+      { value: 'pending', label: 'Pending' },
+      { value: 'failed', label: 'Failed' }
+    ],
+    dateRange: true
+  };
 
   return (
     <CustomerLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">Payment History</h1>
         
-        <div className="bg-white rounded-lg shadow-sm border overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Application</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {payments.map((payment) => (
-                <tr key={payment._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <CreditCard className="h-5 w-5 text-green-500 mr-2" />
-                      <span className="text-sm font-medium text-gray-900">
-                        {payment.transactionId?.slice(-8) || 'N/A'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {payment.application?.applicationNumber || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ₹{payment.amount}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${payment.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {payment.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(payment.paidAt || payment.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => downloadInvoice(payment)}
-                      disabled={payment.status !== 'success'}
-                    >
-                      Download
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {payments.length === 0 && (
-            <div className="p-8 text-center">
-              <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No payments yet</h3>
-              <p className="text-gray-600">Your payment receipts will appear here</p>
+        <SearchFilters
+          onSearch={handleSearch}
+          onFilter={handleFilter}
+          onClear={handleClearFilters}
+          filters={filterOptions}
+          searchPlaceholder="Search by transaction ID or application number..."
+          initialSearch={searchTerm}
+          initialFilters={filters}
+        />
+        
+        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+          {loading ? (
+            <div className="p-8">
+              <LoadingSpinner size="md" />
             </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Application</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {payments.map((payment) => (
+                      <tr key={payment._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <CreditCard className="h-5 w-5 text-green-500 mr-2" />
+                            <span className="text-sm font-medium text-gray-900">
+                              {payment.transactionId?.slice(-8) || 'N/A'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {payment.application?.applicationNumber || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          ₹{payment.amount}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            payment.status === 'success' ? 'bg-green-100 text-green-800' : 
+                            payment.status === 'failed' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {payment.status.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(payment.paidAt || payment.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => downloadInvoice(payment)}
+                            disabled={payment.status !== 'success'}
+                          >
+                            Download
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {payments.length === 0 && (
+                <div className="p-8 text-center">
+                  <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No payments found</h3>
+                  <p className="text-gray-600">Try adjusting your search or filters</p>
+                </div>
+              )}
+              
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.totalItems}
+                itemsPerPage={pagination.itemsPerPage}
+                onPageChange={handlePageChange}
+              />
+            </>
           )}
         </div>
       </div>
