@@ -169,39 +169,40 @@ export default function CustomerApplications() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full min-w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Application</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Application</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {applications.map((app) => (
                       <tr key={app._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 lg:px-6 py-4">
                           <div className="flex items-center">
                             {getStatusIcon(app.status)}
-                            <div className="ml-3">
-                              <p className="text-sm font-medium text-gray-900">{app.applicationNumber}</p>
+                            <div className="ml-3 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{app.applicationNumber}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {app.countryVisaType?.country?.name || 'N/A'}
+                        <td className="px-4 lg:px-6 py-4 text-sm text-gray-900">
+                          <span className="truncate block">{app.countryVisaType?.country?.name || 'N/A'}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 lg:px-6 py-4">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(app.status)}`}>
                             {formatStatus(app.status)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                        <td className="px-4 lg:px-6 py-4">
+                          <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
                             <div 
                               className="bg-blue-600 h-2 rounded-full" 
                               style={{ width: `${getProgressValue(app.status)}%` }}
@@ -209,10 +210,10 @@ export default function CustomerApplications() {
                           </div>
                           <span className="text-xs text-gray-500">{getProgressValue(app.status)}%</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-4 lg:px-6 py-4 text-sm text-gray-900">
                           {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-4 lg:px-6 py-4 text-sm font-medium">
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -225,6 +226,50 @@ export default function CustomerApplications() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+              
+              {/* Mobile Cards */}
+              <div className="md:hidden">
+                {applications.map((app) => (
+                  <div key={app._id} className="p-4 border-b border-gray-200 last:border-b-0">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center">
+                        {getStatusIcon(app.status)}
+                        <div className="ml-3">
+                          <p className="text-sm font-medium text-gray-900">{app.applicationNumber}</p>
+                          <p className="text-xs text-gray-500">{app.countryVisaType?.country?.name || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(app.status)}`}>
+                        {formatStatus(app.status)}
+                      </span>
+                    </div>
+                    <div className="mb-3">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs text-gray-500">Progress</span>
+                        <span className="text-xs text-gray-500">{getProgressValue(app.status)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ width: `${getProgressValue(app.status)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">
+                        Submitted: {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : '-'}
+                      </span>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => router.push(`/customer/applications/view/${app._id}`)}
+                      >
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
               
               {applications.length === 0 && (

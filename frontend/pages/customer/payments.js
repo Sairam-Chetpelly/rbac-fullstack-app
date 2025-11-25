@@ -141,36 +141,37 @@ export default function CustomerPayments() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full min-w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Application</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Application</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {payments.map((payment) => (
                       <tr key={payment._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 lg:px-6 py-4">
                           <div className="flex items-center">
-                            <CreditCard className="h-5 w-5 text-green-500 mr-2" />
-                            <span className="text-sm font-medium text-gray-900">
+                            <CreditCard className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                            <span className="text-sm font-medium text-gray-900 truncate">
                               {payment.transactionId?.slice(-8) || 'N/A'}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {payment.application?.applicationNumber || 'N/A'}
+                        <td className="px-4 lg:px-6 py-4 text-sm text-gray-900">
+                          <span className="truncate block">{payment.application?.applicationNumber || 'N/A'}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-4 lg:px-6 py-4 text-sm font-medium text-gray-900">
                           ₹{payment.amount}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 lg:px-6 py-4">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             payment.status === 'success' ? 'bg-green-100 text-green-800' : 
                             payment.status === 'failed' ? 'bg-red-100 text-red-800' :
@@ -179,10 +180,10 @@ export default function CustomerPayments() {
                             {payment.status.toUpperCase()}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-4 lg:px-6 py-4 text-sm text-gray-900">
                           {new Date(payment.paidAt || payment.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-4 lg:px-6 py-4 text-sm font-medium">
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -196,6 +197,48 @@ export default function CustomerPayments() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+              
+              {/* Mobile Cards */}
+              <div className="md:hidden">
+                {payments.map((payment) => (
+                  <div key={payment._id} className="p-4 border-b border-gray-200 last:border-b-0">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center">
+                        <CreditCard className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {payment.transactionId?.slice(-8) || 'N/A'}
+                          </p>
+                          <p className="text-xs text-gray-500">{payment.application?.applicationNumber || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        payment.status === 'success' ? 'bg-green-100 text-green-800' : 
+                        payment.status === 'failed' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {payment.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">₹{payment.amount}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(payment.paidAt || payment.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => downloadInvoice(payment)}
+                        disabled={payment.status !== 'success'}
+                      >
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
               
               {payments.length === 0 && (

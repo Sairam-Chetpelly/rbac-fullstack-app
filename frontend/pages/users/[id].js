@@ -59,7 +59,7 @@ export default function ViewUser() {
   };
 
   const viewFile = (filename) => {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/uploads/agents/${filename}`;
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/uploads/agents/${filename}`;
     const type = filename.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
     setFileViewer({ show: true, url, type });
   };

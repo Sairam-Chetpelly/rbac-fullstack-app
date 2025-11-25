@@ -105,17 +105,17 @@ export default function CustomerDrafts() {
           <>
             <div className="grid gap-4">
               {drafts.map((draft) => (
-                <div key={draft._id} className="bg-white rounded-lg shadow-sm border p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                        <FileText className="w-6 h-6 text-yellow-600" />
+                <div key={draft._id} className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
                       </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                           {draft.countryVisaType?.country?.name || 'Draft Application'}
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 truncate">
                           Application Number: {draft.applicationNumber}
                         </p>
                         <p className="text-sm text-gray-500">
@@ -123,7 +123,7 @@ export default function CustomerDrafts() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 flex-shrink-0">
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -131,9 +131,11 @@ export default function CustomerDrafts() {
                           const visaTypeId = typeof draft.countryVisaType === 'object' ? draft.countryVisaType._id : draft.countryVisaType;
                           router.push(`/visa-application/form/${visaTypeId}?draftId=${draft._id}`);
                         }}
+                        className="flex-1 sm:flex-none"
                       >
                         <Edit className="w-4 h-4 mr-1" />
-                        Continue
+                        <span className="hidden sm:inline">Continue</span>
+                        <span className="sm:hidden">Edit</span>
                       </Button>
                       <Button 
                         variant="outline" 

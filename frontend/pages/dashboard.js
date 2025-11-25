@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 import { canAccess } from '../lib/roles';
 import api from '../lib/api';
@@ -7,26 +8,31 @@ import Button from '../components/Button';
 import DashboardChart from '../components/DashboardChart';
 import ProfessionalChart from '../components/ProfessionalChart';
 import RealTimeWidget from '../components/RealTimeWidget';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [stats, setStats] = useState({});
   const [activities, setActivities] = useState([]);
   const [systemStatus, setSystemStatus] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return; // Wait for auth to load
+    
     if (!user) {
-      window.location.href = '/';
+      router.replace('/');
       return;
     }
     
     if (!canAccess(user.role, 'dashboard')) {
-      window.location.href = '/';
+      router.replace('/');
       return;
     }
+    
     fetchDashboardData();
-  }, [user]);
+  }, [user, authLoading, router]);
 
   const fetchDashboardData = async () => {
     try {
@@ -46,8 +52,14 @@ export default function Dashboard() {
     }
   };
 
+  // Show loading while auth is loading
+  if (authLoading) {
+    return <LoadingSpinner size="lg" fullScreen />;
+  }
+
+  // Redirect if no user or no access
   if (!user || !canAccess(user.role, 'dashboard')) {
-    return <div>Access denied</div>;
+    return null;
   }
 
   const getStatCards = () => {

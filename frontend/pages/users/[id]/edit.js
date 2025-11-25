@@ -173,7 +173,7 @@ export default function EditUser() {
   };
 
   const viewFile = (filename, type) => {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/uploads/agents/${filename}`;
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/uploads/agents/${filename}`;
     setFileViewer({ show: true, url, type });
   };
 

@@ -2,7 +2,7 @@ export const rolePermissions = {
   admin: ['dashboard', 'roles', 'users', 'status', 'settings', 'continents', 'countries', 'visa-types', 'country-visa-types', 'country-terms-conditions', 'visa-terms-conditions', 'form-sections', 'form-fields', 'form-builder', 'applications', 'payments'],
   manager: ['dashboard', 'roles:view', 'users', 'status'],
   employee: ['dashboard','applications', 'payments'],
-  customer: ['dashboard']
+  customer: []
 };
 
 export const hasPermission = (userRole, permission) => {
