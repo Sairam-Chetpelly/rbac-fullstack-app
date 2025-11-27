@@ -22,8 +22,17 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    const originalRequest = error.config;
+    
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't retry login requests
+      if (originalRequest.url?.includes('/auth/login')) {
+        return Promise.reject(error);
+      }
+      
+      originalRequest._retry = true;
       const refreshToken = localStorage.getItem('refreshToken');
+      
       if (refreshToken) {
         try {
           const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
@@ -36,7 +45,7 @@ api.interceptors.response.use(
             localStorage.setItem('tokenExpiration', response.data.expirationTime.toString());
           }
           
-          return api.request(error.config);
+          return api.request(originalRequest);
         } catch (refreshError) {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');

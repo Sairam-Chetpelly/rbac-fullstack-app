@@ -28,27 +28,31 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return; // Prevent multiple submissions
+    
     setLoading(true);
     setError('');
 
     try {
       const response = await loginApi(email, password);
+      toast.success('Login successful! Redirecting...');
       login(response.user, {
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         expirationTime: response.expirationTime
       });
-      toast.success('Login successful!');
     } catch (error) {
-      setError(error.response?.data?.message || 'Login failed');
-      toast.error(error.response?.data?.message || 'Login failed');
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.message || 'Login failed';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   if (user) {
-    return <LoadingSpinner size="md" message="Redirecting to dashboard..." fullScreen />;
+    return null;
   }
 
   return (
@@ -189,7 +193,7 @@ export default function Login() {
       {/* WhatsApp Button */}
       <div className="fixed bottom-6 right-6 z-50">
         <a 
-          href="https://wa.me/919920198788" 
+          href="https://wa.me/919167447700" 
           target="_blank" 
           rel="noopener noreferrer"
           className="flex items-center justify-center w-14 h-14 bg-green-500/80 backdrop-blur-sm border border-white/20 rounded-full shadow-lg hover:bg-green-600/80 transition-all duration-300 hover:scale-110"

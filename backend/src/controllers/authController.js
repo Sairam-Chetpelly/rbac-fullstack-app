@@ -38,9 +38,40 @@ const register = async (req, res) => {
   try {
     const { name, email, password, mobile, nationality } = req.body;
     
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+    // Validation errors array
+    const errors = [];
+    
+    // Check for existing email
+    const existingEmailUser = await User.findOne({ email });
+    if (existingEmailUser) {
+      errors.push({ field: 'email', message: 'User already exists with this email' });
+    }
+    
+    // Check for existing mobile
+    if (mobile) {
+      const existingMobileUser = await User.findOne({ mobile });
+      if (existingMobileUser) {
+        errors.push({ field: 'mobile', message: 'Mobile number already exists' });
+      }
+    }
+    
+    // Basic field validation
+    if (!name || name.trim().length === 0) {
+      errors.push({ field: 'name', message: 'Full name is required' });
+    }
+    if (!email) {
+      errors.push({ field: 'email', message: 'Email is required' });
+    }
+    if (!password) {
+      errors.push({ field: 'password', message: 'Password is required' });
+    }
+    if (!mobile) {
+      errors.push({ field: 'mobile', message: 'Mobile number is required' });
+    }
+    
+    // Return field-specific errors if any
+    if (errors.length > 0) {
+      return res.status(400).json({ errors });
     }
 
     // Get default customer role and active status
@@ -79,6 +110,18 @@ const register = async (req, res) => {
       }
     });
   } catch (error) {
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = [];
+      Object.keys(error.errors).forEach(key => {
+        validationErrors.push({
+          field: key,
+          message: error.errors[key].message
+        });
+      });
+      return res.status(400).json({ errors: validationErrors });
+    }
+    
     res.status(500).json({ message: error.message });
   }
 };

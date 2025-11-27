@@ -101,7 +101,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
                     <div style="background: rgba(59, 130, 246, 0.05); border-radius: 8px; padding: 16px; margin: 15px 0; text-align: center;">
                       <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">📞 Need Help? Contact Our Support Team</p>
                       <p style="color: #3b82f6; margin: 0 0 4px 0; font-size: 13px;">📧 Email: <a href="mailto:visas@oneworldvisa.in" style="color: #3b82f6; text-decoration: none; font-weight: 500;">visas@oneworldvisa.in</a></p>
-                      <p style="color: #3b82f6; margin: 0; font-size: 13px;">📱 Phone: <a href="tel:+919920198788" style="color: #3b82f6; text-decoration: none; font-weight: 500;">+91 9920198788</a></p>
+                      <p style="color: #3b82f6; margin: 0; font-size: 13px;">📱 Phone: <a href="tel:+919167447700" style="color: #3b82f6; text-decoration: none; font-weight: 500;">+91 9167447700</a></p>
                     </div>
                     <p style="color: #9ca3af; margin: 0; font-size: 12px;">
                       © 2025 One World Visa. All rights reserved.

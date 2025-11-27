@@ -592,7 +592,7 @@ export default function AgentRegister() {
                     </div>
                     <div className="flex items-center text-orange-700">
                       <span className="w-2 h-2 bg-orange-500 rounded-full mr-3"></span>
-                      Support: +91 99201 98788
+                      Support: +91 91674 47700
                     </div>
                   </div>
                 </div>

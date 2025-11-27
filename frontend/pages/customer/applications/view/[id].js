@@ -223,9 +223,6 @@ export default function ViewApplication() {
                 <div className="flex-1">
                   <h4 className="text-lg font-semibold text-blue-900">{application.assignedTo.name}</h4>
                   <p className="text-blue-700">{application.assignedTo.email}</p>
-                  {application.assignedTo.mobile && (
-                    <p className="text-blue-700">📞 {application.assignedTo.mobile}</p>
-                  )}
                 </div>
               </div>
             </div>

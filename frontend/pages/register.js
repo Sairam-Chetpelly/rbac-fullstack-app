@@ -11,6 +11,7 @@ export default function Register() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [activeTab, setActiveTab] = useState('signup');
   const [formData, setFormData] = useState({
     fullName: '',
@@ -39,23 +40,32 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
+    
     setLoading(true);
     setError('');
+    setFieldErrors({});
 
+    // Client-side validation
+    const errors = {};
     if (!validateEmail(formData.email)) {
-      setError('Please enter a valid email address');
-      setLoading(false);
-      return;
+      errors.email = 'Please enter a valid email address';
     }
-
     if (!validateMobile(formData.mobile)) {
-      setError('Please enter a valid 10-digit mobile number');
-      setLoading(false);
-      return;
+      errors.mobile = 'Please enter a valid 10-digit mobile number';
+    }
+    if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+    if (!formData.fullName.trim()) {
+      errors.fullName = 'Full name is required';
+    }
+    if (!formData.password) {
+      errors.password = 'Password is required';
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       setLoading(false);
       return;
     }
@@ -69,25 +79,64 @@ export default function Register() {
         nationality: formData.nationality || 'Not Specified'
       });
 
-      toast.success('Registration successful! Please login to continue.');
-      setTimeout(() => router.push('/login'), 2000);
+      toast.success('Registration successful! Redirecting to login...');
+      setTimeout(() => router.push('/login'), 1500);
     } catch (error) {
-      setError(error.response?.data?.message || 'Registration failed');
-      toast.error(error.response?.data?.message || 'Registration failed');
+      console.error('Registration error:', error);
+      
+      // Handle field-wise errors from backend
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        const backendErrors = {};
+        error.response.data.errors.forEach(err => {
+          if (err.field) {
+            backendErrors[err.field] = err.message;
+          }
+        });
+        setFieldErrors(backendErrors);
+      } else if (error.response?.data?.fieldErrors) {
+        setFieldErrors(error.response.data.fieldErrors);
+      } else {
+        const errorMessage = error.response?.data?.message || 'Registration failed';
+        
+        // Map generic error messages to specific fields
+        const fieldErrorMap = {
+          'User already exists with this email': 'email',
+          'Email already exists': 'email',
+          'Mobile number already exists': 'mobile',
+          'Phone number already exists': 'mobile'
+        };
+        
+        const fieldForError = fieldErrorMap[errorMessage];
+        if (fieldForError) {
+          setFieldErrors({ [fieldForError]: errorMessage });
+        } else {
+          setError(errorMessage);
+          toast.error(errorMessage);
+        }
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+    
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors({
+        ...fieldErrors,
+        [name]: ''
+      });
+    }
   };
 
   if (user) {
-    return <div>Redirecting...</div>;
+    return null;
   }
 
   return (
@@ -168,9 +217,14 @@ export default function Register() {
                 placeholder="Full Name"
                 value={formData.fullName}
                 onChange={handleChange}
-                className="w-full p-4 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className={`w-full p-4 border rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                  fieldErrors.fullName ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 required
               />
+              {fieldErrors.fullName && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.fullName}</p>
+              )}
             </div>
 
             <div>
@@ -180,11 +234,16 @@ export default function Register() {
                 placeholder="10-digit Mobile Number"
                 value={formData.mobile}
                 onChange={handleChange}
-                className="w-full p-4 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className={`w-full p-4 border rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                  fieldErrors.mobile ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 pattern="\d{10}"
                 maxLength="10"
                 required
               />
+              {fieldErrors.mobile && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.mobile}</p>
+              )}
             </div>
 
             <div>
@@ -194,9 +253,14 @@ export default function Register() {
                 placeholder="Email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full p-4 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className={`w-full p-4 border rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                  fieldErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 required
               />
+              {fieldErrors.email && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -217,9 +281,14 @@ export default function Register() {
                 placeholder="Create Password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full p-4 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className={`w-full p-4 border rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                  fieldErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 required
               />
+              {fieldErrors.password && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             <div>
@@ -229,17 +298,29 @@ export default function Register() {
                 placeholder="Re Enter Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full p-4 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className={`w-full p-4 border rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                  fieldErrors.confirmPassword ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 required
               />
+              {fieldErrors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 shadow-lg"
+              className="w-full flex items-center justify-center bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-lg transition duration-200 shadow-lg"
             >
-              {loading ? "Creating Account..." : "Sign Up"}
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  Creating Account...
+                </>
+              ) : (
+                "Sign Up"
+              )}
             </Button>
             
             <div className="space-y-4">
@@ -266,7 +347,7 @@ export default function Register() {
       {/* WhatsApp Button */}
       <div className="fixed bottom-6 right-6 z-50">
         <a 
-          href="https://wa.me/919920198788" 
+          href="https://wa.me/919167447700" 
           target="_blank" 
           rel="noopener noreferrer"
           className="flex items-center justify-center w-14 h-14 bg-green-500/80 backdrop-blur-sm border border-white/20 rounded-full shadow-lg hover:bg-green-600/80 transition-all duration-300 hover:scale-110"

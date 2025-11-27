@@ -57,7 +57,10 @@ const createEmailTemplate = (title, content, primaryColor = '#3b82f6', icon = '�
                   <div style="background: rgba(59, 130, 246, 0.05); border-radius: 8px; padding: 16px; margin: 15px 0; text-align: center;">
                     <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">📞 Need Help? Contact Our Support Team</p>
                     <p style="color: #3b82f6; margin: 0 0 4px 0; font-size: 13px;">📧 Email: <a href="mailto:visas@oneworldvisa.in" style="color: #3b82f6; text-decoration: none; font-weight: 500;">visas@oneworldvisa.in</a></p>
-                    <p style="color: #3b82f6; margin: 0; font-size: 13px;">📱 Phone: <a href="tel:+919920198788" style="color: #3b82f6; text-decoration: none; font-weight: 500;">+91 9920198788</a></p>
+                    <p style="color: #3b82f6; margin: 0 0 8px 0; font-size: 13px;">📱 Phone: <a href="tel:+919167447700" style="color: #3b82f6; text-decoration: none; font-weight: 500;">+91 9167447700</a></p>
+                    <div style="background: rgba(249, 115, 22, 0.1); border-radius: 6px; padding: 12px; margin: 8px 0;">
+                      <p style="color: #ea580c; margin: 0; font-size: 12px; font-weight: 600;">🕐 Calling Time: 10:00 AM to 7:00 PM (Monday to Saturday)</p>
+                    </div>
                   </div>
                   <p style="color: #9ca3af; margin: 0; font-size: 12px;">
                     © 2025 One World Visa. All rights reserved.
@@ -761,7 +764,6 @@ const emailTemplates = {
         <div style="background: #ffffff; border-radius: 6px; padding: 16px; margin: 12px 0;">
           <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Name: <span style="color: #1f2937; font-weight: 600;">${agentName}</span></p>
           <p style="color: #374151; margin: 0 0 8px 0; font-size: 15px;">Email: <span style="color: #3b82f6; font-weight: 600;">${agentEmail}</span></p>
-          <p style="color: #374151; margin: 0; font-size: 15px;">Mobile: <span style="color: #059669; font-weight: 600;">${agentMobile}</span></p>
         </div>
       </div>
       
