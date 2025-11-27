@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Set Arial as default font */
+* {
+  font-family: Arial, sans-serif;
+}
+
 /* Custom animations */
 @keyframes fadeIn {
   from {
