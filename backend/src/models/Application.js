@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Counter = require('./Counter');
 
 const applicationSchema = new mongoose.Schema({
   user: {
@@ -108,9 +109,14 @@ const applicationSchema = new mongoose.Schema({
 });
 
 // Generate application number before saving
-applicationSchema.pre('save', function(next) {
+applicationSchema.pre('save', async function(next) {
   if (this.isNew && !this.applicationNumber) {
-    this.applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    try {
+      const sequence = await Counter.getNextSequence('applicationNumber');
+      this.applicationNumber = `OWV-${sequence.toString().padStart(7, '0')}`;
+    } catch (error) {
+      return next(error);
+    }
   }
   next();
 });

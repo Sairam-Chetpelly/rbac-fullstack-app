@@ -340,11 +340,9 @@ router.post('/visa-applications', auth, upload.any(), compressMultipleImages, as
       await application.save();
     } else {
       // Create new application
-      const applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       application = new Application({
         user: req.user.id,
         countryVisaType: visaTypeId,
-        applicationNumber,
         status: 'submitted',
         submittedAt: new Date()
       });
@@ -461,11 +459,9 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
     console.log('Creating draft for user:', req.user.id);
     
     // Create draft application
-    const applicationNumber = `DRAFT-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     const application = new Application({
       user: req.user.id,
       countryVisaType: visaTypeId,
-      applicationNumber,
       status: draftStatus._id
     });
     await application.save();

@@ -468,6 +468,7 @@ const emailTemplates = {
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 18px; font-weight: 600;">
         Your ${countryName} visa has been successfully Approved! 🌟
       </p>
+      <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px;">Your visa has been successfully approved. Find below your Visa details. Check if all the information provided is correct. Let us know within 48 hours of this email if there is any discrepancies or corrections in the Visa. Your Passport is now ready for pick up from our office. If a courier has been purchased we will notify you the tracking number as soon as possible.</p>
       
       <div style="background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; padding: 24px; margin: 30px 0; color: white;">
         <h3 style="color: white; margin: 0 0 16px 0; font-size: 20px; font-weight: 600;">📋 Visa Details</h3>
@@ -534,7 +535,7 @@ const emailTemplates = {
         <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Customer: <span style="color: #1f2937; font-weight: 600;">${userName}</span></p>
         <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Country: <span style="color: #059669; font-weight: 600;">${countryName}</span></p>
         ${visaNumber ? `<p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Visa Number: <span style="color: #1f2937; font-weight: 600; font-family: monospace;">${visaNumber}</span></p>` : ''}
-        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Approved by: <span style="color: #1f2937; font-weight: 600;">${updatedBy}</span></p>
+        <p style="color: #166534; margin: 0 0 8px 0; font-size: 15px;">Updated by: <span style="color: #1f2937; font-weight: 600;">${updatedBy}</span></p>
         ${hasVisaFiles ? `<p style="color: #166534; margin: 0; font-size: 15px;">📎 Visa files uploaded: Yes</p>` : ''}
       </div>
       
@@ -661,7 +662,7 @@ const emailTemplates = {
     html: createEmailTemplate('Visa In Transit', `
       <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 28px; font-weight: 700;">🚚 Your Visa is In Transit!</h2>
       <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0; font-size: 18px; font-weight: 600;">
-        Hello ${userName}, your ${countryName} visa has been dispatched and is on its way to you! 📦
+        Hello ${userName}, your passport has been dispatched and below are the Courier tracking details! 📦
       </p>
       
       <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 12px; padding: 24px; margin: 30px 0; color: white;">

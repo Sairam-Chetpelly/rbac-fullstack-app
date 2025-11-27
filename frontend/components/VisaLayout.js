@@ -221,7 +221,7 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
                   +91 9167447700
                 </li>
                 <li>
-                  Mon-Sat 9:00 AM - 7:00 PM IST
+                  Mon-Sat 10:00 AM - 7:00 PM IST
                 </li>
               </ul>
             </div>

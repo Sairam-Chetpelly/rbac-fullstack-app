@@ -22,6 +22,7 @@ const VisaApplicationForm = () => {
   const [relationships, setRelationships] = useState(['self']);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [error, setError] = useState(null);
   const [currentDraftId, setCurrentDraftId] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -600,9 +601,16 @@ const VisaApplicationForm = () => {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       } else {
-        const draftResponse = await handleSaveDraft();
-        if (draftResponse) {
-          setCurrentDraftId(draftResponse.draftId);
+        // Create draft without redirecting
+        const response = await api.post('/visa-applications/draft', {
+          visaTypeId,
+          formData,
+          applicationType,
+          numberOfApplicants,
+          relationships
+        });
+        if (response.data) {
+          setCurrentDraftId(response.data.draftId);
           setCurrentStep(3);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -654,7 +662,11 @@ const VisaApplicationForm = () => {
   };
 
   const handleSaveDraft = async () => {
+    if (savingDraft) return; // Prevent multiple clicks
+    
     try {
+      setSavingDraft(true);
+      
       if (!user) {
         alert('Please log in to save your application.');
         router.push('/login');
@@ -681,7 +693,12 @@ const VisaApplicationForm = () => {
           relationships
         });
       }
-      alert('saved successfully!');
+      
+      alert('Saved successfully!');
+      
+      // Redirect to drafts page only when explicitly saving as draft
+      router.push('/customer/drafts');
+      
       return response.data;
     } catch (err) {
       console.error('Error saving draft:', err);
@@ -692,6 +709,8 @@ const VisaApplicationForm = () => {
         alert('Failed to save draft.');
       }
       throw err;
+    } finally {
+      setSavingDraft(false);
     }
   };
 
@@ -1090,11 +1109,21 @@ const VisaApplicationForm = () => {
               <Button 
                 type="button" 
                 onClick={handleSaveDraft}
+                disabled={savingDraft}
                 variant="outline" 
-                className="flex-1 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 py-4 text-lg font-semibold transition-all duration-200"
+                className="flex-1 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 py-4 text-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Save className="h-5 w-5 mr-3" />
-                Save as Draft
+                {savingDraft ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-3"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-5 w-5 mr-3" />
+                    Save as Draft
+                  </>
+                )}
               </Button>
             )}
           </div>

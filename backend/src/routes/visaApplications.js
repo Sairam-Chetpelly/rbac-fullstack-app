@@ -148,11 +148,9 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
     }
     
     // Create draft application
-    const applicationNumber = `DRAFT-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     const application = new Application({
       user: req.user._id,
       countryVisaType: visaTypeId,
-      applicationNumber,
       applicationType,
       numberOfApplicants,
       status: draftStatus._id
@@ -355,7 +353,6 @@ router.post('/visa-applications/submit-draft', auth, async (req, res) => {
     }
     
     // Update application status
-    application.applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     application.status = submittedStatus._id;
     application.submittedAt = new Date();
     await application.save();
@@ -410,8 +407,7 @@ router.post('/visa-applications/submit-without-payment', auth, async (req, res) 
         return res.status(500).json({ message: 'Submitted status not found' });
       }
       
-      // Change application number from DRAFT to APP
-      application.applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+      // Update status to submitted
       application.status = submittedStatus._id;
       application.submittedAt = new Date();
       await application.save();
@@ -423,11 +419,9 @@ router.post('/visa-applications/submit-without-payment', auth, async (req, res) 
       }
       
       // Create new application
-      const applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       application = new Application({
         user: req.user._id,
         countryVisaType: visaTypeId,
-        applicationNumber,
         status: submittedStatus._id,
         applicationType,
         numberOfApplicants,
@@ -540,8 +534,7 @@ router.post('/visa-applications/submit', auth, upload.any(), compressMultipleIma
         return res.status(500).json({ message: 'Submitted status not found' });
       }
       
-      // Change application number from DRAFT to APP
-      application.applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+      // Update status to submitted
       application.status = submittedStatus._id;
       application.submittedAt = new Date();
       await application.save();
@@ -554,11 +547,9 @@ router.post('/visa-applications/submit', auth, upload.any(), compressMultipleIma
       }
       
       // Create new application
-      const applicationNumber = `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       application = new Application({
         user: req.user._id,
         countryVisaType: visaTypeId,
-        applicationNumber,
         status: submittedStatus._id,
         submittedAt: new Date()
       });

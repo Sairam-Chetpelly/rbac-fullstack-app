@@ -21,6 +21,11 @@ export default function CustomerApplications() {
   });
   const [filters, setFilters] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusOptions, setStatusOptions] = useState([]);
+
+  useEffect(() => {
+    fetchStatusOptions();
+  }, []);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -90,52 +95,27 @@ export default function CustomerApplications() {
     }
   };
 
-  const getStatusColor = (status) => {
-    if (!status?.color) return 'bg-gray-100 text-gray-800';
-    
-    const colorMap = {
-      '#gray': 'bg-gray-100 text-gray-800',
-      '#blue': 'bg-blue-100 text-blue-800',
-      '#yellow': 'bg-yellow-100 text-yellow-800',
-      '#green': 'bg-green-100 text-green-800',
-      '#red': 'bg-red-100 text-red-800',
-      '#purple': 'bg-purple-100 text-purple-800',
-      '#indigo': 'bg-indigo-100 text-indigo-800',
-      '#pink': 'bg-pink-100 text-pink-800'
-    };
-    
-    return colorMap[status.color] || 'bg-gray-100 text-gray-800';
-  };
+
 
   const formatStatus = (status) => {
     return status?.name || 'Unknown';
   };
 
-  const getProgressValue = (status) => {
-    const statusName = status?.name?.toLowerCase() || '';
-    if (statusName.includes('draft')) {
-      return 25;
-    } else if (statusName.includes('submitted')) {
-      return 50;
-    } else if (statusName.includes('review')) {
-      return 75;
-    } else if (statusName.includes('approved')) {
-      return 100;
-    } else if (statusName.includes('rejected')) {
-      return 50;
-    } else {
-      return 0;
+  const fetchStatusOptions = async () => {
+    try {
+      const response = await api.get('/applications/statuses');
+      const options = response.data.map(status => ({
+        value: status.name.toLowerCase(),
+        label: status.name
+      }));
+      setStatusOptions(options);
+    } catch (error) {
+      console.error('Error fetching status options:', error);
     }
   };
 
   const filterOptions = {
-    status: [
-      { value: 'draft', label: 'Draft' },
-      { value: 'submitted', label: 'Submitted' },
-      { value: 'under review', label: 'Under Review' },
-      { value: 'approved', label: 'Approved' },
-      { value: 'rejected', label: 'Rejected' }
-    ],
+    status: statusOptions,
     dateRange: true
   };
 
@@ -177,7 +157,6 @@ export default function CustomerApplications() {
                       <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Application</th>
                       <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
                       <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
                       <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
                       <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -197,18 +176,9 @@ export default function CustomerApplications() {
                           <span className="truncate block">{app.countryVisaType?.country?.name || 'N/A'}</span>
                         </td>
                         <td className="px-4 lg:px-6 py-4">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(app.status)}`}>
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                             {formatStatus(app.status)}
                           </span>
-                        </td>
-                        <td className="px-4 lg:px-6 py-4">
-                          <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
-                              style={{ width: `${getProgressValue(app.status)}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-500">{getProgressValue(app.status)}%</span>
                         </td>
                         <td className="px-4 lg:px-6 py-4 text-sm text-gray-900">
                           {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : '-'}
@@ -240,21 +210,9 @@ export default function CustomerApplications() {
                           <p className="text-xs text-gray-500">{app.countryVisaType?.country?.name || 'N/A'}</p>
                         </div>
                       </div>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(app.status)}`}>
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                         {formatStatus(app.status)}
                       </span>
-                    </div>
-                    <div className="mb-3">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs text-gray-500">Progress</span>
-                        <span className="text-xs text-gray-500">{getProgressValue(app.status)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${getProgressValue(app.status)}%` }}
-                        ></div>
-                      </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-gray-500">
