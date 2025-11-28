@@ -31,7 +31,12 @@ const userSchema = new mongoose.Schema({
   panCardNumber: { type: String, default: null },
   panCardPhoto: { type: String, default: null },
   gstNumber: { type: String, default: null },
-  gstFile: { type: String, default: null }
+  gstFile: { type: String, default: null },
+  aadhaarNumber: { type: String, default: null },
+  aadhaarFile: { type: String, default: null },
+  msmeNumber: { type: String, default: null },
+  msmeFile: { type: String, default: null },
+  cancelledChequeFile: { type: String, default: null }
 }, { timestamps: true });
 
 userSchema.pre('save', async function(next) {

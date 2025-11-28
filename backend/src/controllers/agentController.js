@@ -24,13 +24,16 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|pdf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf'];
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
     
-    if (mimetype && extname) {
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    const isValidExtension = allowedExtensions.includes(fileExtension);
+    const isValidMimeType = allowedMimeTypes.includes(file.mimetype);
+    
+    if (isValidExtension && isValidMimeType) {
       return cb(null, true);
     } else {
       cb(new Error('Only .png, .jpg, .jpeg and .pdf files are allowed!'));
@@ -42,7 +45,8 @@ const registerAgent = async (req, res) => {
   try {
     const { 
       name, email, password, mobile, nationality, 
-      companyName, companyAddress, panCardNumber, gstNumber 
+      companyName, companyAddress, panCardNumber, gstNumber,
+      aadhaarNumber, msmeNumber
     } = req.body;
     
     const existingUser = await User.findOne({ email });
@@ -76,7 +80,9 @@ const registerAgent = async (req, res) => {
       companyName,
       companyAddress: parsedCompanyAddress,
       panCardNumber,
-      gstNumber
+      gstNumber,
+      aadhaarNumber,
+      msmeNumber
     };
 
     // Add file paths if files were uploaded
@@ -86,6 +92,15 @@ const registerAgent = async (req, res) => {
       }
       if (req.files.gstFile) {
         userData.gstFile = req.files.gstFile[0].filename;
+      }
+      if (req.files.aadhaarFile) {
+        userData.aadhaarFile = req.files.aadhaarFile[0].filename;
+      }
+      if (req.files.msmeFile) {
+        userData.msmeFile = req.files.msmeFile[0].filename;
+      }
+      if (req.files.cancelledChequeFile) {
+        userData.cancelledChequeFile = req.files.cancelledChequeFile[0].filename;
       }
     }
 
@@ -124,4 +139,45 @@ const registerAgent = async (req, res) => {
   }
 };
 
-module.exports = { registerAgent, upload };
+const updateAgent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = { ...req.body };
+    
+    if (updates.companyAddress && typeof updates.companyAddress === 'string') {
+      updates.companyAddress = JSON.parse(updates.companyAddress);
+    }
+    
+    if (req.files) {
+      if (req.files.panCardPhoto) {
+        updates.panCardPhoto = req.files.panCardPhoto[0].filename;
+      }
+      if (req.files.gstFile) {
+        updates.gstFile = req.files.gstFile[0].filename;
+      }
+      if (req.files.aadhaarFile) {
+        updates.aadhaarFile = req.files.aadhaarFile[0].filename;
+      }
+      if (req.files.msmeFile) {
+        updates.msmeFile = req.files.msmeFile[0].filename;
+      }
+      if (req.files.cancelledChequeFile) {
+        updates.cancelledChequeFile = req.files.cancelledChequeFile[0].filename;
+      }
+    }
+    
+    const user = await User.findByIdAndUpdate(id, updates, { new: true })
+      .populate('role')
+      .populate('status');
+      
+    if (!user) {
+      return res.status(404).json({ message: 'Agent not found' });
+    }
+
+    res.json({ message: 'Agent updated successfully', user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerAgent, updateAgent, upload };

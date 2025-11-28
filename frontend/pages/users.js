@@ -16,6 +16,7 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState('');
   const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 0 });
   const [currentPage, setCurrentPage] = useState(1);
+  const [toggleLoading, setToggleLoading] = useState({});
 
   useEffect(() => {
     if (!user || !canAccess(user.role, 'users')) {
@@ -51,12 +52,26 @@ export default function Users() {
     }
   };
 
+  const toggleUserStatus = async (userId) => {
+    setToggleLoading(prev => ({ ...prev, [userId]: true }));
+    try {
+      const response = await api.patch(`/users/${userId}/toggle-status`);
+      toast.success(response.data.message);
+      fetchUsers(currentPage);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to toggle status');
+    } finally {
+      setToggleLoading(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
   if (!user || !canAccess(user.role, 'users')) {
     return <div>Access denied</div>;
   }
 
   const canCreate = ['admin', 'manager', 'employee'].includes(user.role);
   const canDelete = user.role === 'admin';
+  const canToggleStatus = ['admin', 'manager'].includes(user.role);
 
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -195,6 +210,13 @@ export default function Users() {
                     onClick: (row) => router.push(`/users/${row._id}/edit`),
                     icon: '✏️'
                   },
+                  ...(canToggleStatus ? [{
+                    label: (row) => toggleLoading[row._id] ? 'Processing...' : (row.status?.name === 'active' ? 'Deactivate' : 'Activate'),
+                    onClick: (row) => toggleUserStatus(row._id),
+                    icon: (row) => row.status?.name === 'active' ? '🔴' : '🟢',
+                    variant: (row) => row.status?.name === 'active' ? 'danger' : 'success',
+                    disabled: (row) => toggleLoading[row._id]
+                  }] : []),
                   ...(canDelete ? [{
                     label: 'Delete',
                     onClick: (row) => handleDelete(row._id),
@@ -255,6 +277,19 @@ export default function Users() {
                       >
                         ✏️ Edit
                       </button>
+                      {canToggleStatus && (
+                        <button
+                          onClick={() => toggleUserStatus(userData._id)}
+                          disabled={toggleLoading[userData._id]}
+                          className={`px-3 py-2 rounded text-sm ${
+                            userData.status?.name === 'active' 
+                              ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                              : 'bg-green-100 text-green-600 hover:bg-green-200'
+                          } disabled:opacity-50`}
+                        >
+                          {toggleLoading[userData._id] ? '...' : (userData.status?.name === 'active' ? '🔴' : '🟢')}
+                        </button>
+                      )}
                       {canDelete && (
                         <button
                           onClick={() => handleDelete(userData._id)}

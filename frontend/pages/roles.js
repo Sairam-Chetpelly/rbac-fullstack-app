@@ -85,7 +85,7 @@ export default function Roles() {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">🛡️ Roles Management</h1>
           <p className="text-gray-600">Manage system roles and permissions</p>
         </div>
-        {canCreate && (
+        {/* {canCreate && (
           <Button 
             onClick={() => router.push('/roles/add')} 
             icon="➕"
@@ -93,7 +93,7 @@ export default function Roles() {
           >
             Add New Role
           </Button>
-        )}
+        )} */}
         {isViewOnly && (
           <div className="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-2">
             👁️ View Only Access
@@ -142,7 +142,7 @@ export default function Roles() {
                   </div>
                 </div>
                 
-                <div className="bg-gray-50 rounded-xl p-3">
+                {/* <div className="bg-gray-50 rounded-xl p-3">
                   <p className="text-xs font-semibold text-gray-500 mb-2">PERMISSIONS ({role.permissions.length})</p>
                   <div className="flex flex-wrap gap-1">
                     {role.permissions.slice(0, 3).map((permission, index) => (
@@ -156,9 +156,9 @@ export default function Roles() {
                       </span>
                     )}
                   </div>
-                </div>
+                </div> */}
                 
-                <div className="flex gap-2 pt-4 border-t border-gray-100">
+                {/* <div className="flex gap-2 pt-4 border-t border-gray-100">
                   <Button 
                     size="sm" 
                     variant="ghost" 
@@ -189,7 +189,7 @@ export default function Roles() {
                       Delete
                     </Button>
                   )}
-                </div>
+                </div> */}
               </div>
             </Card>
           ))}

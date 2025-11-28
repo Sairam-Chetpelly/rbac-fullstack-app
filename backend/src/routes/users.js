@@ -1,7 +1,9 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const { getUsers, createUser, updateUser, deleteUser, changePassword, getProfile, updateProfile } = require('../controllers/userController');
+const sharp = require('sharp');
+const fs = require('fs');
+const { getUsers, createUser, updateUser, deleteUser, changePassword, getProfile, updateProfile, toggleUserStatus } = require('../controllers/userController');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
 
@@ -19,17 +21,13 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.fieldname === 'panCardPhoto') {
+  const allowedFields = ['panCardPhoto', 'gstFile', 'aadhaarFile', 'msmeFile', 'cancelledChequeFile'];
+  
+  if (allowedFields.includes(file.fieldname)) {
     if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
       cb(null, true);
     } else {
-      cb(new Error('PAN card photo must be an image or PDF'), false);
-    }
-  } else if (file.fieldname === 'gstFile') {
-    if (file.mimetype === 'application/pdf' || file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('GST file must be a PDF or image'), false);
+      cb(new Error(`${file.fieldname} must be an image or PDF`), false);
     }
   } else {
     cb(new Error('Unexpected field'), false);
@@ -40,16 +38,82 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 10 * 1024 * 1024 // 10MB limit
   }
 });
+
+// Compression middleware for user files
+const compressUserFiles = async (req, res, next) => {
+  if (!req.files) {
+    return next();
+  }
+
+  try {
+    const fileFields = ['panCardPhoto', 'aadhaarFile', 'gstFile', 'msmeFile', 'cancelledChequeFile'];
+    
+    for (const fieldName of fileFields) {
+      if (req.files[fieldName] && req.files[fieldName][0]) {
+        const file = req.files[fieldName][0];
+        
+        if (file.mimetype.startsWith('image/')) {
+          try {
+            const { filename, path: filePath } = file;
+            const compressedFilename = `compressed-${filename.replace(/\.[^/.]+$/, '')}.jpg`;
+            const compressedPath = path.join(path.dirname(filePath), compressedFilename);
+
+            let quality = 85;
+            if (file.size > 2 * 1024 * 1024) {
+              quality = 70;
+            } else if (file.size > 1 * 1024 * 1024) {
+              quality = 80;
+            }
+
+            await sharp(filePath)
+              .resize(1200, 900, { 
+                fit: 'inside',
+                withoutEnlargement: true 
+              })
+              .jpeg({ 
+                quality,
+                progressive: true
+              })
+              .toFile(compressedPath);
+
+            fs.unlinkSync(filePath);
+
+            file.filename = compressedFilename;
+            file.path = compressedPath;
+            file.mimetype = 'image/jpeg';
+            
+            const stats = fs.statSync(compressedPath);
+            file.size = stats.size;
+          } catch (compressionError) {
+            console.error(`Error compressing ${fieldName}:`, compressionError);
+          }
+        }
+      }
+    }
+    
+    next();
+  } catch (error) {
+    console.error('User file compression error:', error);
+    next();
+  }
+};
 
 router.get('/', auth, role(['admin', 'manager', 'employee']), getUsers);
 router.post('/', auth, role(['admin', 'manager', 'employee']), createUser);
 router.put('/change-password', auth, changePassword);
 router.get('/profile', auth, getProfile);
 router.put('/profile', auth, updateProfile);
-router.put('/:id', auth, role(['admin', 'manager', 'employee']), upload.fields([{ name: 'panCardPhoto', maxCount: 1 }, { name: 'gstFile', maxCount: 1 }]), updateUser);
+router.put('/:id', auth, role(['admin', 'manager', 'employee']), upload.fields([
+  { name: 'panCardPhoto', maxCount: 1 }, 
+  { name: 'gstFile', maxCount: 1 },
+  { name: 'aadhaarFile', maxCount: 1 },
+  { name: 'msmeFile', maxCount: 1 },
+  { name: 'cancelledChequeFile', maxCount: 1 }
+]), compressUserFiles, updateUser);
+router.patch('/:id/toggle-status', auth, role(['admin', 'manager']), toggleUserStatus);
 router.delete('/:id', auth, role(['admin']), deleteUser);
 
 module.exports = router;

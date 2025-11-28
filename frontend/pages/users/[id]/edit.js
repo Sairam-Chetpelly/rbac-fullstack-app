@@ -16,7 +16,7 @@ export default function EditUser() {
   const [roles, setRoles] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [isAgent, setIsAgent] = useState(false);
-  const [files, setFiles] = useState({ panCardPhoto: null, gstFile: null });
+  const [files, setFiles] = useState({ panCardPhoto: null, gstFile: null, aadhaarFile: null, msmeFile: null, cancelledChequeFile: null });
   const [fieldErrors, setFieldErrors] = useState({});
   const [fileViewer, setFileViewer] = useState({ show: false, url: '', type: '' });
   const [formData, setFormData] = useState({
@@ -36,7 +36,9 @@ export default function EditUser() {
       country: ''
     },
     panCardNumber: '',
-    gstNumber: ''
+    gstNumber: '',
+    aadhaarNumber: '',
+    msmeNumber: ''
   });
 
   useEffect(() => {
@@ -81,7 +83,9 @@ export default function EditUser() {
             country: ''
           },
           panCardNumber: foundUser.panCardNumber || '',
-          gstNumber: foundUser.gstNumber || ''
+          gstNumber: foundUser.gstNumber || '',
+          aadhaarNumber: foundUser.aadhaarNumber || '',
+          msmeNumber: foundUser.msmeNumber || ''
         });
       }
     } catch (error) {
@@ -167,6 +171,18 @@ export default function EditUser() {
           delete errors['companyAddress.pin'];
         }
         break;
+      case 'aadhaarNumber':
+        if (isAgent && value) {
+          const aadhaarRegex = /^\d{12}$/;
+          if (!aadhaarRegex.test(value)) {
+            errors.aadhaarNumber = 'Aadhaar must be 12 digits';
+          } else {
+            delete errors.aadhaarNumber;
+          }
+        } else {
+          delete errors.aadhaarNumber;
+        }
+        break;
     }
     
     setFieldErrors(errors);
@@ -210,6 +226,15 @@ export default function EditUser() {
       if (files.gstFile) {
         formDataToSend.append('gstFile', files.gstFile);
       }
+      if (files.aadhaarFile) {
+        formDataToSend.append('aadhaarFile', files.aadhaarFile);
+      }
+      if (files.msmeFile) {
+        formDataToSend.append('msmeFile', files.msmeFile);
+      }
+      if (files.cancelledChequeFile) {
+        formDataToSend.append('cancelledChequeFile', files.cancelledChequeFile);
+      }
 
       await api.put(`/users/${id}`, formDataToSend, {
         headers: {
@@ -235,6 +260,8 @@ export default function EditUser() {
       processedValue = value.toUpperCase().slice(0, 15);
     } else if (name === 'companyAddress.pin') {
       processedValue = value.replace(/\D/g, '').slice(0, 6);
+    } else if (name === 'aadhaarNumber') {
+      processedValue = value.replace(/\D/g, '').slice(0, 12);
     }
     
     if (name.startsWith('companyAddress.')) {
@@ -450,6 +477,28 @@ export default function EditUser() {
                     <p className="text-red-500 text-sm mt-1">{fieldErrors.panCardNumber}</p>
                   )}
                 </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    🆔 Aadhaar Number *
+                  </label>
+                  <input
+                    type="text"
+                    name="aadhaarNumber"
+                    value={formData.aadhaarNumber}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all ${
+                      fieldErrors.aadhaarNumber ? 'border-red-300' : 'border-gray-200'
+                    }`}
+                    placeholder="123456789012"
+                    pattern="\d{12}"
+                    maxLength="12"
+                    required={isAgent}
+                  />
+                  {fieldErrors.aadhaarNumber && (
+                    <p className="text-red-500 text-sm mt-1">{fieldErrors.aadhaarNumber}</p>
+                  )}
+                </div>
               </div>
 
               <div className="mb-6">
@@ -541,6 +590,32 @@ export default function EditUser() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    🆔 Aadhaar Card Photo *
+                  </label>
+                  <input
+                    type="file"
+                    name="aadhaarFile"
+                    onChange={handleFileChange}
+                    accept="image/*,.pdf"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    🏦 Cancelled Cheque *
+                  </label>
+                  <input
+                    type="file"
+                    name="cancelledChequeFile"
+                    onChange={handleFileChange}
+                    accept="image/*,.pdf"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     📋 GST Number (Optional)
                   </label>
                   <input
@@ -557,6 +632,35 @@ export default function EditUser() {
                   {fieldErrors.gstNumber && (
                     <p className="text-red-500 text-sm mt-1">{fieldErrors.gstNumber}</p>
                   )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    🏭 MSME Number (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    name="msmeNumber"
+                    value={formData.msmeNumber}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                    placeholder="UDYAM-XX-00-0000000"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    🏭 MSME Certificate (Optional)
+                  </label>
+                  <input
+                    type="file"
+                    name="msmeFile"
+                    onChange={handleFileChange}
+                    accept="image/*,.pdf"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                  />
                 </div>
               </div>
 

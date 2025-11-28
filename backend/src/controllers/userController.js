@@ -141,6 +141,15 @@ const updateUser = async (req, res) => {
       if (req.files.gstFile) {
         updates.gstFile = req.files.gstFile[0].filename;
       }
+      if (req.files.aadhaarFile) {
+        updates.aadhaarFile = req.files.aadhaarFile[0].filename;
+      }
+      if (req.files.msmeFile) {
+        updates.msmeFile = req.files.msmeFile[0].filename;
+      }
+      if (req.files.cancelledChequeFile) {
+        updates.cancelledChequeFile = req.files.cancelledChequeFile[0].filename;
+      }
     }
     
     // Convert role and status names to IDs if provided
@@ -306,4 +315,39 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, createUser, updateUser, deleteUser, changePassword, getProfile, updateProfile };
+const toggleUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(id).populate('status');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get active and inactive status
+    const activeStatus = await Status.findOne({ name: 'active' });
+    const inactiveStatus = await Status.findOne({ name: 'inactive' });
+    
+    if (!activeStatus || !inactiveStatus) {
+      return res.status(500).json({ message: 'Status not found' });
+    }
+
+    // Toggle status
+    const newStatus = user.status.name === 'active' ? inactiveStatus._id : activeStatus._id;
+    
+    const updatedUser = await User.findByIdAndUpdate(
+      id, 
+      { status: newStatus }, 
+      { new: true }
+    ).populate('role').populate('status');
+
+    res.json({ 
+      message: `User ${updatedUser.status.name === 'active' ? 'activated' : 'deactivated'} successfully`, 
+      user: updatedUser 
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getUsers, createUser, updateUser, deleteUser, changePassword, getProfile, updateProfile, toggleUserStatus };

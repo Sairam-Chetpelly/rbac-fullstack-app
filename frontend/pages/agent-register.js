@@ -6,6 +6,33 @@ import Link from 'next/link';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
+// File compression utility
+const compressImage = (file, maxSizeMB = 2, quality = 0.8) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      const ratio = Math.min(1920 / img.width, 1080 / img.height);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      canvas.toBlob((blob) => {
+        const compressedFile = new File([blob], file.name, {
+          type: file.type,
+          lastModified: Date.now()
+        });
+        resolve(compressedFile);
+      }, file.type, quality);
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 export default function AgentRegister() {
   const router = useRouter();
   const { user } = useAuth();
@@ -28,11 +55,16 @@ export default function AgentRegister() {
       country: ''
     },
     panCardNumber: '',
-    gstNumber: ''
+    gstNumber: '',
+    aadhaarNumber: '',
+    msmeNumber: ''
   });
   const [files, setFiles] = useState({
     panCardPhoto: null,
-    gstFile: null
+    gstFile: null,
+    aadhaarFile: null,
+    msmeFile: null,
+    cancelledChequeFile: null
   });
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -108,6 +140,14 @@ export default function AgentRegister() {
           delete errors['companyAddress.pin'];
         }
         break;
+      case 'aadhaarNumber':
+        const aadhaarRegex = /^\d{12}$/;
+        if (value && !aadhaarRegex.test(value)) {
+          errors.aadhaarNumber = 'Aadhaar must be 12 digits';
+        } else {
+          delete errors.aadhaarNumber;
+        }
+        break;
     }
     
     setFieldErrors(errors);
@@ -148,6 +188,19 @@ export default function AgentRegister() {
       return 'PIN code must be exactly 6 digits';
     }
 
+    const aadhaarRegex = /^\d{12}$/;
+    if (!aadhaarRegex.test(formData.aadhaarNumber)) {
+      return 'Aadhaar number must be exactly 12 digits';
+    }
+
+    if (!files.aadhaarFile) {
+      return 'Aadhaar card file is required';
+    }
+
+    if (!files.cancelledChequeFile) {
+      return 'Cancelled cheque file is required';
+    }
+
     return null;
   };
 
@@ -177,12 +230,23 @@ export default function AgentRegister() {
       formDataToSend.append('companyAddress', JSON.stringify(formData.companyAddress));
       formDataToSend.append('panCardNumber', formData.panCardNumber);
       formDataToSend.append('gstNumber', formData.gstNumber);
+      formDataToSend.append('aadhaarNumber', formData.aadhaarNumber);
+      formDataToSend.append('msmeNumber', formData.msmeNumber);
       
       if (files.panCardPhoto) {
         formDataToSend.append('panCardPhoto', files.panCardPhoto);
       }
       if (files.gstFile) {
         formDataToSend.append('gstFile', files.gstFile);
+      }
+      if (files.aadhaarFile) {
+        formDataToSend.append('aadhaarFile', files.aadhaarFile);
+      }
+      if (files.msmeFile) {
+        formDataToSend.append('msmeFile', files.msmeFile);
+      }
+      if (files.cancelledChequeFile) {
+        formDataToSend.append('cancelledChequeFile', files.cancelledChequeFile);
       }
 
       await api.post('/agents/register', formDataToSend, {
@@ -213,6 +277,8 @@ export default function AgentRegister() {
       processedValue = value.toUpperCase().slice(0, 15);
     } else if (name === 'companyAddress.pin') {
       processedValue = value.replace(/\D/g, '').slice(0, 6);
+    } else if (name === 'aadhaarNumber') {
+      processedValue = value.replace(/\D/g, '').slice(0, 12);
     }
     
     if (name.startsWith('companyAddress.')) {
@@ -234,12 +300,39 @@ export default function AgentRegister() {
     validateField(name, processedValue);
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const { name, files: fileList } = e.target;
-    setFiles({
-      ...files,
-      [name]: fileList[0]
-    });
+    const file = fileList[0];
+    
+    if (!file) return;
+    
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 5MB');
+      e.target.value = '';
+      return;
+    }
+    
+    try {
+      let processedFile = file;
+      
+      // Compress images if they're over 2MB
+      if (file.type.startsWith('image/') && file.size > 2 * 1024 * 1024) {
+        toast.loading('Compressing image...');
+        processedFile = await compressImage(file, 2, 0.8);
+        toast.dismiss();
+        toast.success('Image compressed successfully');
+      }
+      
+      setFiles({
+        ...files,
+        [name]: processedFile
+      });
+    } catch (error) {
+      toast.error('Error processing file');
+      e.target.value = '';
+    }
   };
 
   if (user) {
@@ -265,10 +358,13 @@ export default function AgentRegister() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
                 <div className="space-y-2">
                   <div className="flex items-center"><span className="text-green-500 mr-2">✓</span>Valid PAN card (mandatory)</div>
+                  <div className="flex items-center"><span className="text-green-500 mr-2">✓</span>Valid Aadhaar card (mandatory)</div>
                   <div className="flex items-center"><span className="text-green-500 mr-2">✓</span>Company registration details</div>
+                  <div className="flex items-center"><span className="text-green-500 mr-2">✓</span>Cancelled cheque (mandatory)</div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center"><span className="text-blue-500 mr-2">•</span>GST certificate (if applicable)</div>
+                  <div className="flex items-center"><span className="text-blue-500 mr-2">•</span>MSME certificate (if applicable)</div>
                   <div className="flex items-center"><span className="text-orange-500 mr-2">⏳</span>Admin approval required</div>
                 </div>
               </div>
@@ -470,7 +566,8 @@ export default function AgentRegister() {
                   <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold mr-3">3</div>
                   <h3 className="text-xl font-bold text-gray-800">Documents</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* PAN Card */}
                   <div className="p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 transition-all">
                     <div className="text-center mb-4">
                       <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -486,7 +583,7 @@ export default function AgentRegister() {
                           name="panCardNumber"
                           value={formData.panCardNumber}
                           onChange={handleChange}
-                          className={`w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all font-mono ${
+                          className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all font-mono text-sm ${
                             fieldErrors.panCardNumber ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
                           }`}
                           placeholder="ABCDE1234F"
@@ -502,13 +599,91 @@ export default function AgentRegister() {
                           name="panCardPhoto"
                           accept="image/*,.pdf"
                           onChange={handleFileChange}
-                          className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
                           required
                         />
                         <p className="text-xs text-gray-500 mt-1">Clear photo/scan (Max 5MB)</p>
                       </div>
                     </div>
                   </div>
+
+                  {/* Aadhaar Card */}
+                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-green-400 transition-all">
+                    <div className="text-center mb-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <span className="text-2xl">🆔</span>
+                      </div>
+                      <h4 className="font-semibold text-gray-800">Aadhaar Card Details</h4>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Aadhaar Number *</label>
+                        <input
+                          type="text"
+                          name="aadhaarNumber"
+                          value={formData.aadhaarNumber}
+                          onChange={handleChange}
+                          className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all font-mono text-sm ${
+                            fieldErrors.aadhaarNumber ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                          }`}
+                          placeholder="123456789012"
+                          maxLength="12"
+                          required
+                        />
+                        {fieldErrors.aadhaarNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.aadhaarNumber}</p>}
+                        <p className="text-xs text-gray-500 mt-1">12-digit Aadhaar number</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Upload Aadhaar Card *</label>
+                        <input
+                          type="file"
+                          name="aadhaarFile"
+                          accept="image/*,.pdf"
+                          onChange={handleFileChange}
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Clear photo/scan (Max 5MB)</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cancelled Cheque */}
+                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-400 transition-all">
+                    <div className="text-center mb-4">
+                      <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <span className="text-2xl">🏦</span>
+                      </div>
+                      <h4 className="font-semibold text-gray-800">Bank Details</h4>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Upload Cancelled Cheque *</label>
+                        <input
+                          type="file"
+                          name="cancelledChequeFile"
+                          accept="image/*,.pdf"
+                          onChange={handleFileChange}
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Clear photo/scan (Max 5MB)</p>
+                      </div>
+                      <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg">
+                        <p className="font-medium mb-1">Requirements:</p>
+                        <ul className="space-y-1">
+                          <li>• Bank account holder name should match</li>
+                          <li>• Account number and IFSC visible</li>
+                          <li>• Clearly write "CANCELLED" across</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Optional Documents Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  {/* GST Certificate */}
                   <div className="p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-purple-400 transition-all">
                     <div className="text-center mb-4">
                       <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -525,7 +700,7 @@ export default function AgentRegister() {
                           name="gstNumber"
                           value={formData.gstNumber}
                           onChange={handleChange}
-                          className={`w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all font-mono ${
+                          className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all font-mono text-sm ${
                             fieldErrors.gstNumber ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
                           }`}
                           placeholder="22AAAAA0000A1Z5"
@@ -540,7 +715,43 @@ export default function AgentRegister() {
                           name="gstFile"
                           accept=".pdf,.jpg,.jpeg,.png"
                           onChange={handleFileChange}
-                          className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">PDF or image (Max 5MB)</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MSME Certificate */}
+                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-400 transition-all">
+                    <div className="text-center mb-4">
+                      <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <span className="text-2xl">🏭</span>
+                      </div>
+                      <h4 className="font-semibold text-gray-800">MSME Certificate</h4>
+                      <p className="text-xs text-gray-500">(Optional)</p>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">MSME Registration Number</label>
+                        <input
+                          type="text"
+                          name="msmeNumber"
+                          value={formData.msmeNumber}
+                          onChange={handleChange}
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-mono text-sm"
+                          placeholder="UDYAM-XX-00-0000000"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">UDYAM registration number</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Upload MSME Certificate</label>
+                        <input
+                          type="file"
+                          name="msmeFile"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={handleFileChange}
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
                         />
                         <p className="text-xs text-gray-500 mt-1">PDF or image (Max 5MB)</p>
                       </div>

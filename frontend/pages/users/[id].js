@@ -5,6 +5,7 @@ import { canAccess } from '../../lib/roles';
 import api from '../../lib/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import toast from 'react-hot-toast';
 
 export default function ViewUser() {
   const { user } = useAuth();
@@ -13,6 +14,7 @@ export default function ViewUser() {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fileViewer, setFileViewer] = useState({ show: false, url: '', type: '' });
+  const [toggleLoading, setToggleLoading] = useState(false);
 
   useEffect(() => {
     if (!user || !canAccess(user.role, 'users')) {
@@ -62,6 +64,19 @@ export default function ViewUser() {
     const url = `${process.env.NEXT_PUBLIC_BASE_URL}/uploads/agents/${filename}`;
     const type = filename.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
     setFileViewer({ show: true, url, type });
+  };
+
+  const toggleUserStatus = async () => {
+    setToggleLoading(true);
+    try {
+      const response = await api.patch(`/users/${id}/toggle-status`);
+      setUserData(response.data.user);
+      toast.success(response.data.message);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to toggle status');
+    } finally {
+      setToggleLoading(false);
+    }
   };
 
   if (loading) {
@@ -249,6 +264,48 @@ export default function ViewUser() {
                       )}
                     </div>
                   )}
+                  
+                  {userData.aadhaarNumber && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-500 mb-1">Aadhaar Number</label>
+                      <p className="text-gray-900 font-mono">{userData.aadhaarNumber}</p>
+                      {userData.aadhaarFile && (
+                        <button
+                          onClick={() => viewFile(userData.aadhaarFile)}
+                          className="text-blue-600 hover:underline text-sm cursor-pointer"
+                        >
+                          🆔 View Aadhaar Card
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  
+                  {userData.msmeNumber && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-500 mb-1">MSME Number</label>
+                      <p className="text-gray-900 font-mono">{userData.msmeNumber}</p>
+                      {userData.msmeFile && (
+                        <button
+                          onClick={() => viewFile(userData.msmeFile)}
+                          className="text-blue-600 hover:underline text-sm cursor-pointer"
+                        >
+                          🏭 View MSME Certificate
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  
+                  {userData.cancelledChequeFile && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-500 mb-1">Bank Details</label>
+                      <button
+                        onClick={() => viewFile(userData.cancelledChequeFile)}
+                        className="text-blue-600 hover:underline text-sm cursor-pointer"
+                      >
+                        🏦 View Cancelled Cheque
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -293,6 +350,14 @@ export default function ViewUser() {
               className="flex-1"
             >
               Edit User
+            </Button>
+            <Button 
+              onClick={toggleUserStatus}
+              disabled={toggleLoading}
+              className={`flex-1 ${userData.status?.name === 'active' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white`}
+              icon={userData.status?.name === 'active' ? '🔴' : '🟢'}
+            >
+              {toggleLoading ? 'Processing...' : userData.status?.name === 'active' ? 'Deactivate' : 'Activate'}
             </Button>
             <Button 
               variant="outline" 
