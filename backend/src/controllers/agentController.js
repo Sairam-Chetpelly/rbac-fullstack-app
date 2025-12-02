@@ -120,8 +120,13 @@ const registerAgent = async (req, res) => {
     }
     
     // Send welcome notifications for agent
-    const welcomeMessage = `Welcome to One World Visa Agent Network, ${name}! 🎉\n\nThank you for applying to become our agent. Your application is under review and you will be notified once approved.\n\nFor any assistance, contact us anytime.\n\nThank you for choosing us! ✈️`;
-    sendNotifications(email, mobile, 'agentWelcome', { userName: name }, welcomeMessage);
+    sendNotifications(email, mobile, 'agentRegistration', {
+      userName: user.name,
+      companyName: user.companyName
+    }, 'agentRegistration', {
+      userName: user.name,
+      companyName: user.companyName
+    });
     
     res.status(201).json({
       message: 'Agent registration successful. Your application is under review.',

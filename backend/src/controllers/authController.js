@@ -95,9 +95,8 @@ const register = async (req, res) => {
     
     const populatedUser = await User.findById(user._id).populate('role').populate('status');
     
-    // Send welcome notifications (email & WhatsApp based on settings)
-    const welcomeMessage = `Welcome to One World Visa, ${name}! 🎉\n\nThank you for registering with us. We're here to help you with all your visa and travel needs.\n\nFor any assistance, contact us anytime.\n\nHappy Travels! ✈️`;
-    sendNotifications(email, mobile, 'welcome', { userName: name }, welcomeMessage);
+    // Send welcome notifications
+    sendNotifications(email, mobile, 'welcome', { userName: name }, 'welcome', { userName: name  });
     
     res.status(201).json({
       message: 'Registration successful',

@@ -1,15 +1,4 @@
-const whatsappService = require('../services/whatsappService');
+// This controller is deprecated - WhatsApp functionality moved to whatsappService
+// All WhatsApp messages now use MSG91 templates through the service layer
 
-const sendNotification = async (mobile, messageText, fileUrl = '') => {
-  try {
-    const result = await whatsappService.sendMessage(mobile, messageText, fileUrl);
-    return result;
-  } catch (error) {
-    console.error('WhatsApp notification error:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-module.exports = {
-  sendNotification
-};
+module.exports = {};

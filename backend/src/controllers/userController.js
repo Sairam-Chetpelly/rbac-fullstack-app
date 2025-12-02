@@ -3,6 +3,7 @@ const Role = require('../models/Role');
 const Status = require('../models/Status');
 const { generateDefaultPassword } = require('../utils/passwordGenerator');
 const { sendEmail } = require('../services/emailService');
+const { sendNotifications } = require('../services/notificationService');
 
 const getUsers = async (req, res) => {
   try {
@@ -93,16 +94,16 @@ const createUser = async (req, res) => {
     
     const populatedUser = await User.findById(user._id).populate('role').populate('status');
 
-    // Send welcome email with login credentials
-    try {
-      await sendEmail(email, 'accountCreated', {
-        userName: name,
-        email: email,
-        password: defaultPassword
-      });
-    } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
-    }
+    // Send welcome notifications with login credentials
+    sendNotifications(email, mobile, 'accountCreated', {
+      userName: name,
+      email: email,
+      password: defaultPassword
+    }, 'accountCreated', {
+      name: name,
+      email: email,
+      password: defaultPassword
+    });
 
     res.status(201).json({
       message: 'User created successfully and welcome email sent',
@@ -198,23 +199,15 @@ const updateUser = async (req, res) => {
       const newStatus = user.status.name;
       
       if (oldStatus !== newStatus) {
-        try {
-          if (oldStatus === 'inactive' && newStatus === 'active') {
-            // Agent activated
-            sendEmail(user.email, 'agentActivated', {
-              userName: user.name,
-              companyName: user.companyName
-            });
-          } else if (oldStatus === 'active' && newStatus === 'inactive') {
-            // Agent deactivated
-            sendEmail(user.email, 'agentDeactivated', {
-              userName: user.name,
-              companyName: user.companyName,
-              reason: 'Account deactivated by administrator'
-            });
-          }
-        } catch (emailError) {
-          console.error('Failed to send agent status change email:', emailError);
+        if (oldStatus === 'inactive' && newStatus === 'active') {
+          // Agent activated
+          sendNotifications(user.email, user.mobile, 'agentActivated', {
+            userName: user.name,
+            companyName: user.companyName
+          }, 'agentActivated', {
+            name: user.name,
+            company: user.companyName
+          });
         }
       }
     }

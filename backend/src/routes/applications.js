@@ -10,6 +10,7 @@ const Payment = require('../models/Payment');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
 const { sendEmail, sendAdminNotification } = require('../services/emailService');
+const { sendNotifications } = require('../services/notificationService');
 const { fromIST } = require('../utils/dateUtils');
 const { uploads } = require('../middleware/universalUpload');
 
@@ -129,13 +130,19 @@ router.put('/:id/assign', auth, role(['admin', 'manager']), async (req, res) => 
       });
       
       // Send notification to customer about assigned agent
-      sendEmail(application.user.email, 'agentAssigned', {
+      sendNotifications(application.user.email, application.user.mobile, 'agentAssigned', {
         userName: application.user.name,
         applicationNumber: application.applicationNumber,
         agentName: employee.name,
         agentEmail: employee.email,
         agentMobile: employee.mobile || 'Not provided',
         visaType: application.countryVisaType?.country?.name || 'Visa Application'
+      }, 'agentAssigned', {
+        name: application.user.name,
+        agentName: employee.name,
+        appId: application.applicationNumber,
+        email: employee.email,
+        agentMobile: employee.mobile || 'Not provided'
       });
     }
     
@@ -565,12 +572,17 @@ router.put('/:id/status', auth, role(['admin','employee']), upload.fields([{ nam
         hasCourierFiles: courierFiles.length > 0
       }, courierAttachments);
     } else {
-      // Regular status update email
-      sendEmail(application.user.email, 'statusUpdate', {
+      // Regular status update notifications
+      sendNotifications(application.user.email, application.user.mobile, 'statusUpdate', {
         userName: application.user.name,
         applicationId: application.applicationNumber,
         status: statusDoc.name,
         remarks: remarks
+      }, 'statusUpdate', {
+        name: application.user.name,
+        appId: application.applicationNumber,
+        status: statusDoc.name,
+        remarks: remarks || ''
       });
       
       // Email to admin
@@ -585,10 +597,14 @@ router.put('/:id/status', auth, role(['admin','employee']), upload.fields([{ nam
 
     // Send embassy visit notification if date is set
     if (embassyVisitDateTime) {
-      sendEmail(application.user.email, 'embassyVisitScheduled', {
+      sendNotifications(application.user.email, application.user.mobile, 'embassyVisitScheduled', {
         userName: application.user.name,
         applicationId: application.applicationNumber,
         visitDateTime: embassyVisitDateTime
+      }, 'embassyScheduled', {
+        name: application.user.name,
+        appId: application.applicationNumber,
+        dateTime: embassyVisitDateTime
       });
       
       sendAdminNotification('embassyVisitScheduled', {
@@ -631,12 +647,16 @@ router.put('/:id/payment', auth, role(['admin', 'employee']), async (req, res) =
       .populate('user', 'name email');
     
     if (application && status === 'success') {
-      // Send payment confirmation email
-      await sendEmail(application.user.email, 'paymentConfirmed', {
+      // Send payment confirmation notifications
+      sendNotifications(application.user.email, application.user.mobile, 'paymentConfirmed', {
         userName: application.user.name,
         applicationNumber: application.applicationNumber,
         amount: payment.amount,
         transactionId: payment.transactionId
+      }, 'paymentConfirmed', {
+        name: application.user.name,
+        amount: payment.amount,
+        appId: application.applicationNumber
       });
     }
     

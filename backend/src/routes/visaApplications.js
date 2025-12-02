@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const auth = require('../middleware/auth');
 const { sendEmail, sendAdminNotification } = require('../services/emailService');
+const { sendNotifications } = require('../services/notificationService');
 const compressImage = require('../middleware/imageCompression');
 const compressMultipleImages = require('../middleware/imageCompressionMultiple');
 const User = require('../models/User');
@@ -234,12 +235,15 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
       await ApplicationAnswer.insertMany(answers);
     }
     
-    // Send draft creation email
+    // Send draft creation notifications
     const User = require('../models/User');
     const user = await User.findById(req.user._id);
-    await sendEmail(user.email, 'draftCreated', { 
+    sendNotifications(user.email, user.mobile, 'draftCreated', { 
       userName: user.name, 
       applicationId: application.applicationNumber 
+    }, 'draftSaved', {
+      name: user.name,
+      appId: application.applicationNumber
     });
     
     res.json({ 
@@ -462,13 +466,16 @@ router.post('/visa-applications/submit-without-payment', auth, async (req, res) 
       });
     }
     
-    // Send application submission emails
+    // Send application submission notifications
     const user = userData;
     
-    // Email to customer
-    sendEmail(user.email, 'applicationSubmitted', { 
+    // Notifications to customer
+    sendNotifications(user.email, user.mobile, 'applicationSubmitted', { 
       userName: user.name, 
       applicationId: application.applicationNumber 
+    }, 'applicationSubmitted', {
+      name: user.name,
+      appId: application.applicationNumber
     });
     
     // Email to admin
@@ -593,14 +600,17 @@ router.post('/visa-applications/submit', auth, upload.any(), compressMultipleIma
     });
     await payment.save();
     
-    // Send application submission emails
+    // Send application submission notifications
     const User = require('../models/User');
     const user = await User.findById(req.user._id);
     
-    // Email to customer
-    await sendEmail(user.email, 'applicationSubmitted', { 
+    // Notifications to customer
+    sendNotifications(user.email, user.mobile, 'applicationSubmitted', { 
       userName: user.name, 
       applicationId: application.applicationNumber 
+    }, 'applicationSubmitted', {
+      name: user.name,
+      appId: application.applicationNumber
     });
     
     // Email to admin
