@@ -61,7 +61,7 @@ const CustomerLayout = ({ children }) => {
             </div>
             <div className="flex-1 flex justify-center">
               <Link href="/" className="flex items-center">
-                <img src="/optionslogo.png" alt="Logo" className="h-8 sm:h-10 w-auto" />
+                <img src="/optionslogo.png" alt="Logo" className="h-20 sm:h-20 w-auto" />
               </Link>
             </div>
             <div className="flex items-center gap-2">

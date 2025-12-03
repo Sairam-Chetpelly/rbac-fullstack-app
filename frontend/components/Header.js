@@ -50,7 +50,7 @@ const Header = ({ sidebarWidth, isMobile, onToggleSidebar }) => {
               </button>
             )}
             
-            <img src="/optionslogo.png" alt="Logo" className="" />
+            <img src="/optionslogo.png" alt="Logo" className="h-20" />
 
           </div>
           

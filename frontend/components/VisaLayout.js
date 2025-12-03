@@ -46,11 +46,11 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
             {/* Logo - left on homepage, center on other pages */}
             {isHomePage ? (
               <div className="flex items-center space-x-2">
-                <img src="/optionslogo.png" alt="One World Visa Logo" className="" />
+                <img src="/optionslogo.png" alt="One World Visa Logo" className="h-20" />
               </div>
             ) : (
               <div className="absolute left-1/2 transform -translate-x-1/2">
-                <img src="/optionslogo.png" alt="One World Visa Logo" className="" />
+                <img src="/optionslogo.png" alt="One World Visa Logo" className="h-20" />
               </div>
             )}
 
@@ -182,7 +182,7 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
-                <img src="/optionslogo.png" alt="One World Visa Logo" className="" />
+                <img src="/optionslogo.png" alt="One World Visa Logo" className="h-20" />
               </div>
               <p className="text-black-400 mb-4 text-sm sm:text-base">
                 Travel helps companies manage payments easily.

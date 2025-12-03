@@ -199,7 +199,7 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
       {!isCollapsed && (
         <div className="mt-4 p-4 lg:p-6 bg-white/5 rounded-2xl backdrop-blur-sm border border-white/10 flex-shrink-0 mx-3 lg:mx-6">
           <div className="text-center">
-            <img src="/optionslogo.png" alt="Logo" className="w-100 lg:w-100 mx-auto mb-2" />
+            <img src="/optionslogo.png" alt="Logo" className="w-100 h-20 lg:w-100 mx-auto mb-2" />
           </div>
         </div>
       )}

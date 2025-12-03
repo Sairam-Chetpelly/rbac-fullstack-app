@@ -84,7 +84,7 @@ export default function ResetPassword() {
       >
         {/* Logo - Centered */}
         <div className="mb-8">
-          <img src="/optionslogo.png" alt="One World Visa" className="h-16 w-auto mx-auto" />
+          <img src="/optionslogo.png" alt="One World Visa" className="h-20 w-auto mx-auto" />
         </div>
 
         {/* Main Image */}
@@ -105,7 +105,7 @@ export default function ResetPassword() {
       <div className="flex-1 bg-white flex flex-col justify-center items-center p-8">
         {/* Mobile Logo - Only visible on mobile */}
         <div className="md:hidden mb-8 text-center">
-          <img src="/optionslogo.png" alt="One World Visa" className="h-16 w-auto mx-auto" />
+          <img src="/optionslogo.png" alt="One World Visa" className="h-20 w-auto mx-auto" />
           <p className="mt-4 text-sm text-gray-600">Trusted Visa Assistance for Global Travel Needs</p>
         </div>
         
