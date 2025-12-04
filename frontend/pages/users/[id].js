@@ -242,7 +242,7 @@ export default function ViewUser() {
                       {userData.panCardPhoto && (
                         <button
                           onClick={() => viewFile(userData.panCardPhoto)}
-                          className="text-blue-600 hover:underline text-sm cursor-pointer"
+                          className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer transition-colors"
                         >
                           📄 View PAN Card
                         </button>
@@ -257,7 +257,7 @@ export default function ViewUser() {
                       {userData.gstFile && (
                         <button
                           onClick={() => viewFile(userData.gstFile)}
-                          className="text-blue-600 hover:underline text-sm cursor-pointer"
+                          className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer transition-colors"
                         >
                           📄 View GST Certificate
                         </button>
@@ -272,7 +272,7 @@ export default function ViewUser() {
                       {userData.aadhaarFile && (
                         <button
                           onClick={() => viewFile(userData.aadhaarFile)}
-                          className="text-blue-600 hover:underline text-sm cursor-pointer"
+                          className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer transition-colors"
                         >
                           🆔 View Aadhaar Card
                         </button>
@@ -287,7 +287,7 @@ export default function ViewUser() {
                       {userData.msmeFile && (
                         <button
                           onClick={() => viewFile(userData.msmeFile)}
-                          className="text-blue-600 hover:underline text-sm cursor-pointer"
+                          className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer transition-colors"
                         >
                           🏭 View MSME Certificate
                         </button>
@@ -300,7 +300,7 @@ export default function ViewUser() {
                       <label className="block text-sm font-semibold text-gray-500 mb-1">Bank Details</label>
                       <button
                         onClick={() => viewFile(userData.cancelledChequeFile)}
-                        className="text-blue-600 hover:underline text-sm cursor-pointer"
+                        className="text-blue-600 hover:text-blue-800 text-sm cursor-pointer transition-colors"
                       >
                         🏦 View Cancelled Cheque
                       </button>

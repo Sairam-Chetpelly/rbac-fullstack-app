@@ -304,17 +304,13 @@ export default function Applications() {
       key: 'status',
       label: 'Status',
       render: (value, row) => (
-        <div className="flex items-center gap-2">
-          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(value)}`}>
-            {value?.name?.toUpperCase() || 'UNKNOWN'}
-          </span>
-          <button
-            onClick={() => setStatusModal({ isOpen: true, applicationId: row._id, currentStatus: value })}
-            className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
-          >
-            Change
-          </button>
-        </div>
+        <button
+          onClick={() => setStatusModal({ isOpen: true, applicationId: row._id, currentStatus: value })}
+          className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(value)} hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1`}
+        >
+          <span className="text-xs">✏️</span>
+          {value?.name?.toUpperCase() || 'UNKNOWN'}
+        </button>
       )
     },
     {
@@ -332,25 +328,21 @@ export default function Applications() {
         };
         
         return (
-          <div className="flex items-center gap-2">
-            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(value || 'pending')}`}>
-              {(value || 'pending').toUpperCase()}
-            </span>
-            <button
-              onClick={async () => {
-                try {
-                  const response = await api.get(`/applications/${row._id}`);
-                  setPaymentModal({ isOpen: true, applicationId: row._id, payment: response.data.payment });
-                } catch (error) {
-                  console.error('Error fetching payment:', error);
-                  setPaymentModal({ isOpen: true, applicationId: row._id, payment: null });
-                }
-              }}
-              className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
-            >
-              Update
-            </button>
-          </div>
+          <button
+            onClick={async () => {
+              try {
+                const response = await api.get(`/applications/${row._id}`);
+                setPaymentModal({ isOpen: true, applicationId: row._id, payment: response.data.payment });
+              } catch (error) {
+                console.error('Error fetching payment:', error);
+                setPaymentModal({ isOpen: true, applicationId: row._id, payment: null });
+              }
+            }}
+            className={`px-2 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(value || 'pending')} hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1`}
+          >
+            <span className="text-xs">✏️</span>
+            {(value || 'pending').toUpperCase()}
+          </button>
         );
       }
     },
@@ -372,17 +364,13 @@ export default function Applications() {
         key: 'assignedTo',
         label: 'Assigned To',
         render: (value, row) => (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-600">
-              {value?.name || 'Unassigned'}
-            </span>
-            <button
-              onClick={() => setAssignModal({ isOpen: true, applicationId: row._id, currentEmployee: value })}
-              className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded hover:bg-green-200"
-            >
-              {value ? 'Reassign' : 'Assign'}
-            </button>
-          </div>
+          <button
+            onClick={() => setAssignModal({ isOpen: true, applicationId: row._id, currentEmployee: value })}
+            className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full hover:bg-gray-200 transition-colors cursor-pointer font-medium flex items-center gap-1"
+          >
+            <span className="text-xs">✏️</span>
+            {value?.name || 'Unassigned'}
+          </button>
         )
       }, ...baseColumns.slice(-2)]
     : baseColumns;
@@ -422,7 +410,7 @@ export default function Applications() {
       <Card className="mb-6">
         <div className="space-y-4">
           {/* Search and Quick Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
+          <div className="flex sm:flex-row gap-4 items-center">
             <div className="flex-1">
               <input
                 type="text"
@@ -449,9 +437,6 @@ export default function Applications() {
                   Clear
                 </button>
               )}
-              <span className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
-                Total: {filteredApplications.length}
-              </span>
             </div>
           </div>
 
@@ -775,6 +760,16 @@ export default function Applications() {
             </div>
           )}
         </>
+      )}
+      
+      {!loading && filteredApplications.length === 0 && (
+        <Card>
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No applications found</h3>
+            <p className="text-gray-600">Try adjusting your search criteria or filters</p>
+          </div>
+        </Card>
       )}
       
       <StatusModal

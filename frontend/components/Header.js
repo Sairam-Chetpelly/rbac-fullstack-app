@@ -34,36 +34,37 @@ const Header = ({ sidebarWidth, isMobile, onToggleSidebar }) => {
 
   return (
     <header 
-      className="bg-white border-b border-gray-200 shadow-lg fixed top-0 right-0 z-40"
+      className="bg-white border-b border-gray-200 shadow-sm fixed top-0 right-0 z-50"
       style={{ left: isMobile ? '0' : sidebarWidth }}
     >
-      <div className="px-4 py-2 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 lg:h-20">
-          <div className="flex items-center gap-3 lg:gap-4">
-            {/* Mobile menu button */}
-            {isMobile && (
-              <button
-                onClick={onToggleSidebar}
-                className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-200 hover:scale-110 active:scale-95"
-              >
-                <span className="text-gray-600 text-xl">☰</span>
-              </button>
-            )}
-            
-            <img src="/optionslogo.png" alt="Logo" className="h-20" />
-
+      <div className="px-3 sm:px-4 lg:px-6 xl:px-8 py-2">
+        <div className="flex items-center h-16 sm:h-18 lg:h-20 relative">
+          {/* Mobile menu button - Left */}
+          {isMobile && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-200 hover:scale-110 active:scale-95 absolute left-0"
+            >
+              <span className="text-gray-600 text-xl">☰</span>
+            </button>
+          )}
+          
+          {/* Logo - Center */}
+          <div className="flex-1 flex justify-center">
+            <img src="/optionslogo.png" alt="Logo" className="h-12 sm:h-16 lg:h-20" />
           </div>
           
-          <div className="relative" ref={profileRef}>
+          {/* Profile - Right */}
+          <div className="relative absolute right-0" ref={profileRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="profile-button flex items-center gap-2 lg:gap-3 p-2 lg:p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all duration-200 hover:scale-105 active:scale-95 border border-gray-200"
+              className="profile-button flex items-center gap-2 lg:gap-3 p-2 lg:p-3 rounded-xl bg-gray-50 hover:bg-blue-50 transition-all duration-200 hover:scale-105 active:scale-95 border border-gray-200 hover:border-blue-300"
             >
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-r from-orange-500 to-amber-600 rounded-lg lg:rounded-xl flex items-center justify-center text-white text-sm lg:text-base font-bold">
+              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-blue-600 rounded-lg lg:rounded-xl flex items-center justify-center text-white text-sm lg:text-base font-bold">
                 {user?.name?.charAt(0)?.toUpperCase()}
               </div>
               <div className="text-left hidden sm:block">
-                <p className="text-gray-800 font-semibold text-sm lg:text-base truncate max-w-32">{user?.name}</p>
+                <p className="text-gray-800 font-semibold text-sm lg:text-base truncate max-w-24 sm:max-w-32">{user?.name}</p>
                 <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getRoleColor(user?.role)}`}>
                   {user?.role?.toUpperCase()}
                 </span>

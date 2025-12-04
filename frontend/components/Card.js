@@ -2,16 +2,16 @@ const Card = ({ children, title, className = '', icon, actions, variant = 'defau
   const isGlass = className.includes('bg-white/10') || className.includes('backdrop-blur');
   
   const cardClasses = isGlass 
-    ? `bg-white/10 backdrop-blur-xl shadow-xl rounded-2xl border border-white/20 hover:shadow-2xl transition-all duration-300`
-    : `bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100 hover:shadow-2xl transition-all duration-300`;
+    ? `bg-white/10 backdrop-blur-xl shadow-md rounded-2xl border border-white/20 transition-all duration-300`
+    : `bg-white shadow-sm rounded-2xl border border-gray-200 transition-all duration-300 relative overflow-hidden`;
     
   const headerClasses = isGlass
     ? `px-8 py-6 border-b border-white/20 bg-white/5 rounded-t-2xl`
-    : `px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl`;
+    : `px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-200 bg-gray-50 rounded-t-2xl relative`;
     
   const titleClasses = isGlass
     ? `text-xl font-bold text-white`
-    : `text-xl font-bold text-gray-900`;
+    : `text-xl font-bold text-gray-800`;
 
   return (
     <div className={`${cardClasses} ${className}`}>
@@ -26,7 +26,8 @@ const Card = ({ children, title, className = '', icon, actions, variant = 'defau
           </div>
         </div>
       )}
-      <div className="px-8 py-6">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative">
+        {!isGlass && <div className="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>}
         {children}
       </div>
     </div>

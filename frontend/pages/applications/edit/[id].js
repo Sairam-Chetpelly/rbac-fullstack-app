@@ -433,7 +433,7 @@ const EditApplication = () => {
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                  className="btn-primary flex items-center gap-2"
                 >
                   <Save className="h-4 w-4" />
                   {saving ? 'Saving...' : 'Save Changes'}
@@ -814,7 +814,7 @@ const EditApplication = () => {
                 <h3 className="text-lg font-semibold text-gray-900">{fileModal.fileName}</h3>
                 <button 
                   onClick={() => setFileModal({ show: false, url: '', fileName: '', type: '' })}
-                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                  className="btn-secondary text-sm"
                 >
                   Close
                 </button>

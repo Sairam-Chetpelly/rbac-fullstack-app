@@ -38,29 +38,30 @@ const SearchFilters = ({ onSearch, onFilter, onClear, filters = {}, searchPlaceh
   const hasActiveFilters = Object.keys(activeFilters).length > 0 || searchTerm;
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
+    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Search Input */}
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
           <input
             type="text"
             placeholder={searchPlaceholder}
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
           />
         </div>
 
         {/* Filter Toggle */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+          className="flex items-center px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 font-medium transition-colors min-w-fit"
         >
           <Filter className="h-4 w-4 mr-2" />
-          Filters
+          <span className="hidden sm:inline">Filters</span>
+          <span className="sm:hidden">Filter</span>
           {Object.keys(activeFilters).length > 0 && (
-            <span className="ml-2 bg-orange-500 text-white text-xs rounded-full px-2 py-1">
+            <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
               {Object.keys(activeFilters).length}
             </span>
           )}
@@ -70,24 +71,24 @@ const SearchFilters = ({ onSearch, onFilter, onClear, filters = {}, searchPlaceh
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800"
+            className="flex items-center px-4 py-3 text-gray-600 font-medium transition-colors min-w-fit"
           >
             <X className="h-4 w-4 mr-1" />
-            Clear
+            <span className="hidden sm:inline">Clear</span>
           </button>
         )}
       </div>
 
       {/* Filter Options */}
       {showFilters && (
-        <div className="mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mt-6 pt-6 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filters.status && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
               <select
                 value={activeFilters.status || ''}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
               >
                 <option value="">All Status</option>
                 {filters.status.map(status => (
@@ -99,11 +100,11 @@ const SearchFilters = ({ onSearch, onFilter, onClear, filters = {}, searchPlaceh
 
           {filters.country && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
               <select
                 value={activeFilters.country || ''}
                 onChange={(e) => handleFilterChange('country', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
               >
                 <option value="">All Countries</option>
                 {filters.country.map(country => (
@@ -115,11 +116,11 @@ const SearchFilters = ({ onSearch, onFilter, onClear, filters = {}, searchPlaceh
 
           {filters.dateRange && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Date Range</label>
               <select
                 value={activeFilters.dateRange || ''}
                 onChange={(e) => handleFilterChange('dateRange', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
               >
                 <option value="">All Time</option>
                 <option value="today">Today</option>
