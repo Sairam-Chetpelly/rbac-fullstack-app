@@ -29,7 +29,7 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
       {/* Header */}
       <header className="bg-white/10 backdrop-blur-md sticky top-0 z-50" style={{ boxShadow: "0 2px 2px 2px rgba(255, 255, 255, 0.3)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-4 relative">
+          <div className="flex items-center py-4">
             {/* Left section */}
             <div className="flex items-center space-x-4">
               {showBackButton && (
@@ -41,55 +41,52 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
                   Back
                 </button>
               )}
+              {isHomePage && (
+                <img src="/optionslogo.png" alt="One World Visa Logo" className="h-20" />
+              )}
             </div>
 
-            {/* Logo - left on homepage, center on other pages */}
-            {isHomePage ? (
-              <div className="flex items-center space-x-2">
+            {/* Center spacer/logo */}
+            <div className="flex-1 flex justify-center">
+              {!isHomePage && (
                 <img src="/optionslogo.png" alt="One World Visa Logo" className="h-20" />
-              </div>
-            ) : (
-              <div className="absolute left-1/2 transform -translate-x-1/2">
-                <img src="/optionslogo.png" alt="One World Visa Logo" className="h-20" />
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Right section - spacer to balance layout */}
-            <div className="flex-1"></div>
+            {/* Right section */}
+            <div className="flex items-center">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className="md:hidden flex items-center justify-center p-2 rounded-md text-gray-700 hover:bg-gray-100"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  {showMobileMenu ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
 
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="md:hidden flex items-center justify-center p-2 rounded-md text-gray-700 hover:bg-gray-100"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {showMobileMenu ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              {/* Desktop navigation */}
+              <div className="hidden md:flex items-center space-x-4">
+                {!user ? (
+                  <Button
+                    onClick={handleGetStarted}
+                    className="px-4 py-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-lg hover:from-blue-500 hover:to-purple-600 transition-all"
+                  >
+                    Get Started
+                  </Button>
                 ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
-
-            {/* Desktop navigation */}
-            <div className="hidden md:flex items-center space-x-4">
-              {!user ? (
-                <Button
-                  onClick={handleGetStarted}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-lg hover:from-blue-500 hover:to-purple-600 transition-all"
-                >
-                  Get Started
-                </Button>
-              ) : (
-                <>
                   <Button
                     onClick={handleGetStarted}
                     className="px-4 py-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-lg hover:from-blue-500 hover:to-purple-600 transition-all"
                   >
                     Dashboard
                   </Button>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -126,7 +123,7 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
 
       {/* Hero Section */}
       {showHero && (
-        <section className="relative pt-20 -mt-28 bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500">
+        <section className="relative pt-20 -mt-28 bg-gradient-to-r from-blue-500 to-orange-400">
           <div className="absolute inset-0 bg-black opacity-20"></div>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex lg:grid-cols-2 gap-12 items-center py-20">

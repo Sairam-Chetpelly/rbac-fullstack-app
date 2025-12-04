@@ -34,19 +34,19 @@ const Header = ({ sidebarWidth, isMobile, onToggleSidebar }) => {
 
   return (
     <header 
-      className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-2xl fixed top-0 right-0 z-40"
+      className="bg-white border-b border-gray-200 shadow-lg fixed top-0 right-0 z-40"
       style={{ left: isMobile ? '0' : sidebarWidth }}
     >
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className="px-4 py-2 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 lg:h-20">
           <div className="flex items-center gap-3 lg:gap-4">
             {/* Mobile menu button */}
             {isMobile && (
               <button
                 onClick={onToggleSidebar}
-                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-110 active:scale-95"
+                className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all duration-200 hover:scale-110 active:scale-95"
               >
-                <span className="text-white text-xl">☰</span>
+                <span className="text-gray-600 text-xl">☰</span>
               </button>
             )}
             
@@ -57,18 +57,18 @@ const Header = ({ sidebarWidth, isMobile, onToggleSidebar }) => {
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="profile-button flex items-center gap-2 lg:gap-3 p-2 lg:p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-105 active:scale-95"
+              className="profile-button flex items-center gap-2 lg:gap-3 p-2 lg:p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all duration-200 hover:scale-105 active:scale-95 border border-gray-200"
             >
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg lg:rounded-xl flex items-center justify-center text-white text-sm lg:text-base font-bold">
+              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-r from-orange-500 to-amber-600 rounded-lg lg:rounded-xl flex items-center justify-center text-white text-sm lg:text-base font-bold">
                 {user?.name?.charAt(0)?.toUpperCase()}
               </div>
               <div className="text-left hidden sm:block">
-                <p className="text-white font-semibold text-sm lg:text-base truncate max-w-32">{user?.name}</p>
+                <p className="text-gray-800 font-semibold text-sm lg:text-base truncate max-w-32">{user?.name}</p>
                 <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getRoleColor(user?.role)}`}>
                   {user?.role?.toUpperCase()}
                 </span>
               </div>
-              <span className="text-white text-sm lg:text-base">▼</span>
+              <span className="text-gray-600 text-sm lg:text-base">▼</span>
             </button>
 
             {showProfileMenu && (
