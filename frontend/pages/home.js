@@ -93,7 +93,7 @@ const VisaFlowHomepage = () => {
             
             {/* Region Filter Sidebar - Desktop */}
             <div className="hidden lg:block w-64 flex-shrink-0">
-              <div className="max-w-sm mx-auto sticky top-24 mt-6">
+              <div className="max-w-sm mx-auto sticky top-24">
                 <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden">
                   {availableContinents.map((continent, index) => (
                     <div key={continent}>

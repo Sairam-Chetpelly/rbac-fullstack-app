@@ -377,22 +377,45 @@ router.put('/:id', auth, role(['admin', 'employee']), async (req, res) => {
     // Update application answers
     if (answers && Array.isArray(answers)) {
       for (const answer of answers) {
-        const updateData = {};
-        if (answer.answerText !== undefined) {
-          updateData.answerText = answer.answerText;
+        // Skip temporary IDs (new file uploads)
+        if (answer._id && answer._id.startsWith('temp-')) {
+          // Create new answer for newly uploaded files
+          const newAnswer = {
+            application: req.params.id,
+            field: answer.field._id || answer.field,
+            applicantIndex: answer.applicantIndex || 0
+          };
+          
+          if (answer.answerText !== undefined) {
+            newAnswer.answerText = answer.answerText;
+          }
+          if (answer.answerFile !== undefined) {
+            newAnswer.answerFile = answer.answerFile;
+          }
+          if (answer.answerFiles !== undefined) {
+            newAnswer.answerFiles = answer.answerFiles;
+          }
+          
+          await ApplicationAnswer.create(newAnswer);
+        } else if (answer._id) {
+          // Update existing answer
+          const updateData = {};
+          if (answer.answerText !== undefined) {
+            updateData.answerText = answer.answerText;
+          }
+          if (answer.answerFile !== undefined) {
+            updateData.answerFile = answer.answerFile;
+          }
+          if (answer.answerFiles !== undefined) {
+            updateData.answerFiles = answer.answerFiles;
+          }
+          
+          await ApplicationAnswer.findByIdAndUpdate(
+            answer._id,
+            updateData,
+            { new: true }
+          );
         }
-        if (answer.answerFile !== undefined) {
-          updateData.answerFile = answer.answerFile;
-        }
-        if (answer.answerFiles !== undefined) {
-          updateData.answerFiles = answer.answerFiles;
-        }
-        
-        await ApplicationAnswer.findByIdAndUpdate(
-          answer._id,
-          updateData,
-          { new: true }
-        );
       }
     }
 

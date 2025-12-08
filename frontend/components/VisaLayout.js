@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { ArrowLeft, Mail, Phone, MapPin, Plane, Clock, Globe } from 'lucide-react';
 import Button from './Button';
@@ -9,6 +9,15 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
   const router = useRouter();
   const { user } = useAuth();
   const isHomePage = router.pathname === '/' || router.pathname === '/home';
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleGetStarted = () => {
     if (user) {
@@ -29,7 +38,7 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
       {/* Header */}
       <header className="bg-white/10 backdrop-blur-md sticky top-0 z-50" style={{ boxShadow: "0 2px 2px 2px rgba(255, 255, 255, 0.3)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-4">
+          <div className="flex items-center py-2">
             {/* Left section */}
             <div className="flex items-center space-x-4">
               {showBackButton && (
@@ -42,7 +51,7 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
                 </button>
               )}
               {isHomePage && (
-                  <img src="/optionslogo.png" alt="One World Visa Logo" className="h-20" />
+                  <img src="/optionslogo.png" alt="One World Visa Logo" className={`transition-all duration-300 ${scrolled ? 'h-12' : 'h-20'}`} />
               )}
             </div>
 
@@ -50,7 +59,7 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
             <div className="flex-1 flex justify-center">
               {!isHomePage && (
                 <Link href="/" className="flex items-center">
-                  <img src="/optionslogo.png" alt="One World Visa Logo" className="h-20" />
+                  <img src="/optionslogo.png" alt="One World Visa Logo" className={`transition-all duration-300 ${scrolled ? 'h-12' : 'h-20'}`} />
                 </Link>    
                           )}
             </div>
