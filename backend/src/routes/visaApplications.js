@@ -126,7 +126,7 @@ router.post('/visa-applications/upload', auth, upload.array('files', 10), compre
 // Save visa application draft
 router.post('/visa-applications/draft', auth, async (req, res) => {
   try {
-    const { visaTypeId, formData, applicationType = 'individual', numberOfApplicants = 1 } = req.body;
+    const { visaTypeId, formData, applicationType = 'individual', numberOfApplicants = 1, relationships = [] } = req.body;
     
     console.log('Draft request - User:', req.user);
     console.log('Draft request - Body:', { visaTypeId, formData, applicationType, numberOfApplicants });
@@ -164,7 +164,7 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
       applicants.push({
         application: application._id,
         applicantIndex: i,
-        relationship: 'self'
+        relationship: relationships[i] || 'self'
       });
     }
     await Applicant.insertMany(applicants);

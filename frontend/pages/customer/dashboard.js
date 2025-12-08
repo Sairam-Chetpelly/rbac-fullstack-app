@@ -105,20 +105,6 @@ export default function CustomerDashboard() {
             </div>
           </Link>
 
-          <Link href="/customer/notifications">
-            <div className="bg-orange-50 p-6 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Bell className="w-6 h-6 text-orange-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Notifications</h3>
-                  <p className="text-gray-600 text-sm">View notifications</p>
-                </div>
-              </div>
-            </div>
-          </Link>
-
           <Link href="/customer/help">
             <div className="bg-green-50 p-6 rounded-lg cursor-pointer hover:bg-green-100 transition-colors">
               <div className="flex items-center gap-4">

@@ -78,12 +78,12 @@ export default function CustomerProfile() {
         <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
         
         <div className="bg-white rounded-lg border p-6">
-          <div className="flex items-center gap-6 mb-6">
-            <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 mb-6">
+            <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
               <User className="w-12 h-12 text-gray-500" />
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <h3 className="text-xl font-semibold">{user?.name}</h3>
                 {user?.isAgent && (
                   <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">
@@ -91,10 +91,10 @@ export default function CustomerProfile() {
                   </span>
                 )}
               </div>
-              <p className="text-gray-600">{user?.email}</p>
+              <p className="text-gray-600 truncate">{user?.email}</p>
               <p className="text-sm text-gray-500">Role: {user?.role}</p>
             </div>
-            <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
+            <Button variant="outline" onClick={() => setIsEditing(!isEditing)} className="w-full sm:w-auto flex-shrink-0">
               <Edit className="w-4 h-4 mr-2" />
               {isEditing ? 'Cancel' : 'Edit Profile'}
             </Button>

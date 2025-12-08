@@ -19,6 +19,29 @@ export default function ViewApplication() {
   const [fileModal, setFileModal] = useState({ show: false, url: '', fileName: '', type: '' });
 
   useEffect(() => {
+    const header = document.querySelector('header');
+    
+    if (fileModal.show) {
+      if (header) {
+        header.style.zIndex = '-1';
+        header.style.visibility = 'hidden';
+      }
+    } else {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+    }
+    
+    return () => {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+    };
+  }, [fileModal.show]);
+
+  useEffect(() => {
     if (id) {
       fetchApplicationDetails();
     }

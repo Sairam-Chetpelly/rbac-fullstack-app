@@ -34,7 +34,7 @@ const Header = ({ sidebarWidth, isMobile, onToggleSidebar }) => {
 
   return (
     <header 
-      className="bg-white border-b border-gray-200 shadow-sm fixed top-0 right-0 z-50"
+      className="bg-white border-b border-gray-200 shadow-sm fixed top-0 right-0 z-40"
       style={{ left: isMobile ? '0' : sidebarWidth }}
     >
       <div className="px-3 sm:px-4 lg:px-6 xl:px-8 py-2">
