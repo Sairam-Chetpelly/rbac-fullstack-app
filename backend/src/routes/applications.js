@@ -13,6 +13,7 @@ const { sendEmail, sendAdminNotification } = require('../services/emailService')
 const { sendNotifications } = require('../services/notificationService');
 const { fromIST } = require('../utils/dateUtils');
 const { uploads } = require('../middleware/universalUpload');
+const json2csv = require('json2csv').parse;
 
 const router = express.Router();
 
@@ -664,6 +665,75 @@ router.put('/:id/payment', auth, role(['admin', 'employee']), async (req, res) =
   } catch (error) {
     console.error('Error updating payment status:', error);
     res.status(500).json({ message: 'Error updating payment status', error: error.message });
+  }
+});
+
+// Export applications data
+router.get('/export/csv', auth, role(['admin', 'manager']), async (req, res) => {
+  try {
+    const applications = await Application.find({ deletedAt: null })
+      .populate('user', 'name email mobile')
+      .populate('status', 'name')
+      .populate('assignedTo', 'name email')
+      .populate({
+        path: 'countryVisaType',
+        populate: [
+          { path: 'country', select: 'name' },
+          { path: 'visaType', select: 'name' }
+        ]
+      })
+      .lean();
+
+    // Get payment data for each application
+    const applicationsWithPayments = await Promise.all(
+      applications.map(async (app) => {
+        const payment = await Payment.findOne({ application: app._id }).lean();
+        return {
+          applicationNumber: app.applicationNumber,
+          customerName: app.user?.name || 'N/A',
+          customerEmail: app.user?.email || 'N/A',
+          customerMobile: app.user?.mobile || 'N/A',
+          country: app.countryVisaType?.country?.name || 'N/A',
+          visaType: app.countryVisaType?.visaType?.name || 'N/A',
+          status: app.status?.name || 'N/A',
+          assignedTo: app.assignedTo?.name || 'Unassigned',
+          assignedEmail: app.assignedTo?.email || 'N/A',
+          paymentStatus: payment?.status || 'pending',
+          paymentAmount: payment?.amount || 0,
+          transactionId: payment?.transactionId || 'N/A',
+          submittedAt: app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : 'Not submitted',
+          createdAt: new Date(app.createdAt).toLocaleDateString(),
+          embassyVisitDateTime: app.embassyVisitDateTime ? new Date(app.embassyVisitDateTime).toLocaleString() : 'Not scheduled'
+        };
+      })
+    );
+
+    const fields = [
+      'applicationNumber',
+      'customerName', 
+      'customerEmail',
+      'customerMobile',
+      'country',
+      'visaType',
+      'status',
+      'assignedTo',
+      'assignedEmail',
+      'paymentStatus',
+      'paymentAmount',
+      'transactionId',
+      'submittedAt',
+      'createdAt',
+      'embassyVisitDateTime'
+    ];
+
+    const csv = json2csv(applicationsWithPayments, { fields });
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=applications-${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csv);
+  } catch (error) {
+    console.error('Error exporting applications:', error);
+    res.status(500).json({ message: 'Error exporting applications', error: error.message });
   }
 });
 

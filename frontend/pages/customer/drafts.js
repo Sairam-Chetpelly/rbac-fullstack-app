@@ -78,6 +78,20 @@ export default function CustomerDrafts() {
     fetchDrafts(page, searchTerm, filters);
   };
 
+  const handleDelete = async (draftId) => {
+    if (!confirm('Are you sure you want to delete this draft application?')) {
+      return;
+    }
+    
+    try {
+      await api.delete(`/customer/draft/${draftId}`);
+      fetchDrafts(pagination.currentPage, searchTerm, filters);
+    } catch (error) {
+      console.error('Error deleting draft:', error);
+      alert('Failed to delete draft application');
+    }
+  };
+
   const filterOptions = {
     dateRange: true
   };
@@ -141,6 +155,7 @@ export default function CustomerDrafts() {
                         variant="outline" 
                         size="sm" 
                         className="text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => handleDelete(draft._id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

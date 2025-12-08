@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { ChevronLeft, User, FileText, CreditCard, Bell, HelpCircle, List, LogOut, Menu, X } from 'lucide-react';
+import { ChevronLeft, User, FileText, CreditCard, Bell, HelpCircle, List, LogOut, Menu, X, LayoutDashboard } from 'lucide-react';
 
 const CustomerLayout = ({ children }) => {
   const router = useRouter();
@@ -10,6 +10,7 @@ const CustomerLayout = ({ children }) => {
   const [user, setUser] = useState(null);
 
   const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', href: '/customer/dashboard', icon: LayoutDashboard },
     { id: 'applications', label: 'My Applications', href: '/customer/applications', icon: FileText },
     { id: 'drafts', label: 'Draft Applications', href: '/customer/drafts', icon: List },
     { id: 'payments', label: 'Payment History', href: '/customer/payments', icon: CreditCard },

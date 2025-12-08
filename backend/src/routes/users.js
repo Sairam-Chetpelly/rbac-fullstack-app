@@ -6,6 +6,7 @@ const fs = require('fs');
 const { getUsers, createUser, updateUser, deleteUser, changePassword, getProfile, updateProfile, toggleUserStatus } = require('../controllers/userController');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
+const json2csv = require('json2csv').parse;
 
 const router = express.Router();
 
@@ -114,6 +115,64 @@ router.put('/:id', auth, role(['admin', 'manager', 'employee']), upload.fields([
   { name: 'cancelledChequeFile', maxCount: 1 }
 ]), compressUserFiles, updateUser);
 router.patch('/:id/toggle-status', auth, role(['admin', 'manager']), toggleUserStatus);
+
+// Export users data
+router.get('/export/csv', auth, role(['admin', 'manager']), async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const Role = require('../models/Role');
+    
+    const users = await User.find({ deletedAt: null })
+      .populate('role', 'name')
+      .lean();
+
+    const usersData = users.map(user => ({
+      name: user.name || 'N/A',
+      email: user.email || 'N/A',
+      mobile: user.mobile || 'N/A',
+      role: user.role?.name || 'N/A',
+      status: user.status || 'active',
+      companyName: user.companyName || 'N/A',
+      gstNumber: user.gstNumber || 'N/A',
+      panNumber: user.panNumber || 'N/A',
+      aadhaarNumber: user.aadhaarNumber || 'N/A',
+      address: user.address || 'N/A',
+      city: user.city || 'N/A',
+      state: user.state || 'N/A',
+      pincode: user.pincode || 'N/A',
+      createdAt: new Date(user.createdAt).toLocaleDateString(),
+      lastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'
+    }));
+
+    const fields = [
+      'name',
+      'email', 
+      'mobile',
+      'role',
+      'status',
+      'companyName',
+      'gstNumber',
+      'panNumber',
+      'aadhaarNumber',
+      'address',
+      'city',
+      'state',
+      'pincode',
+      'createdAt',
+      'lastLogin'
+    ];
+
+    const csv = json2csv(usersData, { fields });
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=users-${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csv);
+  } catch (error) {
+    console.error('Error exporting users:', error);
+    res.status(500).json({ message: 'Error exporting users', error: error.message });
+  }
+});
+
 router.delete('/:id', auth, role(['admin']), deleteUser);
 
 module.exports = router;

@@ -3,9 +3,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 import { canAccess } from '../lib/roles';
 import api from '../lib/api';
-import Card from '../components/Card';
-import Button from '../components/Button';
-import Table from '../components/Table';
+import EnhancedTable from '../components/EnhancedTable';
 import toast from 'react-hot-toast';
 
 export default function Users() {
@@ -13,9 +11,7 @@ export default function Users() {
   const router = useRouter();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 0 });
-  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
   const [toggleLoading, setToggleLoading] = useState({});
 
   useEffect(() => {
@@ -23,8 +19,8 @@ export default function Users() {
       window.location.href = '/dashboard';
       return;
     }
-    fetchUsers(currentPage);
-  }, [user, currentPage]);
+    fetchUsers(pagination.page);
+  }, [user]);
 
   const fetchUsers = async (page = 1) => {
     try {
@@ -32,7 +28,17 @@ export default function Users() {
       setUsers(response.data.data || response.data);
       if (response.data.pagination) {
         setPagination(response.data.pagination);
+      } else {
+        // Fallback pagination if backend doesn't provide it
+        const totalUsers = response.data.length || 0;
+        setPagination({
+          page: page,
+          limit: 10,
+          total: totalUsers,
+          pages: Math.ceil(totalUsers / 10)
+        });
       }
+      console.log('Pagination:', response.data.pagination || 'No pagination from backend');
     } catch (error) {
       toast.error('Failed to fetch users');
     } finally {
@@ -40,28 +46,43 @@ export default function Users() {
     }
   };
 
-  const handleDelete = async (userId) => {
-    if (confirm('Are you sure you want to delete this user?')) {
-      try {
-        await api.delete(`/users/${userId}`);
-        toast.success('User deleted successfully!');
-        fetchUsers(currentPage);
-      } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to delete user');
-      }
-    }
-  };
+
 
   const toggleUserStatus = async (userId) => {
     setToggleLoading(prev => ({ ...prev, [userId]: true }));
     try {
       const response = await api.patch(`/users/${userId}/toggle-status`);
       toast.success(response.data.message);
-      fetchUsers(currentPage);
+      fetchUsers(pagination.page);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to toggle status');
     } finally {
       setToggleLoading(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/users/export/csv', {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `users-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Users data exported successfully!');
+    } catch (error) {
+      console.error('Error exporting users:', error);
+      toast.error('Failed to export users data');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,11 +94,29 @@ export default function Users() {
   const canDelete = user.role === 'admin';
   const canToggleStatus = ['admin', 'manager'].includes(user.role);
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (u.role?.name || u.role || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleView = (item) => {
+    router.push(`/users/${item._id}`);
+  };
+
+  const handleEdit = (item) => {
+    router.push(`/users/${item._id}/edit`);
+  };
+
+  const handleDelete = async (item) => {
+    if (confirm(`Are you sure you want to delete user "${item.name}"?`)) {
+      try {
+        await api.delete(`/users/${item._id}`);
+        toast.success('User deleted successfully!');
+        fetchUsers(pagination.page);
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to delete user');
+      }
+    }
+  };
+
+  const handleAdd = () => {
+    router.push('/users/add');
+  };
 
   const getRoleColor = (role) => {
     const roleName = role?.name || role || '';
@@ -100,260 +139,140 @@ export default function Users() {
     return colors[statusName] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  return (
-    <div className="space-y-6 lg:space-y-8 p-4 sm:p-0">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 lg:gap-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">👥 Users Management</h1>
-          <p className="text-sm sm:text-base text-gray-600">Manage user accounts and permissions</p>
-        </div>
-        {canCreate && (
-          <Button 
-            onClick={() => router.push('/users/add')} 
-            icon="➕"
-            className="shadow-lg w-full sm:w-auto"
-            size="lg"
-          >
-            Add New User
-          </Button>
-        )}
-      </div>
-
-      <Card className="mb-6">
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="🔍 Search users by name, email, or role..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-            />
+  const columns = [
+    {
+      key: 'name',
+      label: 'User Details',
+      sortable: true,
+      render: (value, item) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-lg">
+            👤
           </div>
-          <div className="flex gap-2">
-            <span className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
-              Total: {pagination.total || users.length}
-            </span>
-            <span className="px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
-              Active: {users.filter(u => (u.status?.name || u.status) === 'active').length}
-            </span>
-          </div>
-        </div>
-      </Card>
-
-      {loading ? (
-        <Card>
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading users...</p>
-          </div>
-        </Card>
-      ) : (
-        <>
-          {/* Desktop Table View */}
-          <div className="hidden lg:block">
-            <Card>
-              <Table
-                data={filteredUsers}
-                columns={[
-                  {
-                    key: 'name',
-                    label: 'User',
-                    render: (value, row) => (
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                          {value.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-semibold flex items-center gap-2">
-                            {value}
-                            {row.isAgent && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">AGENT</span>}
-                          </div>
-                          <div className="text-sm text-gray-600">{row.email}</div>
-                          {row.mobile && <div className="text-xs text-gray-500">📱 {row.mobile}</div>}
-                        </div>
-                      </div>
-                    )
-                  },
-                  {
-                    key: 'role',
-                    label: 'Role',
-                    render: (value) => (
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getRoleColor(value)}`}>
-                        {(value?.name || value || '').toUpperCase()}
-                      </span>
-                    )
-                  },
-                  {
-                    key: 'status',
-                    label: 'Status',
-                    render: (value) => (
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(value)}`}>
-                        {(value?.name || value || '').toUpperCase()}
-                      </span>
-                    )
-                  },
-                  {
-                    key: 'createdAt',
-                    label: 'Created',
-                    render: (value) => new Date(value).toLocaleDateString()
-                  }
-                ]}
-                actions={[
-                  {
-                    label: 'View',
-                    onClick: (row) => router.push(`/users/${row._id}`),
-                    icon: '👁️'
-                  },
-                  {
-                    label: 'Edit',
-                    onClick: (row) => router.push(`/users/${row._id}/edit`),
-                    icon: '✏️'
-                  },
-                  ...(canToggleStatus ? [{
-                    label: (row) => toggleLoading[row._id] ? 'Processing...' : (row.status?.name === 'active' ? 'Deactivate' : 'Activate'),
-                    onClick: (row) => toggleUserStatus(row._id),
-                    icon: (row) => row.status?.name === 'active' ? '🔴' : '🟢',
-                    variant: (row) => row.status?.name === 'active' ? 'danger' : 'success',
-                    disabled: (row) => toggleLoading[row._id]
-                  }] : []),
-                  ...(canDelete ? [{
-                    label: 'Delete',
-                    onClick: (row) => handleDelete(row._id),
-                    icon: '🗑️',
-                    variant: 'danger'
-                  }] : [])
-                ]}
-                emptyMessage="No users found"
-              />
-            </Card>
-          </div>
-          
-          {/* Mobile/Tablet Card View */}
-          <div className="lg:hidden space-y-4">
-            {filteredUsers.length === 0 ? (
-              <Card>
-                <div className="text-center py-8">
-                  <p className="text-gray-600">No users found</p>
-                </div>
-              </Card>
-            ) : (
-              filteredUsers.map((userData) => (
-                <Card key={userData._id} className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {userData.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 truncate flex items-center gap-2">
-                          {userData.name}
-                          {userData.isAgent && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">AGENT</span>}
-                        </h3>
-                        <p className="text-sm text-gray-600 truncate">{userData.email}</p>
-                        {userData.mobile && <p className="text-xs text-gray-500 truncate">📱 {userData.mobile}</p>}
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getRoleColor(userData.role)}`}>
-                        {(userData.role?.name || userData.role || '').toUpperCase()}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(userData.status)}`}>
-                        {(userData.status?.name || userData.status || '').toUpperCase()}
-                      </span>
-                    </div>
-                    
-                    <div className="flex gap-2 pt-2">
-                      <button
-                        onClick={() => router.push(`/users/${userData._id}`)}
-                        className="flex-1 bg-gray-100 text-gray-600 px-3 py-2 rounded text-sm hover:bg-gray-200"
-                      >
-                        👁️ View
-                      </button>
-                      <button
-                        onClick={() => router.push(`/users/${userData._id}/edit`)}
-                        className="flex-1 bg-blue-100 text-blue-600 px-3 py-2 rounded text-sm hover:bg-blue-200"
-                      >
-                        ✏️ Edit
-                      </button>
-                      {canToggleStatus && (
-                        <button
-                          onClick={() => toggleUserStatus(userData._id)}
-                          disabled={toggleLoading[userData._id]}
-                          className={`px-3 py-2 rounded text-sm ${
-                            userData.status?.name === 'active' 
-                              ? 'bg-red-100 text-red-600 hover:bg-red-200' 
-                              : 'bg-green-100 text-green-600 hover:bg-green-200'
-                          } disabled:opacity-50`}
-                        >
-                          {toggleLoading[userData._id] ? '...' : (userData.status?.name === 'active' ? '🔴' : '🟢')}
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button
-                          onClick={() => handleDelete(userData._id)}
-                          className="bg-red-100 text-red-600 px-3 py-2 rounded text-sm hover:bg-red-200"
-                        >
-                          🗑️
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
-          
-          {pagination.pages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Previous
-              </button>
-              
-              {[...Array(pagination.pages)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-2 border rounded-lg ${
-                    currentPage === i + 1 
-                      ? 'bg-blue-500 text-white border-blue-500' 
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.pages))}
-                disabled={currentPage === pagination.pages}
-                className="px-3 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Next
-              </button>
-              
-              <span className="text-sm text-gray-600 ml-4">
-                Page {currentPage} of {pagination.pages} ({pagination.total} total)
-              </span>
+          <div>
+            <div className="font-semibold text-gray-900 flex items-center gap-2">
+              {value}
+              {item.isAgent && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">AGENT</span>}
             </div>
-          )}
-        </>
-      )}
-      
-      {!loading && filteredUsers.length === 0 && (
-        <Card>
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No users found</h3>
-            <p className="text-gray-600">Try adjusting your search criteria</p>
+            <div className="text-sm text-gray-500">
+              {item.email}
+            </div>
+            {item.mobile && <div className="text-xs text-gray-500">📱 {item.mobile}</div>}
           </div>
-        </Card>
+        </div>
+      )
+    },
+    {
+      key: 'role.name',
+      label: 'Role',
+      sortable: true,
+      render: (value, item) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getRoleColor(item.role)}`}>
+          {(value || item.role || '').toUpperCase()}
+        </span>
+      )
+    },
+    {
+      key: 'status.name',
+      label: 'Status',
+      sortable: true,
+      render: (value, item) => {
+        const canToggle = canToggleStatus && !toggleLoading[item._id];
+        return (
+          <button
+            onClick={() => canToggle && toggleUserStatus(item._id)}
+            disabled={!canToggle}
+            className={`px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(item.status)} ${
+              canToggle ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'
+            } transition-opacity flex items-center gap-1`}
+          >
+            {toggleLoading[item._id] && <span className="text-xs">⏳</span>}
+            {(value || item.status || '').toUpperCase()}
+          </button>
+        );
+      }
+    },
+    {
+      key: 'createdAt',
+      label: 'Created',
+      type: 'date',
+      sortable: true
+    }
+  ];
+
+  const filters = [
+    {
+      key: 'role.name',
+      label: 'Role',
+      type: 'select',
+      options: [...new Set(users.map(user => user.role?.name || user.role).filter(Boolean))].map(role => ({
+        value: role,
+        label: role.charAt(0).toUpperCase() + role.slice(1)
+      }))
+    },
+    {
+      key: 'status.name',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+        { value: 'pending', label: 'Pending' }
+      ]
+    }
+  ];
+
+  const stats = {
+    total: pagination.total || users.length,
+    active: users.filter(u => (u.status?.name || u.status) === 'active').length,
+    inactive: users.filter(u => (u.status?.name || u.status) === 'inactive').length,
+    admins: users.filter(u => (u.role?.name || u.role) === 'admin').length,
+    agents: users.filter(u => u.isAgent).length
+  };
+
+  const handleExportAction = async () => {
+    await handleExport();
+  };
+
+  return (
+    <>
+      <EnhancedTable
+        title="👥 Users Management"
+        data={users}
+        columns={columns}
+        loading={loading}
+        searchPlaceholder="🔍 Search users by name, email, or role..."
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={canDelete ? handleDelete : undefined}
+        onAdd={canCreate ? handleAdd : undefined}
+        addButtonText="Add New User"
+        emptyMessage="No users found"
+        emptyIcon="👥"
+        showStats={true}
+        stats={stats}
+        filters={filters}
+        itemsPerPage={pagination.limit || 12}
+        serverSidePagination={true}
+        totalItems={pagination.total}
+        currentPage={pagination.page}
+        onPageChange={(page) => {
+          setPagination(prev => ({ ...prev, page }));
+          fetchUsers(page);
+        }}
+      />
+      
+      {(user?.role === 'admin' || user?.role === 'manager') && (
+        <div className="fixed bottom-6 right-6">
+          <button
+            onClick={handleExportAction}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium transition-colors"
+          >
+            📊 Export CSV
+          </button>
+        </div>
       )}
-    </div>
+    </>
   );
 }

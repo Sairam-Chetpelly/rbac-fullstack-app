@@ -478,6 +478,35 @@ router.get('/application/:id', auth, role(['customer', 'admin']), async (req, re
   }
 });
 
+// Delete draft application
+router.delete('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => {
+  try {
+    const draftStatus = await Status.findOne({ name: 'draft' });
+    if (!draftStatus) {
+      return res.status(500).json({ message: 'Draft status not found' });
+    }
+    
+    const application = await Application.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+      status: draftStatus._id,
+      deletedAt: null
+    });
+    
+    if (!application) {
+      return res.status(404).json({ message: 'Draft not found' });
+    }
+    
+    application.deletedAt = new Date();
+    await application.save();
+    
+    res.json({ message: 'Draft deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting draft:', error);
+    res.status(500).json({ message: 'Error deleting draft', error: error.message });
+  }
+});
+
 // Update customer profile
 router.put('/profile', auth, role(['customer', 'admin']), async (req, res) => {
   try {

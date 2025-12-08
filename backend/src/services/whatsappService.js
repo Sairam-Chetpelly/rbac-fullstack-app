@@ -25,7 +25,7 @@ class WhatsAppService {
       });
 
       const payload = {
-        integrated_number: process.env.MSG91_WHATSAPP_NUMBER || '15558659734',
+        integrated_number: process.env.MSG91_WHATSAPP_NUMBER || '919167447700',
         content_type: 'template',
         payload: {
           messaging_product: 'whatsapp',

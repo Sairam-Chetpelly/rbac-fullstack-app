@@ -123,45 +123,86 @@ const VisaLayout = ({ children, showBackButton = true, showHero = false }) => {
 
       {/* Hero Section */}
       {showHero && (
-        <section className="relative pt-20 -mt-28 bg-gradient-to-r from-blue-500 to-orange-400">
-          <div className="absolute inset-0 bg-black opacity-20"></div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex lg:grid-cols-2 gap-12 items-center py-20">
-              <div className="text-white">
-                <h2 className="text-5xl font-bold mb-6 leading-tight">
-                  Explore global destinations with confidence
-                </h2>
-                <p className="text-xl mb-8 opacity-90">
-                  Our visa guides and travel tips help you plan better and travel smarter.
-                </p>
-                <div className="space-y-2 mb-8">
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-5 w-5" />
-                    <span>Visa-free countries</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-5 w-5" />
-                    <span>24/7 service msg</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Phone className="h-5 w-5" />
-                    <span>Embassy contact info</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Plane className="h-5 w-5" />
-                    <span>Travel insurance recommendations</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Globe className="h-5 w-5" />
-                    <span>End-to-end visa services available</span>
-                  </div>
-                </div>
+        <section className="relative pt-20 -mt-28 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div className="text-center max-w-4xl mx-auto space-y-8">
+              {/* Badge */}
+              {/* <div className="inline-block">
+                <span className="bg-gradient-to-r from-blue-500 to-orange-500 text-white px-6 py-2 rounded-full text-sm font-medium">
+                  🌍 Trusted by 10,000+ Travelers
+                </span>
+              </div> */}
+              
+              {/* Heading */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900">
+                Your Journey to the{' '}
+                <span className="bg-gradient-to-r from-blue-600 to-orange-500 bg-clip-text text-transparent">
+                  World Starts Here
+                </span>
+              </h1>
+              
+              {/* Description */}
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Expert visa assistance, seamless processing, and 24/7 support for your global adventures.
+              </p>
+
+              {/* CTA Button */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
                   onClick={handleGetStarted}
-                  className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-8 py-3 rounded-lg font-semibold hover:from-orange-500 hover:to-red-600 transition-all"
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg"
                 >
                   {user ? 'Go to Dashboard' : 'Start Your Journey'}
                 </Button>
+                <button
+                  onClick={() => window.location.href = 'https://wa.me/919167447700'}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  <Phone className="h-5 w-5" />
+                  Contact Us
+                </button>
+              </div>
+
+              {/* Features */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6 pt-8">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <MapPin className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900">More Countries</h3>
+                  <p className="text-sm text-gray-600">Visa-free countries</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Clock className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900">24/7 Support MSG</h3>
+                  <p className="text-sm text-gray-600">Always available</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Phone   className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900">Embassy</h3>
+                  <p className="text-sm text-gray-600">contact info</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Plane className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900">Fast Processing</h3>
+                  <p className="text-sm text-gray-600">Travel insurance recommendations</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Globe className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900">Expert Guidance</h3>
+                  <p className="text-sm text-gray-600">End-to-end visa services available</p>
+                </div>
               </div>
             </div>
           </div>

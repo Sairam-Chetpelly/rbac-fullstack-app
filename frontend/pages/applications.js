@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Button from '../components/Button';
-import Card from '../components/Card';
-import Table from '../components/Table';
+import EnhancedTable from '../components/EnhancedTable';
 import StatusModal from '../components/StatusModal';
 import AssignModal from '../components/AssignModal';
 import PaymentModal from '../components/PaymentModal';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function Applications() {
   const [applications, setApplications] = useState([]);
@@ -16,37 +15,22 @@ export default function Applications() {
   const [countries, setCountries] = useState([]);
   const [visaTypes, setVisaTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({
-    status: 'all',
-    country: 'all',
-    visaType: 'all',
-    paymentStatus: 'all',
-    assignedTo: 'all',
-    applicationType: 'all',
-    dateFrom: '',
-    dateTo: '',
-    submittedFrom: '',
-    submittedTo: ''
-  });
-  const [showFilters, setShowFilters] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 0 });
   const [statusModal, setStatusModal] = useState({ isOpen: false, applicationId: null, currentStatus: null });
   const [assignModal, setAssignModal] = useState({ isOpen: false, applicationId: null, currentEmployee: null });
   const [paymentModal, setPaymentModal] = useState({ isOpen: false, applicationId: null, payment: null });
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
-  const [currentPage, setCurrentPage] = useState(1);
   const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    fetchApplications(currentPage);
+    fetchApplications(pagination.page);
     fetchStatuses();
     fetchCountries();
     fetchVisaTypes();
     if (user?.role === 'admin' || user?.role === 'manager') {
       fetchEmployees();
     }
-  }, [user, currentPage]);
+  }, [user]);
 
   const fetchEmployees = async () => {
     if (user?.role !== 'admin' && user?.role !== 'manager') {
@@ -65,7 +49,7 @@ export default function Applications() {
   const fetchApplications = async (page = 1) => {
     try {
       const endpoint = user?.role === 'employee' ? '/applications/assigned' : '/applications';
-      const response = await api.get(`${endpoint}?page=${page}&limit=10`);
+      const response = await api.get(`${endpoint}?page=${page}&limit=12`);
       const apps = response.data.data || response.data;
       
       // Fetch payment status for each application
@@ -86,6 +70,7 @@ export default function Applications() {
       }
     } catch (error) {
       console.error('Error fetching applications:', error);
+      toast.error('Failed to fetch applications');
     } finally {
       setLoading(false);
     }
@@ -153,13 +138,14 @@ export default function Applications() {
         }
       });
       fetchApplications();
+      toast.success('Status updated successfully!');
       
       if (visaDetails || (visaFiles && visaFiles.length > 0) || courierDetails || (courierFiles && courierFiles.length > 0)) {
-        alert('Status updated successfully! Notification has been sent to the applicant.');
+        toast.success('Notification has been sent to the applicant.');
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update status');
+      toast.error('Failed to update status');
     }
   };
 
@@ -169,7 +155,7 @@ export default function Applications() {
       fetchApplications();
     } catch (error) {
       console.error('Error assigning employee:', error);
-      alert('Failed to assign employee');
+      toast.error('Failed to assign employee');
     }
   };
 
@@ -177,69 +163,59 @@ export default function Applications() {
     try {
       await api.put(`/applications/${paymentModal.applicationId}/payment`, paymentData);
       fetchApplications();
-      alert('Payment status updated successfully');
+      toast.success('Payment status updated successfully');
     } catch (error) {
       console.error('Error updating payment:', error);
-      alert('Failed to update payment status');
+      toast.error('Failed to update payment status');
     }
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this application?')) {
+
+
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/applications/export/csv', {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `applications-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Applications exported successfully!');
+    } catch (error) {
+      console.error('Error exporting applications:', error);
+      toast.error('Failed to export applications');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleView = (item) => {
+    router.push(`/applications/view/${item._id}`);
+  };
+
+  const handleEdit = (item) => {
+    router.push(`/applications/edit/${item._id}`);
+  };
+
+  const handleDelete = async (item) => {
+    if (confirm(`Are you sure you want to delete application "${item.applicationNumber}"?`)) {
       try {
-        await api.delete(`/applications/${id}`);
+        await api.delete(`/applications/${item._id}`);
+        toast.success('Application deleted successfully!');
         fetchApplications();
       } catch (error) {
-        console.error('Error deleting application:', error);
-        alert('Failed to delete application');
+        toast.error('Failed to delete application');
       }
     }
   };
-
-  const filteredApplications = applications.filter(app => {
-    const matchesSearch = app.applicationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         app.user?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         app.user?.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = filters.status === 'all' || app.status?._id === filters.status;
-    const matchesCountry = filters.country === 'all' || app.countryVisaType?.country?._id === filters.country;
-    const matchesVisaType = filters.visaType === 'all' || app.countryVisaType?._id === filters.visaType;
-    const matchesPayment = filters.paymentStatus === 'all' || app.paymentStatus === filters.paymentStatus;
-    const matchesAssigned = filters.assignedTo === 'all' || 
-                           (filters.assignedTo === 'unassigned' && !app.assignedTo) ||
-                           app.assignedTo?._id === filters.assignedTo;
-    const matchesAppType = filters.applicationType === 'all' || app.applicationType === filters.applicationType;
-    
-    const createdDate = new Date(app.createdAt);
-    const submittedDate = app.submittedAt ? new Date(app.submittedAt) : null;
-    
-    const matchesDateFrom = !filters.dateFrom || createdDate >= new Date(filters.dateFrom);
-    const matchesDateTo = !filters.dateTo || createdDate <= new Date(filters.dateTo + 'T23:59:59');
-    const matchesSubmittedFrom = !filters.submittedFrom || (submittedDate && submittedDate >= new Date(filters.submittedFrom));
-    const matchesSubmittedTo = !filters.submittedTo || (submittedDate && submittedDate <= new Date(filters.submittedTo + 'T23:59:59'));
-    
-    return matchesSearch && matchesStatus && matchesCountry && matchesVisaType && 
-           matchesPayment && matchesAssigned && matchesAppType && 
-           matchesDateFrom && matchesDateTo && matchesSubmittedFrom && matchesSubmittedTo;
-  });
-
-  const clearFilters = () => {
-    setFilters({
-      status: 'all',
-      country: 'all',
-      visaType: 'all',
-      paymentStatus: 'all',
-      assignedTo: 'all',
-      applicationType: 'all',
-      dateFrom: '',
-      dateTo: '',
-      submittedFrom: '',
-      submittedTo: ''
-    });
-    setSearchTerm('');
-  };
-
-  const activeFiltersCount = Object.values(filters).filter(value => value !== 'all' && value !== '').length + (searchTerm ? 1 : 0);
 
   const getStatusColor = (status) => {
     if (!status?.color) return 'bg-gray-100 text-gray-800';
@@ -259,517 +235,240 @@ export default function Applications() {
     return colorMap[status.color] || 'bg-gray-100 text-gray-800';
   };
 
+  const getPaymentStatusColor = (status) => {
+    const colors = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      success: 'bg-green-100 text-green-800',
+      failed: 'bg-red-100 text-red-800',
+      refunded: 'bg-gray-100 text-gray-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
   const baseColumns = [
     {
       key: 'applicationNumber',
-      label: 'Application #',
-      render: (value, row) => (
-        <div className="font-mono text-sm">
-          {value}
+      label: 'Application Details',
+      sortable: true,
+      render: (value, item) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white text-lg">
+            📋
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900 font-mono">{value}</div>
+            <div className="text-sm text-gray-500">
+              {item.user?.name} • {item.user?.email}
+            </div>
+          </div>
         </div>
       )
     },
     {
-      key: 'user',
-      label: 'Applicant',
-      render: (value) => (
-        <div>
-          <div className="font-semibold">{value?.name}</div>
-          <div className="text-sm text-gray-600">{value?.email}</div>
-        </div>
-      )
-    },
-    {
-      key: 'countryVisaType',
-      label: 'Visa Type',
-      render: (value) => (
+      key: 'countryVisaType.country.name',
+      label: 'Destination',
+      sortable: true,
+      render: (value, item) => (
         <div className="flex items-center gap-2">
-          {value?.country?.placeImage ? (
+          {item.countryVisaType?.country?.placeImage ? (
             <img 
-              src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000' }/uploads/countries/${value.country.placeImage}`} 
-              alt={value?.country?.name}
-              className="w-8 h-8 object-cover rounded-lg"
+              src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000' }/uploads/countries/${item.countryVisaType.country.placeImage}`} 
+              alt={item.countryVisaType?.country?.name}
+              className="w-6 h-6 object-cover rounded"
             />
           ) : (
             <span className="text-lg">🌍</span>
           )}
           <div>
-            <div className="font-semibold">{value?.country?.name}</div>
-            <div className="text-sm text-gray-600">{value?.name}</div>
+            <div className="font-medium text-gray-900">{value}</div>
+            <div className="text-xs text-gray-500">{item.countryVisaType?.name}</div>
           </div>
         </div>
       )
     },
     {
-      key: 'status',
+      key: 'status.name',
       label: 'Status',
-      render: (value, row) => (
+      sortable: true,
+      render: (value, item) => (
         <button
-          onClick={() => setStatusModal({ isOpen: true, applicationId: row._id, currentStatus: value })}
-          className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(value)} hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1`}
+          onClick={() => setStatusModal({ isOpen: true, applicationId: item._id, currentStatus: item.status })}
+          className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(item.status)} hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1`}
         >
           <span className="text-xs">✏️</span>
-          {value?.name?.toUpperCase() || 'UNKNOWN'}
+          {(value || 'UNKNOWN').toUpperCase()}
         </button>
       )
     },
     {
       key: 'paymentStatus',
-      label: 'Payment Status',
-      render: (value, row) => {
-        const getPaymentStatusColor = (status) => {
-          const colors = {
-            pending: 'bg-yellow-100 text-yellow-800',
-            success: 'bg-green-100 text-green-800',
-            failed: 'bg-red-100 text-red-800',
-            refunded: 'bg-gray-100 text-gray-800'
-          };
-          return colors[status] || 'bg-gray-100 text-gray-800';
-        };
-        
-        return (
-          <button
-            onClick={async () => {
-              try {
-                const response = await api.get(`/applications/${row._id}`);
-                setPaymentModal({ isOpen: true, applicationId: row._id, payment: response.data.payment });
-              } catch (error) {
-                console.error('Error fetching payment:', error);
-                setPaymentModal({ isOpen: true, applicationId: row._id, payment: null });
-              }
-            }}
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(value || 'pending')} hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1`}
-          >
-            <span className="text-xs">✏️</span>
-            {(value || 'pending').toUpperCase()}
-          </button>
-        );
-      }
+      label: 'Payment',
+      sortable: true,
+      render: (value, item) => (
+        <button
+          onClick={async () => {
+            try {
+              const response = await api.get(`/applications/${item._id}`);
+              setPaymentModal({ isOpen: true, applicationId: item._id, payment: response.data.payment });
+            } catch (error) {
+              console.error('Error fetching payment:', error);
+              setPaymentModal({ isOpen: true, applicationId: item._id, payment: null });
+            }
+          }}
+          className={`px-2 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(value || 'pending')} hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1`}
+        >
+          <span className="text-xs">💳</span>
+          {(value || 'pending').toUpperCase()}
+        </button>
+      )
     },
     {
       key: 'submittedAt',
       label: 'Submitted',
-      render: (value) => value ? new Date(value).toLocaleDateString() : 'Not submitted'
+      type: 'date',
+      sortable: true,
+      render: (value) => (
+        <div className="text-sm">
+          <div className="font-medium text-gray-900">
+            {value ? new Date(value).toLocaleDateString() : 'Not submitted'}
+          </div>
+          <div className="text-xs text-gray-500">
+            {value ? 'Submitted' : 'Draft'}
+          </div>
+        </div>
+      )
     },
     {
       key: 'createdAt',
       label: 'Created',
-      render: (value) => new Date(value).toLocaleDateString()
+      type: 'date',
+      sortable: true
     }
   ];
 
   // Add assignment column only for admin/manager
   const columns = user?.role === 'admin' || user?.role === 'manager' 
-    ? [...baseColumns.slice(0, -2), {
-        key: 'assignedTo',
+    ? [...baseColumns.slice(0, -1), {
+        key: 'assignedTo.name',
         label: 'Assigned To',
-        render: (value, row) => (
+        sortable: true,
+        render: (value, item) => (
           <button
-            onClick={() => setAssignModal({ isOpen: true, applicationId: row._id, currentEmployee: value })}
+            onClick={() => setAssignModal({ isOpen: true, applicationId: item._id, currentEmployee: item.assignedTo })}
             className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full hover:bg-gray-200 transition-colors cursor-pointer font-medium flex items-center gap-1"
           >
-            <span className="text-xs">✏️</span>
-            {value?.name || 'Unassigned'}
+            <span className="text-xs">👤</span>
+            {value || 'Unassigned'}
           </button>
         )
-      }, ...baseColumns.slice(-2)]
+      }, ...baseColumns.slice(-1)]
     : baseColumns;
 
-  const actions = [
+  const filters = [
     {
-      label: 'View',
-      onClick: (row) => router.push(`/applications/view/${row._id}`),
-      icon: '👁️'
+      key: 'status.name',
+      label: 'Status',
+      type: 'select',
+      options: statuses.map(status => ({
+        value: status.name,
+        label: status.name
+      }))
     },
     {
-      label: 'Edit',
-      onClick: (row) => router.push(`/applications/edit/${row._id}`),
-      icon: '✏️'
+      key: 'countryVisaType.country.name',
+      label: 'Country',
+      type: 'select',
+      options: [...new Set(applications.map(app => app.countryVisaType?.country?.name).filter(Boolean))].map(name => ({
+        value: name,
+        label: name
+      }))
     },
     {
-      label: 'Delete',
-      onClick: (row) => handleDelete(row._id),
-      icon: '🗑️',
-      variant: 'danger'
+      key: 'countryVisaType.name',
+      label: 'Visa Type',
+      type: 'select',
+      options: [...new Set(applications.map(app => app.countryVisaType?.name).filter(Boolean))].map(name => ({
+        value: name,
+        label: name
+      }))
+    },
+    {
+      key: 'paymentStatus',
+      label: 'Payment Status',
+      type: 'select',
+      options: [
+        { value: 'pending', label: 'Pending' },
+        { value: 'success', label: 'Success' },
+        { value: 'failed', label: 'Failed' },
+        { value: 'refunded', label: 'Refunded' }
+      ]
     }
   ];
 
+  // Add assignment filter for admin/manager
+  if (user?.role === 'admin' || user?.role === 'manager') {
+    filters.push({
+      key: 'assignedTo.name',
+      label: 'Assigned To',
+      type: 'select',
+      options: [
+        { value: '', label: 'Unassigned' },
+        ...employees.map(emp => ({
+          value: emp.name,
+          label: emp.name
+        }))
+      ]
+    });
+  }
+
+  const stats = {
+    total: applications.length,
+    pending: applications.filter(app => app.paymentStatus === 'pending').length,
+    success: applications.filter(app => app.paymentStatus === 'success').length,
+    submitted: applications.filter(app => app.submittedAt).length,
+    unassigned: applications.filter(app => !app.assignedTo).length
+  };
+
+  const handleExportAction = async () => {
+    await handleExport();
+  };
+
   return (
-    <div className="space-y-6 lg:space-y-8 p-4 sm:p-0">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 lg:gap-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-            📋 {user?.role === 'employee' ? 'My Assigned Applications' : 'Applications Management'}
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            {user?.role === 'employee' ? 'Applications assigned to you' : 'Manage visa applications and track their status'}
-          </p>
-        </div>
-      </div>
-
-      <Card className="mb-6">
-        <div className="space-y-4">
-          {/* Search and Quick Filters */}
-          <div className="flex sm:flex-row gap-4 items-center">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="🔍 Search by application number, name, or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-              />
-            </div>
-            <div className="flex gap-2 items-center">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  showFilters ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                🔧 Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
-              </button>
-              {activeFiltersCount > 0 && (
-                <button
-                  onClick={clearFilters}
-                  className="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Advanced Filters */}
-          {showFilters && (
-            <div className="border-t pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {/* Status Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={filters.status}
-                    onChange={(e) => setFilters({...filters, status: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All Status</option>
-                    {statuses.map(status => (
-                      <option key={status._id} value={status._id}>
-                        {status.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Country Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                  <select
-                    value={filters.country}
-                    onChange={(e) => setFilters({...filters, country: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All Countries</option>
-                    {countries.map(country => (
-                      <option key={country._id} value={country._id}>
-                        {country.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Visa Type Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Visa Type</label>
-                  <select
-                    value={filters.visaType}
-                    onChange={(e) => setFilters({...filters, visaType: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All Visa Types</option>
-                    {visaTypes.map(visa => (
-                      <option key={visa._id} value={visa._id}>
-                        {visa.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Payment Status Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
-                  <select
-                    value={filters.paymentStatus}
-                    onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All Payments</option>
-                    <option value="pending">Pending</option>
-                    <option value="success">Success</option>
-                    <option value="failed">Failed</option>
-                    <option value="refunded">Refunded</option>
-                  </select>
-                </div>
-
-                {/* Assigned To Filter (Admin/Manager only) */}
-                {(user?.role === 'admin' || user?.role === 'manager') && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
-                    <select
-                      value={filters.assignedTo}
-                      onChange={(e) => setFilters({...filters, assignedTo: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">All Assignments</option>
-                      <option value="unassigned">Unassigned</option>
-                      {employees.map(employee => (
-                        <option key={employee._id} value={employee._id}>
-                          {employee.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Application Type Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Application Type</label>
-                  <select
-                    value={filters.applicationType}
-                    onChange={(e) => setFilters({...filters, applicationType: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="individual">Individual</option>
-                    <option value="family">Family</option>
-                    <option value="group">Group</option>
-                  </select>
-                </div>
-
-                {/* Created Date From */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Created From</label>
-                  <input
-                    type="date"
-                    value={filters.dateFrom}
-                    onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Created Date To */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Created To</label>
-                  <input
-                    type="date"
-                    value={filters.dateTo}
-                    onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Submitted Date From */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Submitted From</label>
-                  <input
-                    type="date"
-                    value={filters.submittedFrom}
-                    onChange={(e) => setFilters({...filters, submittedFrom: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Submitted Date To */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Submitted To</label>
-                  <input
-                    type="date"
-                    value={filters.submittedTo}
-                    onChange={(e) => setFilters({...filters, submittedTo: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {loading ? (
-        <Card>
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading applications...</p>
-          </div>
-        </Card>
-      ) : (
-        <>
-          {/* Desktop Table View */}
-          <div className="hidden lg:block">
-            <Card>
-              <Table
-                data={filteredApplications}
-                columns={columns}
-                actions={actions}
-                canEdit={false}
-                canDelete={false}
-                emptyMessage="No applications found"
-              />
-            </Card>
-          </div>
-          
-          {/* Mobile/Tablet Card View */}
-          <div className="lg:hidden space-y-4">
-            {filteredApplications.length === 0 ? (
-              <Card>
-                <div className="text-center py-8">
-                  <p className="text-gray-600">No applications found</p>
-                </div>
-              </Card>
-            ) : (
-              filteredApplications.map((app) => (
-                <Card key={app._id} className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-mono text-sm font-semibold">{app.applicationNumber}</p>
-                        <p className="text-xs text-gray-500">Application #</p>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(app.status)}`}>
-                        {app.status?.name?.toUpperCase() || 'UNKNOWN'}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <p className="font-semibold">{app.user?.name}</p>
-                      <p className="text-sm text-gray-600">{app.user?.email}</p>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {app.countryVisaType?.country?.placeImage ? (
-                        <img 
-                          src={`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000' }/uploads/countries/${app.countryVisaType.country.placeImage}`} 
-                          alt={app.countryVisaType?.country?.name}
-                          className="w-8 h-8 object-cover rounded-lg"
-                        />
-                      ) : (
-                        <span className="text-lg">🌍</span>
-                      )}
-                      <div>
-                        <p className="font-semibold text-sm">{app.countryVisaType?.country?.name}</p>
-                        <p className="text-xs text-gray-600">{app.countryVisaType?.name}</p>
-                      </div>
-                    </div>
-                    
-                    {(user?.role === 'admin' || user?.role === 'manager') && (
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Assigned To</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">{app.assignedTo?.name || 'Unassigned'}</span>
-                          <button
-                            onClick={() => setAssignModal({ isOpen: true, applicationId: app._id, currentEmployee: app.assignedTo })}
-                            className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded hover:bg-green-200"
-                          >
-                            {app.assignedTo ? 'Reassign' : 'Assign'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center text-xs text-gray-500">
-                      <span>Submitted: {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : 'Not submitted'}</span>
-                      <span>Created: {new Date(app.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    
-                    <div className="flex gap-2 pt-2">
-                      <button
-                        onClick={() => setStatusModal({ isOpen: true, applicationId: app._id, currentStatus: app.status })}
-                        className="flex-1 bg-blue-100 text-blue-600 px-3 py-2 rounded text-sm hover:bg-blue-200"
-                      >
-                        Change Status
-                      </button>
-                      <button
-                        onClick={async () => {
-                          try {
-                            const response = await api.get(`/applications/${app._id}`);
-                            setPaymentModal({ isOpen: true, applicationId: app._id, payment: response.data.payment });
-                          } catch (error) {
-                            console.error('Error fetching payment:', error);
-                            setPaymentModal({ isOpen: true, applicationId: app._id, payment: null });
-                          }
-                        }}
-                        className="bg-green-100 text-green-600 px-3 py-2 rounded text-sm hover:bg-green-200"
-                      >
-                        💳 Payment
-                      </button>
-                      <button
-                        onClick={() => router.push(`/applications/view/${app._id}`)}
-                        className="bg-gray-100 text-gray-600 px-3 py-2 rounded text-sm hover:bg-gray-200"
-                      >
-                        👁️ View
-                      </button>
-                      <button
-                        onClick={() => router.push(`/applications/edit/${app._id}`)}
-                        className="bg-gray-100 text-gray-600 px-3 py-2 rounded text-sm hover:bg-gray-200"
-                      >
-                        ✏️ Edit
-                      </button>
-                    </div>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
-          
-          {/* Pagination */}
-          {pagination.pages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Previous
-              </button>
-              
-              {[...Array(pagination.pages)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-2 border rounded-lg ${
-                    currentPage === i + 1 
-                      ? 'bg-blue-500 text-white border-blue-500' 
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.pages))}
-                disabled={currentPage === pagination.pages}
-                className="px-3 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                Next
-              </button>
-              
-              <span className="text-sm text-gray-600 ml-4">
-                Page {currentPage} of {pagination.pages} ({pagination.total} total)
-              </span>
-            </div>
-          )}
-        </>
-      )}
+    <>
+      <EnhancedTable
+        title={`📋 ${user?.role === 'employee' ? 'My Assigned Applications' : 'Applications Management'}`}
+        data={applications}
+        columns={columns}
+        loading={loading}
+        searchPlaceholder="🔍 Search by application number, name, email, or country..."
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        emptyMessage="No applications found"
+        emptyIcon="📋"
+        showStats={true}
+        stats={stats}
+        filters={filters}
+        itemsPerPage={pagination.limit || 12}
+        serverSidePagination={true}
+        totalItems={pagination.total}
+        currentPage={pagination.page}
+        onPageChange={(page) => {
+          setPagination(prev => ({ ...prev, page }));
+          fetchApplications(page);
+        }}
+      />
       
-      {!loading && filteredApplications.length === 0 && (
-        <Card>
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No applications found</h3>
-            <p className="text-gray-600">Try adjusting your search criteria or filters</p>
-          </div>
-        </Card>
+      {(user?.role === 'admin' || user?.role === 'manager') && (
+        <div className="fixed bottom-6 right-6">
+          <button
+            onClick={handleExportAction}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium transition-colors"
+          >
+            📊 Export CSV
+          </button>
+        </div>
       )}
       
       <StatusModal
@@ -794,6 +493,6 @@ export default function Applications() {
         onUpdate={handlePaymentUpdate}
         payment={paymentModal.payment}
       />
-    </div>
+    </>
   );
 }

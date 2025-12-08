@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Button from './Button';
 
 export default function EnhancedTable({ 
@@ -17,10 +17,19 @@ export default function EnhancedTable({
   itemsPerPage = 10,
   showStats = false,
   stats = {},
-  filters = []
+  filters = [],
+  serverSidePagination = false,
+  totalItems = 0,
+  currentPage: externalCurrentPage = 1,
+  onPageChange
 }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(externalCurrentPage);
+
+  // Sync external current page changes
+  useEffect(() => {
+    setCurrentPage(externalCurrentPage);
+  }, [externalCurrentPage]);
   const [sortColumn, setSortColumn] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
   const [activeFilters, setActiveFilters] = useState({});
@@ -61,9 +70,12 @@ export default function EnhancedTable({
   });
 
   // Pagination
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  const totalPages = serverSidePagination 
+    ? Math.ceil(totalItems / itemsPerPage)
+    : Math.ceil(sortedData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedData = serverSidePagination ? data : sortedData.slice(startIndex, startIndex + itemsPerPage);
+  const totalRecords = serverSidePagination ? totalItems : sortedData.length;
 
   // Handle column sorting
   const handleSort = (columnKey) => {
@@ -170,9 +182,9 @@ export default function EnhancedTable({
             </div>
             <div className="flex gap-2">
               <span className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
-                Total: {data.length}
+                Total: {serverSidePagination ? totalItems : data.length}
               </span>
-              {(searchTerm || Object.values(activeFilters).some(v => v)) && (
+              {!serverSidePagination && (searchTerm || Object.values(activeFilters).some(v => v)) && (
                 <span className="px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
                   Filtered: {filteredData.length}
                 </span>
@@ -222,7 +234,7 @@ export default function EnhancedTable({
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading...</p>
           </div>
-        ) : sortedData.length === 0 ? (
+        ) : (serverSidePagination ? data.length === 0 : sortedData.length === 0) ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">{emptyIcon}</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">{emptyMessage}</h3>
@@ -232,7 +244,8 @@ export default function EnhancedTable({
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
@@ -307,18 +320,82 @@ export default function EnhancedTable({
               </table>
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-700">
-                    Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, sortedData.length)} of {sortedData.length} results
+            {/* Mobile Card View */}
+            <div className="lg:hidden">
+              <div className="space-y-4 p-4">
+                {paginatedData.map((item, index) => (
+                  <div key={item._id || index} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="space-y-3">
+                      {columns.map((column) => {
+                        const value = getNestedValue(item, column.key);
+                        if (!value && value !== 0) return null;
+                        
+                        return (
+                          <div key={column.key} className="flex justify-between items-start">
+                            <div className="text-sm font-medium text-gray-500 min-w-0 flex-1">
+                              {column.label}:
+                            </div>
+                            <div className="text-sm text-gray-900 ml-2 flex-1 text-right">
+                              {column.render ? column.render(value, item) : renderCell(item, column)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      
+                      {(onView || onEdit || onDelete) && (
+                        <div className="flex gap-2 pt-3 border-t border-gray-100">
+                          {onView && (
+                            <button
+                              onClick={() => onView(item)}
+                              className="flex-1 bg-gray-100 text-gray-600 px-3 py-2 rounded text-sm hover:bg-gray-200 transition-colors"
+                            >
+                              👁️ View
+                            </button>
+                          )}
+                          {onEdit && (
+                            <button
+                              onClick={() => onEdit(item)}
+                              className="flex-1 bg-blue-100 text-blue-600 px-3 py-2 rounded text-sm hover:bg-blue-200 transition-colors"
+                            >
+                              ✏️ Edit
+                            </button>
+                          )}
+                          {onDelete && (
+                            <button
+                              onClick={() => onDelete(item)}
+                              className="bg-red-100 text-red-600 px-3 py-2 rounded text-sm hover:bg-red-200 transition-colors"
+                            >
+                              🗑️
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                ))}
+              </div>
+            </div>
+
+            {/* Pagination */}
+            {(totalPages > 1 || serverSidePagination) && (
+              <div className="bg-gray-50 px-4 lg:px-6 py-3 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-gray-700 text-center sm:text-left">
+                    Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, totalRecords)} of {totalRecords} results
+                    {serverSidePagination && ` (Page ${currentPage} of ${totalPages})`}
+                  </div>
+                  <div className="flex gap-2 flex-wrap justify-center">
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setCurrentPage(currentPage - 1)}
+                      onClick={() => {
+                        const newPage = currentPage - 1;
+                        if (serverSidePagination && onPageChange) {
+                          onPageChange(newPage);
+                        } else {
+                          setCurrentPage(newPage);
+                        }
+                      }}
                       disabled={currentPage === 1}
                     >
                       Previous
@@ -332,7 +409,13 @@ export default function EnhancedTable({
                             key={page}
                             size="sm"
                             variant={currentPage === page ? 'primary' : 'outline'}
-                            onClick={() => setCurrentPage(page)}
+                            onClick={() => {
+                              if (serverSidePagination && onPageChange) {
+                                onPageChange(page);
+                              } else {
+                                setCurrentPage(page);
+                              }
+                            }}
                           >
                             {page}
                           </Button>
@@ -346,7 +429,14 @@ export default function EnhancedTable({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setCurrentPage(currentPage + 1)}
+                      onClick={() => {
+                        const newPage = currentPage + 1;
+                        if (serverSidePagination && onPageChange) {
+                          onPageChange(newPage);
+                        } else {
+                          setCurrentPage(newPage);
+                        }
+                      }}
                       disabled={currentPage === totalPages}
                     >
                       Next
