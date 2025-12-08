@@ -3,17 +3,24 @@ import { useState, useRef, useEffect } from 'react';
 export default function RichTextEditor({ value, onChange, placeholder = "Enter content..." }) {
   const editorRef = useRef(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
+  const isTyping = useRef(false);
 
   useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = value || '';
+    if (editorRef.current && !isTyping.current) {
+      if (editorRef.current.innerHTML !== value) {
+        editorRef.current.innerHTML = value || '';
+      }
       setIsEditorReady(true);
     }
   }, [value]);
 
   const handleInput = () => {
     if (editorRef.current && onChange) {
+      isTyping.current = true;
       onChange(editorRef.current.innerHTML);
+      setTimeout(() => {
+        isTyping.current = false;
+      }, 0);
     }
   };
 

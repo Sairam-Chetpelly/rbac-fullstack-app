@@ -21,7 +21,9 @@ export default function EnhancedTable({
   serverSidePagination = false,
   totalItems = 0,
   currentPage: externalCurrentPage = 1,
-  onPageChange
+  onPageChange,
+  onExport,
+  exportButtonText = "Export CSV"
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(externalCurrentPage);
@@ -147,11 +149,18 @@ export default function EnhancedTable({
             <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
           </div>
         )}
-        {onAdd && (
-          <Button onClick={onAdd} icon="➕" className="w-full sm:w-auto">
-            {addButtonText}
-          </Button>
-        )}
+        <div className="flex gap-2 w-full sm:w-auto">
+          {onExport && (
+            <Button onClick={onExport} icon="📊" variant="outline" className="flex-1 sm:flex-none">
+              {exportButtonText}
+            </Button>
+          )}
+          {onAdd && (
+            <Button onClick={onAdd} icon="➕" className="flex-1 sm:flex-none">
+              {addButtonText}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Statistics */}

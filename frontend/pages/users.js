@@ -230,49 +230,33 @@ export default function Users() {
     agents: users.filter(u => u.isAgent).length
   };
 
-  const handleExportAction = async () => {
-    await handleExport();
-  };
-
   return (
-    <>
-      <EnhancedTable
-        title="👥 Users Management"
-        data={users}
-        columns={columns}
-        loading={loading}
-        searchPlaceholder="🔍 Search users by name, email, or role..."
-        onView={handleView}
-        onEdit={handleEdit}
-        onDelete={canDelete ? handleDelete : undefined}
-        onAdd={canCreate ? handleAdd : undefined}
-        addButtonText="Add New User"
-        emptyMessage="No users found"
-        emptyIcon="👥"
-        showStats={true}
-        stats={stats}
-        filters={filters}
-        itemsPerPage={pagination.limit || 12}
-        serverSidePagination={true}
-        totalItems={pagination.total}
-        currentPage={pagination.page}
-        onPageChange={(page) => {
-          setPagination(prev => ({ ...prev, page }));
-          fetchUsers(page);
-        }}
-      />
-      
-      {(user?.role === 'admin' || user?.role === 'manager') && (
-        <div className="fixed bottom-6 right-6">
-          <button
-            onClick={handleExportAction}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium transition-colors"
-          >
-            📊 Export CSV
-          </button>
-        </div>
-      )}
-    </>
+    <EnhancedTable
+      title="👥 Users Management"
+      data={users}
+      columns={columns}
+      loading={loading}
+      searchPlaceholder="🔍 Search users by name, email, or role..."
+      onView={handleView}
+      onEdit={handleEdit}
+      onDelete={canDelete ? handleDelete : undefined}
+      onAdd={canCreate ? handleAdd : undefined}
+      addButtonText="Add New User"
+      emptyMessage="No users found"
+      emptyIcon="👥"
+      showStats={true}
+      stats={stats}
+      filters={filters}
+      itemsPerPage={pagination.limit || 12}
+      serverSidePagination={true}
+      totalItems={pagination.total}
+      currentPage={pagination.page}
+      onPageChange={(page) => {
+        setPagination(prev => ({ ...prev, page }));
+        fetchUsers(page);
+      }}
+      onExport={(user?.role === 'admin' || user?.role === 'manager') ? handleExport : undefined}
+      exportButtonText="Export CSV"
+    />
   );
 }

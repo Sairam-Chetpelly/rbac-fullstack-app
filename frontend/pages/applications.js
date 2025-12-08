@@ -429,10 +429,6 @@ export default function Applications() {
     unassigned: applications.filter(app => !app.assignedTo).length
   };
 
-  const handleExportAction = async () => {
-    await handleExport();
-  };
-
   return (
     <>
       <EnhancedTable
@@ -457,19 +453,9 @@ export default function Applications() {
           setPagination(prev => ({ ...prev, page }));
           fetchApplications(page);
         }}
+        onExport={(user?.role === 'admin' || user?.role === 'manager') ? handleExport : undefined}
+        exportButtonText="Export CSV"
       />
-      
-      {(user?.role === 'admin' || user?.role === 'manager') && (
-        <div className="fixed bottom-6 right-6">
-          <button
-            onClick={handleExportAction}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium transition-colors"
-          >
-            📊 Export CSV
-          </button>
-        </div>
-      )}
       
       <StatusModal
         isOpen={statusModal.isOpen}
