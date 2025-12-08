@@ -110,9 +110,7 @@ export default function ViewCountryTermsConditions() {
 
               <div className="lg:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Content</label>
-                <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900 min-h-[200px] whitespace-pre-wrap">
-                  {terms.content}
-                </div>
+                <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900 min-h-[200px]" dangerouslySetInnerHTML={{ __html: terms.content }} />
               </div>
 
               <div>

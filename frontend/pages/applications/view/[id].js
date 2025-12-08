@@ -364,7 +364,22 @@ export default function AdminViewApplication() {
                       }
                     }
                     
-                    return <span className="text-sm text-gray-900">{answer.answerText}</span>;
+                    // Decode HTML entities and parse JSON arrays (for checkboxes)
+                    let displayText = answer.answerText;
+                    try {
+                      const textarea = document.createElement('textarea');
+                      textarea.innerHTML = displayText;
+                      displayText = textarea.value;
+                      
+                      const parsed = JSON.parse(displayText);
+                      if (Array.isArray(parsed)) {
+                        return <span className="text-sm text-gray-900">{parsed.join(', ')}</span>;
+                      }
+                      return <span className="text-sm text-gray-900">{String(parsed)}</span>;
+                    } catch (e) {
+                      // Not JSON, display as is
+                    }
+                    return <span className="text-sm text-gray-900">{displayText}</span>;
                   };
                   
                   return (
@@ -463,7 +478,22 @@ export default function AdminViewApplication() {
                               }
                             }
                             
-                            return <span className="text-sm text-gray-900">{answer.answerText}</span>;
+                            // Decode HTML entities and parse JSON arrays (for checkboxes)
+                            let displayText = answer.answerText;
+                            try {
+                              const textarea = document.createElement('textarea');
+                              textarea.innerHTML = displayText;
+                              displayText = textarea.value;
+                              
+                              const parsed = JSON.parse(displayText);
+                              if (Array.isArray(parsed)) {
+                                return <span className="text-sm text-gray-900">{parsed.join(', ')}</span>;
+                              }
+                              return <span className="text-sm text-gray-900">{String(parsed)}</span>;
+                            } catch (e) {
+                              // Not JSON, display as is
+                            }
+                            return <span className="text-sm text-gray-900">{displayText}</span>;
                           };
                           
                           return (

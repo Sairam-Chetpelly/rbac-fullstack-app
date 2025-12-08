@@ -299,7 +299,24 @@ export default function ViewApplication() {
                       }
                     }
                     
-                    return <span className="text-sm text-gray-900">{answer.answerText}</span>;
+                    // Decode HTML entities and parse JSON arrays (for checkboxes)
+                    let displayText = answer.answerText;
+                    try {
+                      // Decode HTML entities
+                      const textarea = document.createElement('textarea');
+                      textarea.innerHTML = displayText;
+                      displayText = textarea.value;
+                      
+                      // Try to parse as JSON
+                      const parsed = JSON.parse(displayText);
+                      if (Array.isArray(parsed)) {
+                        return <span className="text-sm text-gray-900">{parsed.join(', ')}</span>;
+                      }
+                      return <span className="text-sm text-gray-900">{String(parsed)}</span>;
+                    } catch (e) {
+                      // Not JSON, display as is
+                    }
+                    return <span className="text-sm text-gray-900">{displayText}</span>;
                   };
                   
                   return (
@@ -398,7 +415,24 @@ export default function ViewApplication() {
                               }
                             }
                             
-                            return <span className="text-sm text-gray-900">{answer.answerText}</span>;
+                            // Decode HTML entities and parse JSON arrays (for checkboxes)
+                            let displayText = answer.answerText;
+                            try {
+                              // Decode HTML entities
+                              const textarea = document.createElement('textarea');
+                              textarea.innerHTML = displayText;
+                              displayText = textarea.value;
+                              
+                              // Try to parse as JSON
+                              const parsed = JSON.parse(displayText);
+                              if (Array.isArray(parsed)) {
+                                return <span className="text-sm text-gray-900">{parsed.join(', ')}</span>;
+                              }
+                              return <span className="text-sm text-gray-900">{String(parsed)}</span>;
+                            } catch (e) {
+                              // Not JSON, display as is
+                            }
+                            return <span className="text-sm text-gray-900">{displayText}</span>;
                           };
                           
                           return (
