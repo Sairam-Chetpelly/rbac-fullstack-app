@@ -23,16 +23,23 @@ export default function AdminViewApplication() {
 
   useEffect(() => {
     const header = document.querySelector('header');
+    const sidebar = document.querySelector('div[class*="bg-white/10 backdrop-blur-md border-r"]');
     
-    if (fileModal.show) {
+    if (fileModal.show || statusModal.isOpen) {
       if (header) {
         header.style.zIndex = '-1';
         header.style.visibility = 'hidden';
+      }
+      if (sidebar) {
+        sidebar.style.transform = 'translateX(-100%)';
       }
     } else {
       if (header) {
         header.style.zIndex = '';
         header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
       }
     }
     
@@ -41,8 +48,11 @@ export default function AdminViewApplication() {
         header.style.zIndex = '';
         header.style.visibility = '';
       }
+      if (sidebar) {
+        sidebar.style.transform = '';
+      }
     };
-  }, [fileModal.show]);
+  }, [fileModal.show, statusModal.isOpen]);
 
   useEffect(() => {
     if (id) {
@@ -756,10 +766,10 @@ export default function AdminViewApplication() {
 
         {/* File Modal */}
         {fileModal.show && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 !m-0">
             <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-6xl max-h-[95vh] transform transition-all overflow-hidden">
               {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-2xl px-6 py-4">
+              <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl px-6 py-4">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -767,7 +777,7 @@ export default function AdminViewApplication() {
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-white">File Preview</h3>
-                      <p className="text-blue-100 text-sm truncate max-w-md">{fileModal.fileName}</p>
+                      <p className="text-orange-100 text-sm truncate max-w-md">{fileModal.fileName}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">

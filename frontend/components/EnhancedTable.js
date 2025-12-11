@@ -186,7 +186,7 @@ export default function EnhancedTable({
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
             <div className="flex gap-2">
@@ -211,7 +211,7 @@ export default function EnhancedTable({
                     <select
                       value={activeFilters[filter.key] || ''}
                       onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                     >
                       <option value="">All {filter.label}</option>
                       {filter.options.map((option) => (
@@ -226,7 +226,7 @@ export default function EnhancedTable({
                       placeholder={`Filter by ${filter.label.toLowerCase()}`}
                       value={activeFilters[filter.key] || ''}
                       onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                     />
                   )}
                 </div>

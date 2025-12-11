@@ -20,16 +20,23 @@ export default function ViewApplication() {
 
   useEffect(() => {
     const header = document.querySelector('header');
+    const sidebar = document.querySelector('div[class*="bg-white/10 backdrop-blur-md border-r"]');
     
     if (fileModal.show) {
       if (header) {
         header.style.zIndex = '-1';
         header.style.visibility = 'hidden';
       }
+      if (sidebar) {
+        sidebar.style.transform = 'translateX(-100%)';
+      }
     } else {
       if (header) {
         header.style.zIndex = '';
         header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
       }
     }
     
@@ -37,6 +44,9 @@ export default function ViewApplication() {
       if (header) {
         header.style.zIndex = '';
         header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
       }
     };
   }, [fileModal.show]);
@@ -718,28 +728,39 @@ export default function ViewApplication() {
 
         {/* File Modal */}
         {fileModal.show && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-4xl max-h-[90vh] w-full overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b">
-                <h3 className="text-lg font-semibold text-gray-900">{fileModal.fileName}</h3>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleFileDownload(fileModal.fileName, fileModal.url.split('/').pop())}
-                    className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 transition-colors"
-                  >
-                    <Download className="h-4 w-4 mr-1 inline" />
-                    Download
-                  </button>
-                  <button 
-                    onClick={() => setFileModal({ show: false, url: '', fileName: '', type: '' })}
-                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                  >
-                    <X className="h-4 w-4 mr-1 inline" />
-                    Close
-                  </button>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 !m-0">
+            <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-6xl max-h-[95vh] transform transition-all overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl px-6 py-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      <span className="text-2xl">📄</span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">File Preview</h3>
+                      <p className="text-orange-100 text-sm truncate max-w-md">{fileModal.fileName}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleFileDownload(fileModal.fileName, fileModal.url.split('/').pop())}
+                      className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm transition-colors flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </button>
+                    <button 
+                      onClick={() => setFileModal({ show: false, url: '', fileName: '', type: '' })}
+                      className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
+                    >
+                      <X size={18} className="text-white" />
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="p-4 max-h-[calc(90vh-80px)] overflow-auto">
+              {/* Content */}
+              <div className="p-6 max-h-[calc(95vh-100px)] overflow-auto">
                 {fileModal.type?.startsWith('image/') ? (
                   <img 
                     src={fileModal.url} 
@@ -769,7 +790,7 @@ export default function ViewApplication() {
                       <p className="text-red-600 mb-4">Failed to load PDF document.</p>
                       <button 
                         onClick={() => window.open(fileModal.url, '_blank')}
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded hover:from-orange-600 hover:to-orange-700 shadow-lg"
                       >
                         Open in New Tab
                       </button>

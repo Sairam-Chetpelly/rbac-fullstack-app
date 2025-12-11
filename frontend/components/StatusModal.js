@@ -90,10 +90,10 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 !m-0">
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-2xl transform transition-all max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-2xl px-6 py-4">
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl px-6 py-4 shadow-lg">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -101,7 +101,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white">Status Management</h3>
-                <p className="text-blue-100 text-sm">Update application status</p>
+                <p className="text-orange-100 text-sm">Update application status</p>
               </div>
             </div>
             <button 
@@ -123,7 +123,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all bg-white text-gray-900 font-medium"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all bg-white text-gray-900 font-medium"
                 required
               >
                 <option value="">Select Status</option>
@@ -144,7 +144,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                   type="datetime-local"
                   value={embassyVisitDateTime}
                   onChange={(e) => setEmbassyVisitDateTime(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                 />
               </div>
             )}
@@ -162,7 +162,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                     type="text"
                     value={visaDetails.visaNumber}
                     onChange={(e) => setVisaDetails({...visaDetails, visaNumber: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                     placeholder="Enter visa number"
                   />
                 </div>
@@ -176,7 +176,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                       type="date"
                       value={visaDetails.dateOfIssuance}
                       onChange={(e) => setVisaDetails({...visaDetails, dateOfIssuance: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                     />
                   </div>
                   
@@ -188,7 +188,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                       type="date"
                       value={visaDetails.dateOfExpiry}
                       onChange={(e) => setVisaDetails({...visaDetails, dateOfExpiry: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                     />
                   </div>
                 </div>
@@ -200,7 +200,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                   <textarea
                     value={visaDetails.additionalDetails}
                     onChange={(e) => setVisaDetails({...visaDetails, additionalDetails: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all resize-none"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all resize-none"
                     rows="2"
                     placeholder="Any additional visa details..."
                   />
@@ -215,7 +215,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                     multiple
                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                     onChange={(e) => setVisaFiles(Array.from(e.target.files))}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                   />
                   <p className="text-xs text-gray-500 mt-1">Upload visa documents (PDF, Images, Word files)</p>
                   {visaFiles.length > 0 && (
@@ -245,7 +245,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                     type="text"
                     value={courierDetails.visaNumber}
                     onChange={(e) => setCourierDetails({...courierDetails, visaNumber: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                     placeholder="Enter visa number"
                   />
                 </div>
@@ -258,7 +258,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                     type="text"
                     value={courierDetails.courierName}
                     onChange={(e) => setCourierDetails({...courierDetails, courierName: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                     placeholder="Enter courier company name"
                   />
                 </div>
@@ -271,7 +271,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                     type="text"
                     value={courierDetails.shipmentRefNumber}
                     onChange={(e) => setCourierDetails({...courierDetails, shipmentRefNumber: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                     placeholder="Enter tracking/reference number"
                   />
                 </div>
@@ -284,7 +284,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                     type="date"
                     value={courierDetails.shipmentDate}
                     onChange={(e) => setCourierDetails({...courierDetails, shipmentDate: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                   />
                 </div>
                 
@@ -297,7 +297,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
                     multiple
                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                     onChange={(e) => setCourierFiles(Array.from(e.target.files))}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
                   />
                   <p className="text-xs text-gray-500 mt-1">Upload courier receipts, tracking documents</p>
                   {courierFiles.length > 0 && (
@@ -321,7 +321,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
               <textarea
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all resize-none"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all resize-none"
                 rows="3"
                 placeholder="Add any remarks about this status change..."
               />
@@ -337,7 +337,7 @@ export default function StatusModal({ isOpen, onClose, onSubmit, statuses, curre
               </button>
               <button
                 type="submit"
-                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl"
               >
                 Update Status
               </button>

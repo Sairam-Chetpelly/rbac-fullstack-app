@@ -301,7 +301,7 @@ export default function CustomerDashboard() {
               
               {isEditing && (
                 <div className="mt-4 flex gap-2">
-                  <Button className="bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600" onClick={handleEditProfile}>Save Changes</Button>
+                  <Button variant="primary" onClick={handleEditProfile}>Save Changes</Button>
                   <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
                 </div>
               )}
@@ -333,7 +333,7 @@ export default function CustomerDashboard() {
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">My Application Status</h2>
               <Link href="/visa-application-demo">
-                <Button className="bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600">
+                <Button variant="primary">
                   <Plus className="h-4 w-4 mr-2" />
                   New Application
                 </Button>
@@ -490,7 +490,7 @@ export default function CustomerDashboard() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                        <Button size="sm" variant="secondary">
                           Continue
                         </Button>
                       </td>
@@ -584,7 +584,7 @@ export default function CustomerDashboard() {
             <div className="flex items-center">
               <button 
                 onClick={() => router.back()}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-lg hover:from-blue-500 hover:to-purple-600 transition-all text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all text-sm shadow-lg"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Back
@@ -600,7 +600,7 @@ export default function CustomerDashboard() {
             </div>
             <button 
               onClick={() => setActiveSection('account')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-lg hover:from-blue-500 hover:to-purple-600 transition-all text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all text-sm shadow-md"
             >
               <User className="w-4 h-4" />
               Profile
@@ -612,7 +612,7 @@ export default function CustomerDashboard() {
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <button 
           onClick={() => setShowMobileMenu(!showMobileMenu)}
-          className="lg:hidden mb-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-lg hover:from-blue-500 hover:to-purple-600 transition-all"
+          className="lg:hidden mb-4 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-md"
         >
           <Menu className="w-4 h-4" />
           Menu
@@ -657,7 +657,7 @@ export default function CustomerDashboard() {
             <div className="mt-8 pt-6 border-t">
               <button 
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-red-400 to-red-500 text-white rounded-lg hover:from-red-500 hover:to-red-600 transition-all"
+                className="w-full flex items-center justify-center gap-2 p-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-md"
               >
                 <LogOut className="w-4 h-4" />
                 Logout

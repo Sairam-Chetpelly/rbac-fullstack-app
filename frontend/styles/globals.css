@@ -6,23 +6,23 @@
 @layer components {
   /* Standard Button Styles */
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg;
   }
   
   .btn-secondary {
-    @apply bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md;
   }
   
   .btn-outline {
-    @apply border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply border border-orange-300 bg-white hover:bg-orange-50 text-orange-600 px-4 py-2 rounded-lg font-medium transition-all duration-200;
   }
   
   .btn-danger {
-    @apply bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md;
   }
   
   .btn-success {
-    @apply bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md;
   }
   
   /* Small Button Variants */
@@ -31,7 +31,7 @@
   }
   
   .btn-primary-sm {
-    @apply btn-sm bg-blue-100 text-blue-600 hover:bg-blue-200;
+    @apply btn-sm bg-orange-100 text-orange-600 hover:bg-orange-200;
   }
   
   .btn-danger-sm {

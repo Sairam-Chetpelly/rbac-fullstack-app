@@ -32,6 +32,39 @@ const VisaApplicationForm = () => {
   const [uploadingFiles, setUploadingFiles] = useState({});
 
   useEffect(() => {
+    const header = document.querySelector('header');
+    const sidebar = document.querySelector('div[class*="bg-white/10 backdrop-blur-md border-r"]');
+    
+    if (fileModal.show) {
+      if (header) {
+        header.style.zIndex = '-1';
+        header.style.visibility = 'hidden';
+      }
+      if (sidebar) {
+        sidebar.style.transform = 'translateX(-100%)';
+      }
+    } else {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
+      }
+    }
+    
+    return () => {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
+      }
+    };
+  }, [fileModal.show]);
+
+  useEffect(() => {
     if (visaTypeId) {
       fetchFormData();
     }
@@ -836,7 +869,7 @@ const VisaApplicationForm = () => {
               <select
                 value={numberOfApplicants}
                 onChange={(e) => handleNumberOfApplicantsChange(parseInt(e.target.value))}
-                className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
               >
                 {[...Array(10)].map((_, i) => (
                   <option key={i + 1} value={i + 1}>{i + 1}</option>
@@ -893,7 +926,7 @@ const VisaApplicationForm = () => {
               <select
                 value={relationships[currentApplicant] || 'self'}
                 onChange={(e) => handleRelationshipChange(currentApplicant, e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               >
                 <option value="self">Self (Primary Applicant)</option>
                 <option value="spouse">Spouse</option>
@@ -953,7 +986,7 @@ const VisaApplicationForm = () => {
                               value={getFieldValue(field)}
                               onChange={(e) => handleInputChange(field.name, e.target.value)}
                               required={field.required}
-                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-orange-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
                               rows={4}
                             />
                           ) : field.type === 'select' ? (
@@ -962,7 +995,7 @@ const VisaApplicationForm = () => {
                               value={getFieldValue(field)}
                               onChange={(e) => handleInputChange(field.name, e.target.value)}
                               required={field.required}
-                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white"
+                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-orange-500 transition-all duration-200 text-gray-900 bg-white"
                             >
                               <option disabled value="">Select {field.label}</option>
                               {field.options && field.options.map((option, index) => (
@@ -1086,7 +1119,7 @@ const VisaApplicationForm = () => {
                               value={getFieldValue(field)}
                               onChange={(e) => handleInputChange(field.name, e.target.value)}
                               required={field.required}
-                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-orange-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
                             />
                           )}
                         </div>
@@ -1100,7 +1133,7 @@ const VisaApplicationForm = () => {
           <div className="flex gap-6 pt-8">
             <Button 
               type="submit" 
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
+              className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
             >
               <Eye className="h-5 w-5 mr-3" />
               Continue to Review
@@ -1391,7 +1424,7 @@ const VisaApplicationForm = () => {
             <Button 
               onClick={handleConfirmSubmit}
               disabled={submitting}
-              className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
+              className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
             >
               <CheckCircle className="h-5 w-5 mr-3" />
               {submitting ? (
@@ -1507,7 +1540,7 @@ const VisaApplicationForm = () => {
             <Button 
               onClick={handleFinalSubmit}
               disabled={submitting}
-              className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
+              className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
             >
               {submitting ? (
                 <span className="flex items-center gap-2">
@@ -1572,7 +1605,7 @@ const VisaApplicationForm = () => {
           <div className="space-y-4 mb-8">
             <Button 
               onClick={() => router.push('/customer/dashboard')}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 py-4 text-lg font-semibold"
             >
               Go to Dashboard
             </Button>
@@ -1686,7 +1719,7 @@ const VisaApplicationForm = () => {
 
         {/* File Modal */}
         {fileModal.show && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-opacity-75 flex items-center justify-center z-50 p-4 !m-0" style={{ backgroundColor: "rgb(125 122 122 / 75%)" }}>
             <div className="bg-white rounded-2xl max-w-4xl max-h-[90vh] w-full overflow-hidden">
               <div className="flex items-center justify-between p-4 border-b">
                 <h3 className="text-lg font-semibold text-gray-900">{fileModal.fileName}</h3>

@@ -37,10 +37,10 @@ export default function AssignModal({ isOpen, onClose, onSubmit, employees, curr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 !m-0">
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-lg transform transition-all">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-2xl px-6 py-4">
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl px-6 py-4 shadow-lg">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -48,7 +48,7 @@ export default function AssignModal({ isOpen, onClose, onSubmit, employees, curr
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white">Assignment Management</h3>
-                <p className="text-blue-100 text-sm">Assign application to employee</p>
+                <p className="text-orange-100 text-sm">Assign application to employee</p>
               </div>
             </div>
             <button 
@@ -69,7 +69,7 @@ export default function AssignModal({ isOpen, onClose, onSubmit, employees, curr
             <select
               value={selectedEmployee}
               onChange={(e) => setSelectedEmployee(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all bg-white text-gray-900 font-medium"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all bg-white text-gray-900 font-medium"
             >
               <option value="">🚫 Unassigned</option>
               {employees.map(employee => (
@@ -90,7 +90,7 @@ export default function AssignModal({ isOpen, onClose, onSubmit, employees, curr
             </button>
             <button
               type="submit"
-              className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl"
             >
               Assign Application
             </button>

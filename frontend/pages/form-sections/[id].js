@@ -123,7 +123,7 @@ export default function EditFormSection() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter form section name"
                 />
               </div>
@@ -139,7 +139,7 @@ export default function EditFormSection() {
                   onChange={handleChange}
                   required
                   min="1"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter display order"
                 />
               </div>
@@ -153,7 +153,7 @@ export default function EditFormSection() {
                   value={formData.countryVisaType}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option  disabled value="">Select Visa Type</option>
                   {countryVisaTypes.map((cvt) => (
@@ -173,7 +173,7 @@ export default function EditFormSection() {
                   value={formData.status}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option disabled value="">Select Status</option>
                   {/* {statuses.map((status) => (
@@ -198,7 +198,7 @@ export default function EditFormSection() {
                   value={formData.description}
                   onChange={handleChange}
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter form section description"
                 />
               </div>

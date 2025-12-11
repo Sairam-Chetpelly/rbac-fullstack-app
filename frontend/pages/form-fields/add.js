@@ -155,7 +155,7 @@ export default function AddFormField() {
                   value={formData.label}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter field label (e.g., First Name)"
                 />
               </div>
@@ -170,7 +170,7 @@ export default function AddFormField() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50"
                   placeholder="Auto-generated from label"
                   readOnly
                 />
@@ -185,7 +185,7 @@ export default function AddFormField() {
                   value={formData.type}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option disabled value="">Select Field Type</option>
                   {fieldTypes.map((type) => (
@@ -207,7 +207,7 @@ export default function AddFormField() {
                   onChange={handleChange}
                   required
                   min="1"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter display order"
                 />
               </div>
@@ -220,7 +220,7 @@ export default function AddFormField() {
                   name="formSection"
                   value={formData.formSection}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option disabled value="">Select Form Section</option>
                   {formSections.map((section) => (
@@ -240,7 +240,7 @@ export default function AddFormField() {
                   value={formData.status}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option disabled value="">Select Status</option>
                   {/* {statuses.map((status) => (
@@ -265,7 +265,7 @@ export default function AddFormField() {
                   name="placeholder"
                   value={formData.placeholder}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter placeholder text"
                 />
               </div>
@@ -279,7 +279,7 @@ export default function AddFormField() {
                   name="defaultValue"
                   value={formData.defaultValue}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter default value"
                 />
               </div>
@@ -316,7 +316,7 @@ export default function AddFormField() {
                             newOptions[index] = e.target.value;
                             setFormData({ ...formData, options: newOptions });
                           }}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
                         <button
                           type="button"
@@ -333,7 +333,7 @@ export default function AddFormField() {
                         value={newOption}
                         onChange={(e) => setNewOption(e.target.value)}
                         placeholder="Add new option"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOption())}
                       />
                       <button
@@ -362,7 +362,7 @@ export default function AddFormField() {
                           type="number"
                           value={formData.validationRules.minLength || ''}
                           onChange={(e) => handleValidationChange('minLength', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                           min="0"
                         />
                       </div>
@@ -374,7 +374,7 @@ export default function AddFormField() {
                           type="number"
                           value={formData.validationRules.maxLength || ''}
                           onChange={(e) => handleValidationChange('maxLength', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                           min="0"
                         />
                       </div>
@@ -390,7 +390,7 @@ export default function AddFormField() {
                           type="number"
                           value={formData.validationRules.min || ''}
                           onChange={(e) => handleValidationChange('min', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
                       </div>
                       <div>
@@ -401,7 +401,7 @@ export default function AddFormField() {
                           type="number"
                           value={formData.validationRules.max || ''}
                           onChange={(e) => handleValidationChange('max', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
                       </div>
                     </>
@@ -414,7 +414,7 @@ export default function AddFormField() {
                       type="text"
                       value={formData.validationRules.pattern || ''}
                       onChange={(e) => handleValidationChange('pattern', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       placeholder="e.g., ^[a-zA-Z]+$"
                     />
                   </div>
@@ -426,7 +426,7 @@ export default function AddFormField() {
                       type="text"
                       value={formData.validationRules.customMessage || ''}
                       onChange={(e) => handleValidationChange('customMessage', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       placeholder="Custom validation error message"
                     />
                   </div>

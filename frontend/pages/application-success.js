@@ -31,7 +31,8 @@ const ApplicationSuccess = () => {
           <div className="space-y-3">
             <Button 
               onClick={() => router.push('/customer/dashboard')}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+              variant="primary"
+              className="w-full"
             >
               <Home className="h-4 w-4 mr-2" />
               Go to Dashboard

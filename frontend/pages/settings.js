@@ -63,7 +63,7 @@ export default function Settings() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
                     activeTab === tab.id
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -87,7 +87,7 @@ export default function Settings() {
                     type="text"
                     value={settings.appName}
                     onChange={(e) => handleSettingChange('appName', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
                   />
                 </div>
 
@@ -99,17 +99,17 @@ export default function Settings() {
                     type="number"
                     value={settings.sessionTimeout}
                     onChange={(e) => handleSettingChange('sessionTimeout', parseInt(e.target.value))}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
                   />
                   <p className="text-sm text-gray-500 mt-1">Users will be logged out after this period of inactivity</p>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <div className="text-blue-500 text-xl">💡</div>
+                    <div className="text-orange-500 text-xl">💡</div>
                     <div>
-                      <h4 className="text-sm font-semibold text-blue-900 mb-1">System Information</h4>
-                      <div className="text-sm text-blue-700 space-y-1">
+                      <h4 className="text-sm font-semibold text-orange-900 mb-1">System Information</h4>
+                      <div className="text-sm text-orange-700 space-y-1">
                         <p>Version: 1.0.0</p>
                         <p>Last Updated: {new Date().toLocaleDateString()}</p>
                         <p>Environment: Production</p>
@@ -144,7 +144,7 @@ export default function Settings() {
                         onChange={(e) => handleSettingChange('twoFactorAuth', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                     </label>
                   </div>
 
@@ -163,7 +163,7 @@ export default function Settings() {
                         onChange={(e) => handleSettingChange('passwordComplexity', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                     </label>
                   </div>
 
@@ -182,7 +182,7 @@ export default function Settings() {
                         onChange={(e) => handleSettingChange('loginAttempts', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                     </label>
                   </div>
                 </div>
@@ -206,7 +206,7 @@ export default function Settings() {
                     value={settings.smtpServer}
                     onChange={(e) => handleSettingChange('smtpServer', e.target.value)}
                     placeholder="smtp.example.com"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
                   />
                 </div>
 
@@ -220,7 +220,7 @@ export default function Settings() {
                       value={settings.smtpPort}
                       onChange={(e) => handleSettingChange('smtpPort', parseInt(e.target.value))}
                       placeholder="587"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
                     />
                   </div>
 
@@ -233,7 +233,7 @@ export default function Settings() {
                       value={settings.fromEmail}
                       onChange={(e) => handleSettingChange('fromEmail', e.target.value)}
                       placeholder="noreply@example.com"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
                     />
                   </div>
                 </div>

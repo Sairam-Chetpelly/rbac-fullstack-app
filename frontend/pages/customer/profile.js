@@ -143,7 +143,7 @@ export default function CustomerProfile() {
           
           {isEditing && (
             <div className="mt-4 flex gap-2">
-              <Button className="bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600" onClick={handleEditProfile}>
+              <Button variant="primary" onClick={handleEditProfile}>
                 Save Changes
               </Button>
               <Button variant="outline" onClick={() => setIsEditing(false)}>

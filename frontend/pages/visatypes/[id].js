@@ -168,7 +168,7 @@ const CountryVisaTypes = () => {
                     </div>
 
                     {/* Apply Button */}
-                    <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
+                    <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700">
                       Select This Visa Type
                     </Button>
                   </div>

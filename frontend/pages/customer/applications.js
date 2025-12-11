@@ -125,7 +125,7 @@ export default function CustomerApplications() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">My Applications</h1>
           <Link href="/">
-            <Button className="bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600">
+            <Button variant="primary">
               <Plus className="h-4 w-4 mr-2" />
               New Application
             </Button>

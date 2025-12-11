@@ -247,7 +247,7 @@ const VisaFlowHomepage = () => {
                             </div>
                           )} */}
                           <Link href={`/visatypes/${destination.id}`}>
-                            <Button className="w-full bg-gradient-to-r from-blue-400 to-purple-500 text-white hover:from-blue-500 hover:to-purple-600 transition-all text-sm font-semibold">
+                            <Button variant="primary" className="w-full text-sm font-semibold">
                               Apply Now
                             </Button>
                           </Link>
@@ -265,6 +265,75 @@ const VisaFlowHomepage = () => {
                   <p className="text-gray-600">Try selecting a different region to see available destinations.</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Passport Application Section */}
+      <section className="py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden bg-white rounded-3xl shadow-2xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-orange-500/5"></div>
+            <div className="relative px-8 py-16 sm:px-16">
+              <div className="flex flex-col lg:flex-row items-center gap-12">
+                {/* Left Content */}
+                <div className="flex-1 text-center lg:text-left">
+                  <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-orange-100 rounded-full text-sm font-medium text-blue-800 mb-6">
+                    🛂 Passport Services
+                  </div>
+                  <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                    Need a New
+                    <span className="bg-gradient-to-r from-blue-600 to-orange-500 bg-clip-text text-transparent block">
+                      Passport?
+                    </span>
+                  </h2>
+                  <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                    Start your passport application journey with us. Fill out our simple form and we'll guide you through every step of the process.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                    <button
+                      onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdCPVPGV-uO209XWRyjYkJ36kLX08pN9POhba_PEnhcqDQVMw/viewform?usp=sf_link', '_blank')}
+                      className="group bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-3"
+                    >
+                      Apply for Passport
+                      <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => window.location.href = 'https://wa.me/919167447700'}
+                      className="bg-white text-gray-700 px-8 py-4 rounded-xl font-semibold border-2 border-gray-200 hover:border-blue-300 hover:text-blue-600 transition-all duration-300 flex items-center justify-center gap-3"
+                    >
+                      <Phone className="w-5 h-5" />
+                      Get Help
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Right Visual */}
+                <div className="flex-shrink-0">
+                  <div className="relative">
+                    <div className="w-80 h-80 bg-gradient-to-br from-blue-500 to-orange-500 rounded-3xl flex items-center justify-center transform rotate-3 shadow-2xl">
+                      <div className="w-72 h-72 bg-white rounded-2xl flex flex-col items-center justify-center p-8 transform -rotate-3">
+                        <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-orange-500 rounded-2xl flex items-center justify-center mb-6">
+                          <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Quick & Easy</h3>
+                        <p className="text-gray-600 text-center text-sm leading-relaxed">
+                          Simple online form
+                          <br />Professional guidance
+                          <br />Fast processing
+                        </p>
+                      </div>
+                    </div>
+                    <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full opacity-20 animate-pulse"></div>
+                    <div className="absolute -top-4 -left-4 w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-30 animate-pulse delay-1000"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

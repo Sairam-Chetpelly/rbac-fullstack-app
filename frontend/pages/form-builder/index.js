@@ -68,6 +68,39 @@ export default function FormBuilder() {
   const router = useRouter();
 
   useEffect(() => {
+    const header = document.querySelector('header');
+    const sidebar = document.querySelector('div[class*="bg-white/10 backdrop-blur-md border-r"]');
+    
+    if (showSectionModal || showFieldModal) {
+      if (header) {
+        header.style.zIndex = '-1';
+        header.style.visibility = 'hidden';
+      }
+      if (sidebar) {
+        sidebar.style.transform = 'translateX(-100%)';
+      }
+    } else {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
+      }
+    }
+    
+    return () => {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
+      }
+    };
+  }, [showSectionModal, showFieldModal]);
+
+  useEffect(() => {
     fetchVisaTypes();
     fetchStatuses();
   }, []);
@@ -414,7 +447,7 @@ export default function FormBuilder() {
             <div className="relative">
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="w-full p-4 text-left border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-4 text-left border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               >
                 {selectedVisa ? (
                   <div className="flex items-center justify-between">
@@ -457,7 +490,7 @@ export default function FormBuilder() {
                       placeholder="Search visa types..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                     />
                   </div>
                   <div className="max-h-60 overflow-y-auto">
@@ -702,11 +735,11 @@ export default function FormBuilder() {
                                     <textarea
                                       name={field.name}
                                       placeholder={field.placeholder}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                                       rows={3}
                                     />
                                   ) : field.type === 'select' ? (
-                                    <select name={field.name} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <select name={field.name} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
                                       <option disabled value="">Select {field.label}</option>
                                       {field.options && field.options.map((option, index) => (
                                         <option key={index} value={option}>
@@ -753,7 +786,7 @@ export default function FormBuilder() {
                                       type={field.type}
                                       name={field.name}
                                       placeholder={field.placeholder}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                                     />
                                   )}
                                 </div>
@@ -804,7 +837,7 @@ export default function FormBuilder() {
                   value={sectionForm.name}
                   onChange={handleSectionChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter form section name"
                 />
               </div>
@@ -818,7 +851,7 @@ export default function FormBuilder() {
                   onChange={handleSectionChange}
                   required
                   min="1"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter display order"
                 />
               </div>
@@ -830,7 +863,7 @@ export default function FormBuilder() {
                   value={sectionForm.countryVisaType}
                   onChange={handleSectionChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="">Select Visa Type</option>
                   {countryVisaTypes.map((cvt) => (
@@ -848,7 +881,7 @@ export default function FormBuilder() {
                   value={sectionForm.status}
                   onChange={handleSectionChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option disabled value="">Select Status</option>
                   {/* {statuses.map((status) => (
@@ -871,7 +904,7 @@ export default function FormBuilder() {
                   value={sectionForm.description}
                   onChange={handleSectionChange}
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter form section description"
                 />
               </div>
@@ -920,7 +953,7 @@ export default function FormBuilder() {
                   value={fieldForm.label}
                   onChange={handleFieldChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter field label (e.g., First Name)"
                 />
               </div>
@@ -933,7 +966,7 @@ export default function FormBuilder() {
                   value={fieldForm.name}
                   onChange={handleFieldChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50"
                   placeholder="Auto-generated from label"
                   readOnly
                 />
@@ -946,7 +979,7 @@ export default function FormBuilder() {
                   value={fieldForm.type}
                   onChange={handleFieldChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option disabled value="">Select Field Type</option>
                   {fieldTypes.map((type) => (
@@ -966,7 +999,7 @@ export default function FormBuilder() {
                   onChange={handleFieldChange}
                   required
                   min="1"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter display order"
                 />
               </div>
@@ -977,7 +1010,7 @@ export default function FormBuilder() {
                   name="formSection"
                   value={fieldForm.formSection}
                   onChange={handleFieldChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option disabled value="">Select Form Section</option>
                   {formSections.map((section) => (
@@ -995,7 +1028,7 @@ export default function FormBuilder() {
                   value={fieldForm.status}
                   onChange={handleFieldChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option disabled value="">Select Status</option>
                   {/* {statuses.map((status) => (
@@ -1018,7 +1051,7 @@ export default function FormBuilder() {
                   name="placeholder"
                   value={fieldForm.placeholder}
                   onChange={handleFieldChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter placeholder text"
                 />
               </div>
@@ -1030,7 +1063,7 @@ export default function FormBuilder() {
                   name="defaultValue"
                   value={fieldForm.defaultValue}
                   onChange={handleFieldChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Enter default value"
                 />
               </div>
@@ -1065,7 +1098,7 @@ export default function FormBuilder() {
                             newOptions[index] = e.target.value;
                             setFieldForm({ ...fieldForm, options: newOptions });
                           }}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
                         <button
                           type="button"
@@ -1082,7 +1115,7 @@ export default function FormBuilder() {
                         value={newOption}
                         onChange={(e) => setNewOption(e.target.value)}
                         placeholder="Add new option"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addOption())}
                       />
                       <button
@@ -1109,7 +1142,7 @@ export default function FormBuilder() {
                           type="number"
                           value={fieldForm.validationRules.minLength || ''}
                           onChange={(e) => handleValidationChange('minLength', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                           min="0"
                         />
                       </div>
@@ -1119,7 +1152,7 @@ export default function FormBuilder() {
                           type="number"
                           value={fieldForm.validationRules.maxLength || ''}
                           onChange={(e) => handleValidationChange('maxLength', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                           min="0"
                         />
                       </div>
@@ -1133,7 +1166,7 @@ export default function FormBuilder() {
                           type="number"
                           value={fieldForm.validationRules.min || ''}
                           onChange={(e) => handleValidationChange('min', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
                       </div>
                       <div>
@@ -1142,7 +1175,7 @@ export default function FormBuilder() {
                           type="number"
                           value={fieldForm.validationRules.max || ''}
                           onChange={(e) => handleValidationChange('max', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         />
                       </div>
                     </>
@@ -1153,7 +1186,7 @@ export default function FormBuilder() {
                       type="text"
                       value={fieldForm.validationRules.pattern || ''}
                       onChange={(e) => handleValidationChange('pattern', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       placeholder="e.g., ^[a-zA-Z]+$"
                     />
                   </div>
@@ -1163,7 +1196,7 @@ export default function FormBuilder() {
                       type="text"
                       value={fieldForm.validationRules.customMessage || ''}
                       onChange={(e) => handleValidationChange('customMessage', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       placeholder="Custom validation error message"
                     />
                   </div>

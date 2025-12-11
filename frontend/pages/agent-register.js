@@ -393,7 +393,7 @@ export default function AgentRegister() {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                       required
                     />
                   </div>
@@ -404,8 +404,8 @@ export default function AgentRegister() {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                        fieldErrors.email ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      className={`w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-orange-500 transition-all ${
+                        fieldErrors.email ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-orange-500'
                       }`}
                       required
                     />
@@ -418,8 +418,8 @@ export default function AgentRegister() {
                       name="mobile"
                       value={formData.mobile}
                       onChange={handleChange}
-                      className={`w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                        fieldErrors.mobile ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      className={`w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-orange-500 transition-all ${
+                        fieldErrors.mobile ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-orange-500'
                       }`}
                       placeholder="10-digit Mobile Number"
                       maxLength="10"
@@ -434,7 +434,7 @@ export default function AgentRegister() {
                       name="nationality"
                       value={formData.nationality}
                       onChange={handleChange}
-                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                       required
                     />
                   </div>
@@ -446,8 +446,8 @@ export default function AgentRegister() {
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
-                        className={`w-full p-4 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                          fieldErrors.password ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                        className={`w-full p-4 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-orange-500 transition-all ${
+                          fieldErrors.password ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-orange-500'
                         }`}
                         placeholder="Minimum 6 characters"
                         required
@@ -479,8 +479,8 @@ export default function AgentRegister() {
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        className={`w-full p-4 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                          fieldErrors.confirmPassword ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                        className={`w-full p-4 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-orange-500 transition-all ${
+                          fieldErrors.confirmPassword ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-orange-500'
                         }`}
                         required
                       />
@@ -520,7 +520,7 @@ export default function AgentRegister() {
                       name="companyName"
                       value={formData.companyName}
                       onChange={handleChange}
-                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                       required
                     />
                   </div>
@@ -532,7 +532,7 @@ export default function AgentRegister() {
                         name="companyAddress.line1"
                         value={formData.companyAddress.line1}
                         onChange={handleChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                         required
                       />
                     </div>
@@ -543,7 +543,7 @@ export default function AgentRegister() {
                         name="companyAddress.line2"
                         value={formData.companyAddress.line2}
                         onChange={handleChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                       />
                     </div>
                     <div>
@@ -553,7 +553,7 @@ export default function AgentRegister() {
                         name="companyAddress.city"
                         value={formData.companyAddress.city}
                         onChange={handleChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                         required
                       />
                     </div>
@@ -564,8 +564,8 @@ export default function AgentRegister() {
                         name="companyAddress.pin"
                         value={formData.companyAddress.pin}
                         onChange={handleChange}
-                        className={`w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                          fieldErrors['companyAddress.pin'] ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                        className={`w-full p-4 border-2 rounded-xl focus:ring-2 focus:ring-orange-500 transition-all ${
+                          fieldErrors['companyAddress.pin'] ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-orange-500'
                         }`}
                         placeholder="6-digit PIN code"
                         required
@@ -579,7 +579,7 @@ export default function AgentRegister() {
                         name="companyAddress.state"
                         value={formData.companyAddress.state}
                         onChange={handleChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                         required
                       />
                     </div>
@@ -590,7 +590,7 @@ export default function AgentRegister() {
                         name="companyAddress.country"
                         value={formData.companyAddress.country}
                         onChange={handleChange}
-                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
                         required
                       />
                     </div>
@@ -621,8 +621,8 @@ export default function AgentRegister() {
                           name="panCardNumber"
                           value={formData.panCardNumber}
                           onChange={handleChange}
-                          className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all font-mono text-sm ${
-                            fieldErrors.panCardNumber ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                          className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-orange-500 transition-all font-mono text-sm ${
+                            fieldErrors.panCardNumber ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-orange-500'
                           }`}
                           placeholder="ABCDE1234F"
                           required
@@ -637,7 +637,7 @@ export default function AgentRegister() {
                           name="panCardPhoto"
                           accept="image/*,.pdf"
                           onChange={handleFileChange}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-sm"
                           required
                         />
                         <p className="text-xs text-gray-500 mt-1">Clear photo/scan (Max 5MB)</p>
@@ -661,8 +661,8 @@ export default function AgentRegister() {
                           name="aadhaarNumber"
                           value={formData.aadhaarNumber}
                           onChange={handleChange}
-                          className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all font-mono text-sm ${
-                            fieldErrors.aadhaarNumber ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                          className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-orange-500 transition-all font-mono text-sm ${
+                            fieldErrors.aadhaarNumber ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-orange-500'
                           }`}
                           placeholder="123456789012"
                           maxLength="12"
@@ -678,7 +678,7 @@ export default function AgentRegister() {
                           name="aadhaarFile"
                           accept="image/*,.pdf"
                           onChange={handleFileChange}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-sm"
                           required
                         />
                         <p className="text-xs text-gray-500 mt-1">Clear photo/scan (Max 5MB)</p>
@@ -702,7 +702,7 @@ export default function AgentRegister() {
                           name="cancelledChequeFile"
                           accept="image/*,.pdf"
                           onChange={handleFileChange}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-sm"
                           required
                         />
                         <p className="text-xs text-gray-500 mt-1">Clear photo/scan (Max 5MB)</p>
@@ -738,8 +738,8 @@ export default function AgentRegister() {
                           name="gstNumber"
                           value={formData.gstNumber}
                           onChange={handleChange}
-                          className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all font-mono text-sm ${
-                            fieldErrors.gstNumber ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                          className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-orange-500 transition-all font-mono text-sm ${
+                            fieldErrors.gstNumber ? 'border-red-300 focus:border-red-500' : 'border-gray-200 focus:border-orange-500'
                           }`}
                           placeholder="22AAAAA0000A1Z5"
                         />
@@ -753,7 +753,7 @@ export default function AgentRegister() {
                           name="gstFile"
                           accept=".pdf,.jpg,.jpeg,.png"
                           onChange={handleFileChange}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-sm"
                         />
                         <p className="text-xs text-gray-500 mt-1">PDF or image (Max 5MB)</p>
                       </div>
@@ -777,7 +777,7 @@ export default function AgentRegister() {
                           name="msmeNumber"
                           value={formData.msmeNumber}
                           onChange={handleChange}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-mono text-sm"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-mono text-sm"
                           placeholder="UDYAM-XX-00-0000000"
                         />
                         <p className="text-xs text-gray-500 mt-1">UDYAM registration number</p>
@@ -789,7 +789,7 @@ export default function AgentRegister() {
                           name="msmeFile"
                           accept=".pdf,.jpg,.jpeg,.png"
                           onChange={handleFileChange}
-                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-sm"
                         />
                         <p className="text-xs text-gray-500 mt-1">PDF or image (Max 5MB)</p>
                       </div>
@@ -798,11 +798,20 @@ export default function AgentRegister() {
                 </div>
               </div>
 
-              <div className="text-center">
+              <div className="text-center space-y-4 md:space-y-0 md:space-x-4 md:flex md:justify-center">
+                <button
+                  type="button"
+                  onClick={() => router.push('/login')}
+                  className="w-full md:w-auto flex items-center justify-center bg-white border border-orange-300 hover:bg-orange-50 text-orange-600 font-bold py-4 px-12 rounded-xl transition duration-200 shadow-xl hover:shadow-2xl"
+                >
+                  Cancel
+                </button>
                 <Button
                   type="submit"
                   disabled={loading || Object.keys(fieldErrors).length > 0}
-                  className="w-full md:w-auto px-12 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  variant="primary"
+                  size="lg"
+                  className="w-full md:w-auto px-12 py-4 font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center">

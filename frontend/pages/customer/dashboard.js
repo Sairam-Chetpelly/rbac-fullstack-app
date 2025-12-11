@@ -50,7 +50,7 @@ export default function CustomerDashboard() {
   return (
     <CustomerLayout>
       <div className="space-y-6">
-        <div className="bg-gradient-to-r from-blue-400 via-purple-500 to-red-400 p-6 rounded-lg text-white relative">
+        <div className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 p-6 rounded-lg text-white relative">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <User className="w-14 h-14 text-white" />

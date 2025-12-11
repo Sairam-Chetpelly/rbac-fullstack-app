@@ -97,32 +97,31 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
   }, [router.pathname]);
 
   return (
-    <div className={`bg-white border-r border-gray-200 shadow-sm h-screen transition-all duration-300 fixed left-0 top-0 z-40 flex flex-col ${
+    <div className={`bg-white/10 backdrop-blur-md border-r border-white/10 h-screen transition-all duration-300 fixed left-0 top-0 z-40 flex flex-col ${
       isMobile 
         ? (isCollapsed ? '-translate-x-full w-72' : 'translate-x-0 w-72')
         : (isCollapsed ? 'w-20' : 'w-72')
-    }`}>
+    }`} style={{ boxShadow: "0 2px 2px 2px rgba(255, 255, 255, 0.3)" }}>
       <div className="p-3 sm:p-4 lg:p-6 flex-shrink-0 pt-20 sm:pt-24">
         <div className="flex justify-between items-center mb-4 sm:mb-6 lg:mb-8">
           {!isCollapsed && (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold">
+            <div className="flex items-center gap-3 mr-2 p-3 rounded-2xl border border-orange-200/50">
+              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg">
                 {user?.name?.charAt(0)?.toUpperCase()}
               </div>
               <div>
-                <p className="font-semibold text-gray-800 text-sm">{user?.name}</p>
-                <p className="text-gray-500 text-xs capitalize">{user?.role}</p>
+                <p className="font-bold text-gray-800 text-sm">{user?.name}</p>
+                <p className="text-orange-600 text-xs capitalize font-medium">{user?.role}</p>
               </div>
             </div>
           )}
           <button
             onClick={onToggle}
-            className="p-2 lg:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 hover:scale-110 active:scale-95 text-gray-600"
+            className="p-3 rounded-2xl bg-gradient-to-r from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 transition-all duration-200 hover:scale-110 active:scale-95 text-orange-600 shadow-md"
           >
-            <span className="text-xl lg:text-2xl">{isCollapsed ? '☰' : '✕'}</span>
+            <span className="text-xl">{isCollapsed ? '☰' : '✕'}</span>
           </button>
         </div>
-        
       </div>
       
       <nav className="space-y-1 flex-1 overflow-y-auto sidebar-scroll px-3 sm:px-4 lg:px-6">
@@ -136,8 +135,8 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
                     onClick={() => toggleGroup(group.name)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                       hasActiveChild || isExpanded
-                        ? 'bg-blue-600 text-white border-l-4 border-blue-700'
-                        : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-l-4 border-orange-700 shadow-lg'
+                        : 'text-gray-600 hover:bg-orange-50 hover:text-orange-700'
                     } ${isCollapsed ? 'justify-center' : 'justify-between'}`}
                     title={isCollapsed ? group.name : ''}
                   >
@@ -164,8 +163,8 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
                           href={child.href}
                           className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                             router.pathname === child.href
-                              ? 'bg-blue-600 text-white'
-                              : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600'
+                              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
+                              : 'text-gray-500 hover:bg-orange-50 hover:text-orange-600'
                           }`}
                         >
                           <span className="text-base">{child.icon}</span>
@@ -183,8 +182,8 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
                   href={group.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 mb-1 ${
                     router.pathname === group.href
-                      ? 'bg-blue-600 text-white border-l-4 border-blue-700'
-                      : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-l-4 border-orange-700 shadow-lg'
+                      : 'text-gray-600 hover:bg-orange-50 hover:text-orange-700'
                   } ${isCollapsed ? 'justify-center' : ''}`}
                   title={isCollapsed ? group.name : ''}
                 >
@@ -197,9 +196,11 @@ const Sidebar = ({ isCollapsed, isMobile, onToggle }) => {
       </nav>
       
       {!isCollapsed && (
-        <div className="mt-2 mb-2 p-3 sm:p-4 lg:p-6 bg-gray-50 rounded-2xl border border-gray-200 flex-shrink-0 mx-3 sm:mx-4 lg:mx-6">
+        <div className="mt-2 mb-2 p-4 rounded-2xl border border-orange-200/50 shadow-lg flex-shrink-0 mx-3 sm:mx-4 lg:mx-6">
           <div className="text-center">
-            <img src="/optionslogo.png" alt="Logo" className="w-20 h-20 sm:h-20 mx-auto mb-2" />
+            <Link href="/" className="flex items-center">
+              <img src="/optionslogo.png" alt="Logo" className="w-20 h-20 mx-auto mb-2 hover:scale-105 transition-transform duration-200" />
+            </Link>
           </div>
         </div>
       )}

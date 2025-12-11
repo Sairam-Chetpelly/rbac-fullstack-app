@@ -56,10 +56,10 @@ const PaymentModal = ({ isOpen, onClose, payment, onUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 !m-0">
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-lg transform transition-all">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-2xl px-6 py-4">
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl px-6 py-4 shadow-lg">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -67,7 +67,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onUpdate }) => {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white">Payment Management</h3>
-                <p className="text-blue-100 text-sm">Update payment details</p>
+                <p className="text-orange-100 text-sm">Update payment details</p>
               </div>
             </div>
             <button 
@@ -90,7 +90,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onUpdate }) => {
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all bg-white text-gray-900 font-medium"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all bg-white text-gray-900 font-medium"
                 required
               >
                 <option value="pending">🟡 Pending Payment</option>
@@ -110,7 +110,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onUpdate }) => {
               type="text"
               value={formData.transactionId}
               onChange={(e) => setFormData({ ...formData, transactionId: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
               placeholder="Enter transaction reference number"
             />
           </div>
@@ -123,7 +123,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onUpdate }) => {
             <select
               value={formData.paymentMethod}
               onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all bg-white text-gray-900 font-medium"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all bg-white text-gray-900 font-medium"
             >
               <option value="cash">💵 Cash Payment</option>
               <option value="bank_transfer">🏦 Bank Transfer</option>
@@ -142,7 +142,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onUpdate }) => {
             <textarea
               value={formData.remarks}
               onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all resize-none"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all resize-none"
               rows="3"
               placeholder="Add any additional notes or remarks..."
             />
@@ -160,7 +160,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onUpdate }) => {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">

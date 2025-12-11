@@ -20,6 +20,39 @@ const EditApplication = () => {
   const [uploadingFiles, setUploadingFiles] = useState({});
 
   useEffect(() => {
+    const header = document.querySelector('header');
+    const sidebar = document.querySelector('div[class*="bg-white/10 backdrop-blur-md border-r"]');
+    
+    if (fileModal.show) {
+      if (header) {
+        header.style.zIndex = '-1';
+        header.style.visibility = 'hidden';
+      }
+      if (sidebar) {
+        sidebar.style.transform = 'translateX(-100%)';
+      }
+    } else {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
+      }
+    }
+    
+    return () => {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
+      }
+    };
+  }, [fileModal.show]);
+
+  useEffect(() => {
     if (id) {
       fetchApplicationDetails();
     }
@@ -525,7 +558,7 @@ const EditApplication = () => {
                                     value={currentValue}
                                     onChange={(e) => handleAnswerChange(field._id, e.target.value, 0)}
                                     required={field.required}
-                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-orange-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
                                     rows={4}
                                   />
                                 ) : field.type === 'select' ? (
@@ -534,7 +567,7 @@ const EditApplication = () => {
                                     value={currentValue}
                                     onChange={(e) => handleAnswerChange(field._id, e.target.value, 0)}
                                     required={field.required}
-                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 bg-white"
+                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-orange-500 transition-all duration-200 text-gray-900 bg-white"
                                   >
                                     <option disabled value="">Select {field.label}</option>
                                     {field.options && field.options.map((option, index) => (
@@ -637,7 +670,7 @@ const EditApplication = () => {
                                     value={currentValue}
                                     onChange={(e) => handleAnswerChange(field._id, e.target.value, 0)}
                                     required={field.required}
-                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-orange-500 transition-all duration-200 text-gray-900 placeholder-gray-400"
                                   />
                                 )}
                               </div>
@@ -695,13 +728,13 @@ const EditApplication = () => {
                                           value={currentValue}
                                           onChange={(e) => handleAnswerChange(field._id, e.target.value, applicantIndex)}
                                           rows={3}
-                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                                         />
                                       ) : field.type === 'select' ? (
                                         <select
                                           value={currentValue}
                                           onChange={(e) => handleAnswerChange(field._id, e.target.value, applicantIndex)}
-                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                                         >
                                           <option disabled value="">Select an option</option>
                                           {field.options?.map((option, index) => (
@@ -788,7 +821,7 @@ const EditApplication = () => {
                                           type={field.type === 'email' ? 'email' : field.type === 'date' ? 'date' : 'text'}
                                           value={currentValue}
                                           onChange={(e) => handleAnswerChange(field._id, e.target.value, applicantIndex)}
-                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                                         />
                                       )}
                                     </div>
@@ -808,7 +841,7 @@ const EditApplication = () => {
 
         {/* File Modal */}
         {fileModal.show && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-opacity-75 flex items-center justify-center z-50 p-4 !m-0" style={{ backgroundColor: "rgb(125 122 122 / 75%)" }}>
             <div className="bg-white rounded-2xl max-w-4xl max-h-[90vh] w-full overflow-hidden">
               <div className="flex items-center justify-between p-4 border-b">
                 <h3 className="text-lg font-semibold text-gray-900">{fileModal.fileName}</h3>

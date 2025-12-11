@@ -78,7 +78,7 @@ export default function Reports() {
           <select 
             value={period} 
             onChange={(e) => setPeriod(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
             {periodOptions.map(option => (
               <option key={option.value} value={option.value}>{option.label}</option>

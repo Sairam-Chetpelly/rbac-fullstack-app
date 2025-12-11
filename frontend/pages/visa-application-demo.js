@@ -116,13 +116,13 @@ export default function VisaApplicationDemo() {
                           {field.type === 'textarea' ? (
                             <textarea
                               placeholder={field.placeholder}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                               rows={3}
                               disabled
                             />
                           ) : field.type === 'select' ? (
                             <select
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                               disabled
                             >
                               <option>Select {field.label}</option>
@@ -146,7 +146,7 @@ export default function VisaApplicationDemo() {
                             <input
                               type={field.type}
                               placeholder={field.placeholder}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                               disabled
                             />
                           )}

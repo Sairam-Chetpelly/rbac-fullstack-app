@@ -149,7 +149,7 @@ export default function CustomerChangePassword() {
               <Button 
                 type="submit"
                 disabled={loading}
-                className="bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600"
+                variant="primary"
               >
                 {loading ? 'Changing Password...' : 'Change Password'}
               </Button>

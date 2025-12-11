@@ -23,6 +23,39 @@ export default function Applications() {
   const router = useRouter();
 
   useEffect(() => {
+    const header = document.querySelector('header');
+    const sidebar = document.querySelector('div[class*="bg-white/10 backdrop-blur-md border-r"]');
+    
+    if (statusModal.isOpen || assignModal.isOpen || paymentModal.isOpen) {
+      if (header) {
+        header.style.zIndex = '-1';
+        header.style.visibility = 'hidden';
+      }
+      if (sidebar) {
+        sidebar.style.transform = 'translateX(-100%)';
+      }
+    } else {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
+      }
+    }
+    
+    return () => {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.transform = '';
+      }
+    };
+  }, [statusModal.isOpen, assignModal.isOpen, paymentModal.isOpen]);
+
+  useEffect(() => {
     fetchApplications(pagination.page);
     fetchStatuses();
     fetchCountries();
