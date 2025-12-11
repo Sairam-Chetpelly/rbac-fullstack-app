@@ -302,7 +302,7 @@ const VisaFlowHomepage = () => {
                       </svg>
                     </button>
                     <button
-                      onClick={() => window.location.href = 'https://wa.me/919167447700'}
+                      onClick={() => window.open('https://wa.me/919167447700', '_blank')}
                       className="bg-white text-gray-700 px-8 py-4 rounded-xl font-semibold border-2 border-gray-200 hover:border-blue-300 hover:text-blue-600 transition-all duration-300 flex items-center justify-center gap-3"
                     >
                       <Phone className="w-5 h-5" />

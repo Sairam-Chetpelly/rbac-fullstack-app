@@ -235,7 +235,7 @@ const CustomerLayout = ({ children }) => {
       {/* WhatsApp Floating Button */}
       <div className="fixed bottom-6 right-6 z-50 p-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl" style={{ boxShadow: "0 2px 2px 2px rgba(255, 255, 255, 0.3)" }}>
         <a
-          href="https://wa.me/1234567890"
+          href="https://wa.me/919167447700"
           target="_blank"
           rel="noopener noreferrer"
           className="w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
