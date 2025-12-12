@@ -7,6 +7,8 @@ const { getUsers, createUser, updateUser, deleteUser, changePassword, getProfile
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
 const json2csv = require('json2csv').parse;
+const User = require('../models/User');
+const Role = require('../models/Role');
 
 const router = express.Router();
 
@@ -119,9 +121,6 @@ router.patch('/:id/toggle-status', auth, role(['admin', 'manager']), toggleUserS
 // Export users data
 router.get('/export/csv', auth, role(['admin', 'manager']), async (req, res) => {
   try {
-    const User = require('../models/User');
-    const Role = require('../models/Role');
-    
     const users = await User.find({ deletedAt: null })
       .populate('role', 'name')
       .lean();

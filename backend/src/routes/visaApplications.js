@@ -8,6 +8,16 @@ const { sendNotifications } = require('../services/notificationService');
 const compressImage = require('../middleware/imageCompression');
 const compressMultipleImages = require('../middleware/imageCompressionMultiple');
 const User = require('../models/User');
+const Application = require('../models/Application');
+const ApplicationAnswer = require('../models/ApplicationAnswer');
+const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
+const Applicant = require('../models/Applicant');
+const FormField = require('../models/FormField');
+const FormSection = require('../models/FormSection');
+const Status = require('../models/Status');
+const Payment = require('../models/Payment');
+const CountryVisaType = require('../models/CountryVisaType');
+const crypto = require('crypto');
 
 const router = express.Router();
 
@@ -135,12 +145,6 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
       return res.status(401).json({ message: 'User not authenticated' });
     }
     
-    const Application = require('../models/Application');
-    const ApplicationAnswer = require('../models/ApplicationAnswer');
-    const Applicant = require('../models/Applicant');
-    const FormField = require('../models/FormField');
-    const Status = require('../models/Status');
-    
     // Get draft status
     const draftStatus = await Status.findOne({ name: 'draft' });
     console.log('Draft status:', draftStatus);
@@ -169,8 +173,11 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
     }
     await Applicant.insertMany(applicants);
     
-    // Save form answers
-    const fields = await FormField.find().lean();
+    // Save form answers - Get fields specific to this visa type's form sections
+    const formSections = await FormSection.find({ countryVisaType: visaTypeId }).lean();
+    const sectionIds = formSections.map(section => section._id);
+    
+    const fields = await FormField.find({ formSection: { $in: sectionIds } }).lean();
     const fieldMap = fields.reduce((acc, field) => {
       acc[field.name] = field._id;
       return acc;
@@ -236,7 +243,6 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
     }
     
     // Send draft creation notifications
-    const User = require('../models/User');
     const user = await User.findById(req.user._id);
     sendNotifications(user.email, user.mobile, 'draftCreated', { 
       userName: user.name, 
@@ -271,7 +277,6 @@ router.get('/health', (req, res) => {
 // Debug route to check all applications
 router.get('/debug/applications', async (req, res) => {
   try {
-    const Application = require('../models/Application');
     const applications = await Application.find({}).limit(10);
     res.json({
       count: applications.length,
@@ -295,11 +300,6 @@ router.post('/visa-applications/submit-draft', auth, async (req, res) => {
     if (!draftId) {
       return res.status(400).json({ message: 'Draft ID is required' });
     }
-    
-    const Application = require('../models/Application');
-    const ApplicationAnswer = require('../models/ApplicationAnswer');
-    const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
-    const FormField = require('../models/FormField');
     
     // Find and verify draft belongs to user
     const application = await Application.findOne({
@@ -350,7 +350,6 @@ router.post('/visa-applications/submit-draft', auth, async (req, res) => {
     }
     
     // Get submitted status
-    const Status = require('../models/Status');
     const submittedStatus = await Status.findOne({ name: 'submitted' });
     if (!submittedStatus) {
       return res.status(500).json({ message: 'Submitted status not found' });
@@ -392,10 +391,6 @@ router.post('/visa-applications/submit-without-payment', auth, async (req, res) 
     if (!visaTypeId) {
       return res.status(400).json({ message: 'Visa type ID is required' });
     }
-    
-    const Application = require('../models/Application');
-    const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
-    const Status = require('../models/Status');
     
     let application;
     if (draftId) {
@@ -444,8 +439,6 @@ router.post('/visa-applications/submit-without-payment', auth, async (req, res) 
     });
     
     // Create payment entry with pending status
-    const CountryVisaType = require('../models/CountryVisaType');
-    const Payment = require('../models/Payment');
     const visaTypeData = await CountryVisaType.findById(visaTypeId);
     const userData = await User.findById(req.user._id);
     
@@ -510,12 +503,6 @@ router.post('/visa-applications/submit', auth, upload.any(), compressMultipleIma
       return res.status(400).json({ message: 'Missing required payment information' });
     }
     
-    const Application = require('../models/Application');
-    const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
-    const Payment = require('../models/Payment');
-    const CountryVisaType = require('../models/CountryVisaType');
-    const crypto = require('crypto');
-    
     // Verify payment signature
     const body = orderId + '|' + paymentId;
     const expectedSignature = crypto
@@ -535,7 +522,6 @@ router.post('/visa-applications/submit', auth, upload.any(), compressMultipleIma
         return res.status(404).json({ message: 'Draft not found' });
       }
       // Get submitted status
-      const Status = require('../models/Status');
       const submittedStatus = await Status.findOne({ name: 'Submitted' });
       if (!submittedStatus) {
         return res.status(500).json({ message: 'Submitted status not found' });
@@ -547,7 +533,6 @@ router.post('/visa-applications/submit', auth, upload.any(), compressMultipleIma
       await application.save();
     } else {
       // Get submitted status
-      const Status = require('../models/Status');
       const submittedStatus = await Status.findOne({ name: 'Submitted' });
       if (!submittedStatus) {
         return res.status(500).json({ message: 'Submitted status not found' });
@@ -564,7 +549,6 @@ router.post('/visa-applications/submit', auth, upload.any(), compressMultipleIma
     }
     
     // Create status history
-    const Status = require('../models/Status');
     const submittedStatus = await Status.findOne({ name: 'Submitted' });
     await ApplicationStatusHistory.create({
       application: application._id,
@@ -601,7 +585,6 @@ router.post('/visa-applications/submit', auth, upload.any(), compressMultipleIma
     await payment.save();
     
     // Send application submission notifications
-    const User = require('../models/User');
     const user = await User.findById(req.user._id);
     
     // Notifications to customer
@@ -637,8 +620,6 @@ router.get('/customer/applications', auth, async (req, res) => {
   try {
     console.log('Customer applications request - User ID:', req.user._id);
     
-    const Application = require('../models/Application');
-    
     // First, let's see all applications for debugging
     const allApps = await Application.find({ deletedAt: null });
     console.log('All applications:', allApps.map(app => ({ id: app._id, user: app.user, appNumber: app.applicationNumber })));
@@ -668,8 +649,6 @@ router.get('/customer/applications', auth, async (req, res) => {
 router.get('/customer/payments', auth, async (req, res) => {
   try {
     console.log('Customer payments request - User ID:', req.user._id);
-    
-    const Payment = require('../models/Payment');
     
     // First, let's see all payments for debugging
     const allPayments = await Payment.find({ deletedAt: null });
@@ -702,8 +681,6 @@ router.get('/customer/payments', auth, async (req, res) => {
 // Get visa type with user-specific pricing
 router.get('/visa-types/:id', auth, async (req, res) => {
   try {
-    const CountryVisaType = require('../models/CountryVisaType');
-    
     const visaType = await CountryVisaType.findById(req.params.id)
       .populate('country', 'name placeImage')
       .populate('visaType', 'name')
@@ -742,10 +719,6 @@ router.get('/visa-types/:id', auth, async (req, res) => {
 router.get('/customer/stats', auth, async (req, res) => {
   try {
     console.log('Customer stats request - User ID:', req.user._id);
-    
-    const Application = require('../models/Application');
-    const Payment = require('../models/Payment');
-    const Status = require('../models/Status');
     
     // Get draft status ID
     const draftStatus = await Status.findOne({ name: 'Draft' });

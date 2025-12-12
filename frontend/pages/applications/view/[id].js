@@ -307,106 +307,159 @@ export default function AdminViewApplication() {
         {/* Application Answers */}
         {answers.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Application Details</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">📋 Application Details</h3>
             
             {application.applicationType === 'individual' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {answers.map((answer) => {
-                  const renderAnswerContent = () => {
-                    if (!answer.answerText && !answer.answerFile && (!answer.answerFiles || answer.answerFiles.length === 0)) {
-                      return <span className="text-gray-500 italic">No answer provided</span>;
-                    }
-                    
-                    if (answer.field?.type === 'file') {
-                      // Handle multiple files
-                      if (answer.answerFiles && answer.answerFiles.length > 0) {
-                        return (
-                          <div className="space-y-2">
-                            {answer.answerFiles.map((file, fileIndex) => (
-                              <div key={fileIndex} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                                <FileText className="h-4 w-4 text-blue-600" />
-                                <span className="text-sm flex-1">{file.originalName}</span>
-                                <button 
-                                  onClick={() => handleFileView(file.originalName, file.path || file.filename, file.mimetype)}
-                                  className="text-blue-600 hover:text-blue-800"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </button>
+              (() => {
+                // Group answers by section
+                const answersBySection = {};
+                answers.forEach(answer => {
+                  const sectionName = answer.field?.formSection?.name || 'General Information';
+                  if (!answersBySection[sectionName]) {
+                    answersBySection[sectionName] = {
+                      answers: [],
+                      order: answer.field?.formSection?.order || 999
+                    };
+                  }
+                  answersBySection[sectionName].answers.push(answer);
+                });
+                
+                return (
+                  <div className="space-y-8">
+                    {Object.entries(answersBySection)
+                      .sort(([a, aData], [b, bData]) => {
+                        // Sort sections by order if available
+                        return aData.order - bData.order;
+                      })
+                      .map(([sectionName, sectionData]) => (
+                      <div key={sectionName} className="border-2 border-gray-100 rounded-xl p-6">
+                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <span className="text-white text-sm">📝</span>
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-semibold text-gray-900">{sectionName}</h4>
+                            <p className="text-sm text-gray-600">{sectionData.answers.length} fields</p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {sectionData.answers
+                            .sort((a, b) => (a.field?.order || 999) - (b.field?.order || 999))
+                            .map((answer) => {
+                            const renderAnswerContent = () => {
+                              if (!answer.answerText && !answer.answerFile && (!answer.answerFiles || answer.answerFiles.length === 0)) {
+                                return <span className="text-gray-500 italic">No answer provided</span>;
+                              }
+                              
+                              if (answer.field?.type === 'file') {
+                                // Handle multiple files
+                                if (answer.answerFiles && answer.answerFiles.length > 0) {
+                                  return (
+                                    <div className="space-y-2">
+                                      {answer.answerFiles.map((file, fileIndex) => (
+                                        <div key={fileIndex} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                                          <FileText className="h-4 w-4 text-blue-600" />
+                                          <span className="text-sm flex-1">{file.originalName}</span>
+                                          <button 
+                                            onClick={() => handleFileView(file.originalName, file.path || file.filename, file.mimetype)}
+                                            className="text-blue-600 hover:text-blue-800"
+                                          >
+                                            <Eye className="h-4 w-4" />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                }
+                                
+                                // Handle single file (legacy)
+                                if (answer.answerFile || answer.answerText) {
+                                  let fileName = '';
+                                  let filePath = '';
+                                  let fileType = '';
+                                  
+                                  if (answer.answerFile) {
+                                    fileName = answer.answerFile.split('/').pop();
+                                    filePath = answer.answerFile;
+                                  } else if (answer.answerText) {
+                                    try {
+                                      const fileData = JSON.parse(answer.answerText);
+                                      fileName = fileData.fileName || 'Unknown file';
+                                      filePath = fileData.filePath || fileData.url || '';
+                                      fileType = fileData.fileType || '';
+                                    } catch (e) {
+                                      fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
+                                      filePath = answer.answerText;
+                                    }
+                                  }
+                                  
+                                  return (
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="h-4 w-4 text-blue-600" />
+                                      <span className="text-sm">{fileName}</span>
+                                      <button 
+                                        onClick={() => handleFileView(fileName, filePath, fileType)}
+                                        className="text-blue-600 hover:text-blue-800"
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  );
+                                }
+                              }
+                              
+                              // Decode HTML entities and parse JSON arrays (for checkboxes)
+                              let displayText = answer.answerText;
+                              try {
+                                const textarea = document.createElement('textarea');
+                                textarea.innerHTML = displayText;
+                                displayText = textarea.value;
+                                
+                                const parsed = JSON.parse(displayText);
+                                if (Array.isArray(parsed)) {
+                                  return <span className="text-sm text-gray-900">{parsed.join(', ')}</span>;
+                                }
+                                return <span className="text-sm text-gray-900">{String(parsed)}</span>;
+                              } catch (e) {
+                                // Not JSON, display as is
+                              }
+                              return <span className="text-sm text-gray-900">{displayText}</span>;
+                            };
+                            
+                            return (
+                              <div key={answer._id} className="border border-gray-200 rounded-lg p-4">
+                                <dt className="text-sm font-medium text-gray-700 mb-2">
+                                  {answer.field?.label || answer.field?.name}
+                                </dt>
+                                <dd>{renderAnswerContent()}</dd>
                               </div>
-                            ))}
-                          </div>
-                        );
-                      }
-                      
-                      // Handle single file (legacy)
-                      if (answer.answerFile || answer.answerText) {
-                        let fileName = '';
-                        let filePath = '';
-                        let fileType = '';
-                        
-                        if (answer.answerFile) {
-                          fileName = answer.answerFile.split('/').pop();
-                          filePath = answer.answerFile;
-                        } else if (answer.answerText) {
-                          try {
-                            const fileData = JSON.parse(answer.answerText);
-                            fileName = fileData.fileName || 'Unknown file';
-                            filePath = fileData.filePath || fileData.url || '';
-                            fileType = fileData.fileType || '';
-                          } catch (e) {
-                            fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
-                            filePath = answer.answerText;
-                          }
-                        }
-                        
-                        return (
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-blue-600" />
-                            <span className="text-sm">{fileName}</span>
-                            <button 
-                              onClick={() => handleFileView(fileName, filePath, fileType)}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
-                          </div>
-                        );
-                      }
-                    }
-                    
-                    // Decode HTML entities and parse JSON arrays (for checkboxes)
-                    let displayText = answer.answerText;
-                    try {
-                      const textarea = document.createElement('textarea');
-                      textarea.innerHTML = displayText;
-                      displayText = textarea.value;
-                      
-                      const parsed = JSON.parse(displayText);
-                      if (Array.isArray(parsed)) {
-                        return <span className="text-sm text-gray-900">{parsed.join(', ')}</span>;
-                      }
-                      return <span className="text-sm text-gray-900">{String(parsed)}</span>;
-                    } catch (e) {
-                      // Not JSON, display as is
-                    }
-                    return <span className="text-sm text-gray-900">{displayText}</span>;
-                  };
-                  
-                  return (
-                    <div key={answer._id} className="border border-gray-200 rounded-lg p-4">
-                      <dt className="text-sm font-medium text-gray-700 mb-2">
-                        {answer.field?.label || answer.field?.name}
-                      </dt>
-                      <dd>{renderAnswerContent()}</dd>
-                    </div>
-                  );
-                })}
-              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()
             ) : (
               <div className="space-y-8">
                 {[...Array(application.numberOfApplicants || 1)].map((_, applicantIndex) => {
                   const applicantAnswers = answers.filter(answer => answer.applicantIndex === applicantIndex);
                   const applicant = applicants.find(app => app.applicantIndex === applicantIndex);
+                  
+                  // Group answers by section for this applicant
+                  const answersBySection = {};
+                  applicantAnswers.forEach(answer => {
+                    const sectionName = answer.field?.formSection?.name || 'General Information';
+                    if (!answersBySection[sectionName]) {
+                      answersBySection[sectionName] = {
+                        answers: [],
+                        order: answer.field?.formSection?.order || 999
+                      };
+                    }
+                    answersBySection[sectionName].answers.push(answer);
+                  });
                   
                   return (
                     <div key={applicantIndex} className="border-2 border-blue-100 rounded-xl p-6">
@@ -424,97 +477,113 @@ export default function AdminViewApplication() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {applicantAnswers.map((answer) => {
-                          const renderAnswerContent = () => {
-                            if (!answer.answerText && !answer.answerFile && (!answer.answerFiles || answer.answerFiles.length === 0)) {
-                              return <span className="text-gray-500 italic">No answer provided</span>;
-                            }
-                            
-                            if (answer.field?.type === 'file') {
-                              // Handle multiple files
-                              if (answer.answerFiles && answer.answerFiles.length > 0) {
-                                return (
-                                  <div className="space-y-1">
-                                    {answer.answerFiles.map((file, fileIndex) => (
-                                      <div key={fileIndex} className="flex items-center gap-2 p-1 bg-gray-50 rounded">
-                                        <FileText className="h-3 w-3 text-blue-600" />
-                                        <span className="text-xs flex-1">{file.originalName}</span>
-                                        <button 
-                                          onClick={() => handleFileView(file.originalName, file.path || file.filename, file.mimetype)}
-                                          className="text-blue-600 hover:text-blue-800"
-                                        >
-                                          <Eye className="h-3 w-3" />
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                );
-                              }
-                              
-                              // Handle single file (legacy)
-                              if (answer.answerFile || answer.answerText) {
-                                let fileName = '';
-                                let filePath = '';
-                                let fileType = '';
-                                
-                                if (answer.answerFile) {
-                                  fileName = answer.answerFile.split('/').pop();
-                                  filePath = answer.answerFile;
-                                } else if (answer.answerText) {
-                                  try {
-                                    const fileData = JSON.parse(answer.answerText);
-                                    fileName = fileData.fileName || 'Unknown file';
-                                    filePath = fileData.filePath || fileData.url || '';
-                                    fileType = fileData.fileType || '';
-                                  } catch (e) {
-                                    fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
-                                    filePath = answer.answerText;
+                      <div className="space-y-6">
+                        {Object.entries(answersBySection)
+                          .sort(([a, aData], [b, bData]) => {
+                            return aData.order - bData.order;
+                          })
+                          .map(([sectionName, sectionData]) => (
+                          <div key={sectionName} className="border border-gray-200 rounded-lg p-4">
+                            <h5 className="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                              <span className="text-sm">📝</span>
+                              {sectionName}
+                            </h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {sectionData.answers
+                                .sort((a, b) => (a.field?.order || 999) - (b.field?.order || 999))
+                                .map((answer) => {
+                                const renderAnswerContent = () => {
+                                  if (!answer.answerText && !answer.answerFile && (!answer.answerFiles || answer.answerFiles.length === 0)) {
+                                    return <span className="text-gray-500 italic">No answer provided</span>;
                                   }
-                                }
+                                  
+                                  if (answer.field?.type === 'file') {
+                                    // Handle multiple files
+                                    if (answer.answerFiles && answer.answerFiles.length > 0) {
+                                      return (
+                                        <div className="space-y-1">
+                                          {answer.answerFiles.map((file, fileIndex) => (
+                                            <div key={fileIndex} className="flex items-center gap-2 p-1 bg-gray-50 rounded">
+                                              <FileText className="h-3 w-3 text-blue-600" />
+                                              <span className="text-xs flex-1">{file.originalName}</span>
+                                              <button 
+                                                onClick={() => handleFileView(file.originalName, file.path || file.filename, file.mimetype)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                              >
+                                                <Eye className="h-3 w-3" />
+                                              </button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    // Handle single file (legacy)
+                                    if (answer.answerFile || answer.answerText) {
+                                      let fileName = '';
+                                      let filePath = '';
+                                      let fileType = '';
+                                      
+                                      if (answer.answerFile) {
+                                        fileName = answer.answerFile.split('/').pop();
+                                        filePath = answer.answerFile;
+                                      } else if (answer.answerText) {
+                                        try {
+                                          const fileData = JSON.parse(answer.answerText);
+                                          fileName = fileData.fileName || 'Unknown file';
+                                          filePath = fileData.filePath || fileData.url || '';
+                                          fileType = fileData.fileType || '';
+                                        } catch (e) {
+                                          fileName = answer.answerText.includes('/') ? answer.answerText.split('/').pop() : answer.answerText;
+                                          filePath = answer.answerText;
+                                        }
+                                      }
+                                      
+                                      return (
+                                        <div className="flex items-center gap-2">
+                                          <FileText className="h-4 w-4 text-blue-600" />
+                                          <span className="text-sm">{fileName}</span>
+                                          <button 
+                                            onClick={() => handleFileView(fileName, filePath, fileType)}
+                                            className="text-blue-600 hover:text-blue-800"
+                                          >
+                                            <Eye className="h-3 w-3" />
+                                          </button>
+                                        </div>
+                                      );
+                                    }
+                                  }
+                                  
+                                  // Decode HTML entities and parse JSON arrays (for checkboxes)
+                                  let displayText = answer.answerText;
+                                  try {
+                                    const textarea = document.createElement('textarea');
+                                    textarea.innerHTML = displayText;
+                                    displayText = textarea.value;
+                                    
+                                    const parsed = JSON.parse(displayText);
+                                    if (Array.isArray(parsed)) {
+                                      return <span className="text-sm text-gray-900">{parsed.join(', ')}</span>;
+                                    }
+                                    return <span className="text-sm text-gray-900">{String(parsed)}</span>;
+                                  } catch (e) {
+                                    // Not JSON, display as is
+                                  }
+                                  return <span className="text-sm text-gray-900">{displayText}</span>;
+                                };
                                 
                                 return (
-                                  <div className="flex items-center gap-2">
-                                    <FileText className="h-4 w-4 text-blue-600" />
-                                    <span className="text-sm">{fileName}</span>
-                                    <button 
-                                      onClick={() => handleFileView(fileName, filePath, fileType)}
-                                      className="text-blue-600 hover:text-blue-800"
-                                    >
-                                      <Eye className="h-3 w-3" />
-                                    </button>
+                                  <div key={answer._id} className="border border-gray-200 rounded-lg p-3">
+                                    <dt className="text-sm font-medium text-gray-700 mb-1">
+                                      {answer.field?.label || answer.field?.name}
+                                    </dt>
+                                    <dd>{renderAnswerContent()}</dd>
                                   </div>
                                 );
-                              }
-                            }
-                            
-                            // Decode HTML entities and parse JSON arrays (for checkboxes)
-                            let displayText = answer.answerText;
-                            try {
-                              const textarea = document.createElement('textarea');
-                              textarea.innerHTML = displayText;
-                              displayText = textarea.value;
-                              
-                              const parsed = JSON.parse(displayText);
-                              if (Array.isArray(parsed)) {
-                                return <span className="text-sm text-gray-900">{parsed.join(', ')}</span>;
-                              }
-                              return <span className="text-sm text-gray-900">{String(parsed)}</span>;
-                            } catch (e) {
-                              // Not JSON, display as is
-                            }
-                            return <span className="text-sm text-gray-900">{displayText}</span>;
-                          };
-                          
-                          return (
-                            <div key={answer._id} className="border border-gray-200 rounded-lg p-3">
-                              <dt className="text-sm font-medium text-gray-700 mb-1">
-                                {answer.field?.label || answer.field?.name}
-                              </dt>
-                              <dd>{renderAnswerContent()}</dd>
+                              })}
                             </div>
-                          );
-                        })}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   );
@@ -524,10 +593,51 @@ export default function AdminViewApplication() {
           </div>
         )}
 
+        {/* Payment Information */}
+        {payment && (
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">💳 Payment Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-green-50 p-4 rounded-lg">
+                <dt className="text-sm font-medium text-gray-700 mb-1">Amount</dt>
+                <dd className="text-2xl font-bold text-green-600">₹{payment.amount}</dd>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <dt className="text-sm font-medium text-gray-700 mb-1">Payment Status</dt>
+                <dd className="text-sm font-semibold text-blue-800 capitalize">{payment.status}</dd>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <dt className="text-sm font-medium text-gray-700 mb-1">Payment Method</dt>
+                <dd className="text-sm text-gray-900 capitalize">{payment.paymentMethod || 'Online'}</dd>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <dt className="text-sm font-medium text-gray-700 mb-1">Transaction ID</dt>
+                <dd className="text-sm font-mono text-gray-900">{payment.transactionId}</dd>
+              </div>
+            </div>
+            {payment.razorpayOrderId && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <dt className="font-medium text-gray-700">Razorpay Order ID</dt>
+                    <dd className="font-mono text-gray-900">{payment.razorpayOrderId}</dd>
+                  </div>
+                  {payment.paidAt && (
+                    <div>
+                      <dt className="font-medium text-gray-700">Payment Date</dt>
+                      <dd className="text-gray-900">{new Date(payment.paidAt).toLocaleDateString()} at {new Date(payment.paidAt).toLocaleTimeString()}</dd>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Status History */}
         {statusHistory.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Status History</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">📊 Status History</h3>
             <div className="space-y-4">
               {statusHistory.map((history) => (
                 <div key={history._id} className="flex items-start gap-4">
@@ -713,47 +823,6 @@ export default function AdminViewApplication() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Payment Information */}
-        {payment && (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">💳 Payment Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-green-50 p-4 rounded-lg">
-                <dt className="text-sm font-medium text-gray-700 mb-1">Amount</dt>
-                <dd className="text-2xl font-bold text-green-600">₹{payment.amount}</dd>
-              </div>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <dt className="text-sm font-medium text-gray-700 mb-1">Payment Status</dt>
-                <dd className="text-sm font-semibold text-blue-800 capitalize">{payment.status}</dd>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <dt className="text-sm font-medium text-gray-700 mb-1">Payment Method</dt>
-                <dd className="text-sm text-gray-900 capitalize">{payment.paymentMethod || 'Online'}</dd>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <dt className="text-sm font-medium text-gray-700 mb-1">Transaction ID</dt>
-                <dd className="text-sm font-mono text-gray-900">{payment.transactionId}</dd>
-              </div>
-            </div>
-            {payment.razorpayOrderId && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <dt className="font-medium text-gray-700">Razorpay Order ID</dt>
-                    <dd className="font-mono text-gray-900">{payment.razorpayOrderId}</dd>
-                  </div>
-                  {payment.paidAt && (
-                    <div>
-                      <dt className="font-medium text-gray-700">Payment Date</dt>
-                      <dd className="text-gray-900">{new Date(payment.paidAt).toLocaleDateString()} at {new Date(payment.paidAt).toLocaleTimeString()}</dd>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         )}
         

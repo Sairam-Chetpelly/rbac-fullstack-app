@@ -4,6 +4,11 @@ const Application = require('../models/Application');
 const Payment = require('../models/Payment');
 const User = require('../models/User');
 const Status = require('../models/Status');
+const ApplicationAnswer = require('../models/ApplicationAnswer');
+const FormField = require('../models/FormField');
+const FormSection = require('../models/FormSection');
+const Applicant = require('../models/Applicant');
+const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
 const { sendEmail } = require('../services/emailService');
@@ -196,9 +201,6 @@ router.get('/payments', auth, role(['customer', 'admin']), async (req, res) => {
 // Get draft application details with form data
 router.get('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => {
   try {
-    const ApplicationAnswer = require('../models/ApplicationAnswer');
-    const FormField = require('../models/FormField');
-    const Applicant = require('../models/Applicant');
     const draftStatus = await Status.findOne({ name: 'draft' });
     console.log('Draft status:', draftStatus);
     if (!draftStatus) {
@@ -301,10 +303,6 @@ router.get('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => 
 router.put('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => {
   try {
     const { formData, applicationType, numberOfApplicants, relationships } = req.body;
-    const ApplicationAnswer = require('../models/ApplicationAnswer');
-    const FormField = require('../models/FormField');
-    const Applicant = require('../models/Applicant');
-    const Status = require('../models/Status');
     
     // Get draft status
     const draftStatus = await Status.findOne({ name: 'draft' });
@@ -341,7 +339,11 @@ router.put('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => 
     }
     
     if (formData) {
-      const fields = await FormField.find().lean();
+      // Get fields specific to this application's visa type form sections
+      const formSections = await FormSection.find({ countryVisaType: application.countryVisaType }).lean();
+      const sectionIds = formSections.map(section => section._id);
+      
+      const fields = await FormField.find({ formSection: { $in: sectionIds } }).lean();
       const fieldMap = fields.reduce((acc, field) => {
         acc[field.name] = field._id;
         return acc;
@@ -424,10 +426,6 @@ router.put('/draft/:id', auth, role(['customer', 'admin']), async (req, res) => 
 // Get single application details for customer
 router.get('/application/:id', auth, role(['customer', 'admin']), async (req, res) => {
   try {
-    const ApplicationAnswer = require('../models/ApplicationAnswer');
-    const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
-    const Applicant = require('../models/Applicant');
-    
     const application = await Application.findOne({
       _id: req.params.id,
       user: req.user._id,

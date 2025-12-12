@@ -7,6 +7,11 @@ const ApplicationAnswer = require('../models/ApplicationAnswer');
 const ApplicationDocument = require('../models/ApplicationDocument');
 const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
 const Payment = require('../models/Payment');
+const EmbassyReminder = require('../models/EmbassyReminder');
+const Status = require('../models/Status');
+const User = require('../models/User');
+const Role = require('../models/Role');
+const Applicant = require('../models/Applicant');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
 const { sendEmail, sendAdminNotification } = require('../services/emailService');
@@ -19,7 +24,6 @@ const router = express.Router();
 
 // Schedule embassy visit reminders
 const scheduleEmbassyReminders = async (applicationId, userEmail, userName, applicationNumber, visitDateTime) => {
-  const EmbassyReminder = require('../models/EmbassyReminder');
   const visitDate = new Date(visitDateTime);
   const now = new Date();
   
@@ -65,7 +69,6 @@ const scheduleEmbassyReminders = async (applicationId, userEmail, userName, appl
 // Get all available statuses
 router.get('/statuses', auth, async (req, res) => {
   try {
-    const Status = require('../models/Status');
     const statuses = await Status.find({ isActive: true }).sort({ name: 1 });
     res.json(statuses);
   } catch (error) {
@@ -77,8 +80,6 @@ router.get('/statuses', auth, async (req, res) => {
 // Get employees for assignment (admin/manager only)
 router.get('/employees', auth, role(['admin', 'manager']), async (req, res) => {
   try {
-    const User = require('../models/User');
-    const Role = require('../models/Role');
      const employee = await Role.findOne({ name: 'employee' });
     console.log('Draft status:', employee);
     if (!employee) {
@@ -117,7 +118,6 @@ router.put('/:id/assign', auth, role(['admin', 'manager']), async (req, res) => 
     }
     
     // Get employee details
-    const User = require('../models/User');
     const employee = await User.findById(employeeId);
     
     if (employee) {
@@ -190,8 +190,6 @@ const upload = multer({
 // Get payments for assigned applications (employee)
 router.get('/assigned/payments', auth, role(['employee']), async (req, res) => {
   try {
-    const Payment = require('../models/Payment');
-    
     // Get applications assigned to this employee
     const assignedApps = await Application.find({ 
       assignedTo: req.user._id,
@@ -307,8 +305,6 @@ router.get('/', auth, role(['admin', 'manager']), async (req, res) => {
 // Get single application details
 router.get('/:id', auth, role(['admin', 'manager', 'employee']), async (req, res) => {
   try {
-    const Applicant = require('../models/Applicant');
-    
     const application = await Application.findById(req.params.id)
       .populate('user', 'name email mobile')
       .populate('status', 'name color')
@@ -332,7 +328,14 @@ router.get('/:id', auth, role(['admin', 'manager', 'employee']), async (req, res
 
     // Get application answers
     const answers = await ApplicationAnswer.find({ application: req.params.id })
-      .populate('field', 'name label type')
+      .populate({
+        path: 'field',
+        select: 'name label type order',
+        populate: {
+          path: 'formSection',
+          select: 'name order'
+        }
+      })
       .lean();
 
     // Get application documents
@@ -449,7 +452,6 @@ router.put('/:id/status', auth, role(['admin','employee']), upload.fields([{ nam
       }
     }
     
-    const Status = require('../models/Status');
     const statusDoc = await Status.findById(status);
     if (!statusDoc) {
       return res.status(400).json({ message: 'Invalid status' });
@@ -531,7 +533,6 @@ router.put('/:id/status', auth, role(['admin','employee']), upload.fields([{ nam
     });
 
     // Send status update emails
-    const User = require('../models/User');
     const updatedBy = await User.findById(req.user._id);
     
     if (isVisaIssued && (visaDetails || visaFiles.length > 0)) {

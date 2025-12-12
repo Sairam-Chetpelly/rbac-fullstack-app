@@ -2,11 +2,23 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const Country = require('../models/Country');
 const Continent = require('../models/Continent');
 const CountryVisaType = require('../models/CountryVisaType');
+const VisaTermsConditions = require('../models/VisaTermsConditions');
+const CountryTermsConditions = require('../models/CountryTermsConditions');
+const FormSection = require('../models/FormSection');
+const FormField = require('../models/FormField');
+const Application = require('../models/Application');
+const ApplicationAnswer = require('../models/ApplicationAnswer');
+const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
+const ApplicationDocument = require('../models/ApplicationDocument');
+const Payment = require('../models/Payment');
+const Status = require('../models/Status');
 const auth = require('../middleware/auth');
 const compressMultipleImages = require('../middleware/imageCompressionMultiple');
+const Razorpay = require('razorpay');
 
 const router = express.Router();
 
@@ -185,9 +197,6 @@ router.get('/visa-types/:id', async (req, res) => {
 // Get terms and conditions for visa type (public)
 router.get('/visa-types/:id/terms-conditions', async (req, res) => {
   try {
-    const VisaTermsConditions = require('../models/VisaTermsConditions');
-    const CountryTermsConditions = require('../models/CountryTermsConditions');
-    
     // Get visa type details to find the country
     const visaType = await CountryVisaType.findById(req.params.id)
       .populate('country', 'name')
@@ -233,9 +242,6 @@ router.get('/visa-types/:id/terms-conditions', async (req, res) => {
 // Get form fields for visa type (public)
 router.get('/visa-types/:id/form', async (req, res) => {
   try {
-    const FormSection = require('../models/FormSection');
-    const FormField = require('../models/FormField');
-    
     // Find sections for this specific visa type
     const sections = await FormSection.find({ countryVisaType: req.params.id })
       .sort({ order: 1 })
@@ -259,7 +265,6 @@ router.get('/visa-types/:id/form', async (req, res) => {
 // Create Razorpay order
 router.post('/create-payment-order', async (req, res) => {
   try {
-    const Razorpay = require('razorpay');
     const { visaTypeId, amount } = req.body;
     
     const razorpay = new Razorpay({
@@ -288,7 +293,6 @@ router.post('/create-payment-order', async (req, res) => {
 router.post('/verify-payment', async (req, res) => {
   try {
     const { paymentId, orderId, signature } = req.body;
-    const crypto = require('crypto');
     
     const body = orderId + '|' + paymentId;
     const expectedSignature = crypto
@@ -308,14 +312,6 @@ router.post('/verify-payment', async (req, res) => {
 router.post('/visa-applications', auth, upload.any(), compressMultipleImages, async (req, res) => {
   try {
     const { visaTypeId, draftId, paymentId, orderId, signature, ...formData } = req.body;
-    
-    const Application = require('../models/Application');
-    const ApplicationAnswer = require('../models/ApplicationAnswer');
-    const ApplicationStatusHistory = require('../models/ApplicationStatusHistory');
-    const Payment = require('../models/Payment');
-    const FormField = require('../models/FormField');
-    const Razorpay = require('razorpay');
-    const crypto = require('crypto');
     
     // Verify payment signature
     const body = orderId + '|' + paymentId;
@@ -349,8 +345,11 @@ router.post('/visa-applications', auth, upload.any(), compressMultipleImages, as
       await application.save();
     }
     
-    // Save form answers
-    const fields = await FormField.find().lean();
+    // Save form answers - Get fields specific to this visa type's form sections
+    const formSections = await FormSection.find({ countryVisaType: visaTypeId }).lean();
+    const sectionIds = formSections.map(section => section._id);
+    
+    const fields = await FormField.find({ formSection: { $in: sectionIds } }).lean();
     const fieldMap = fields.reduce((acc, field) => {
       acc[field.name] = field._id;
       return acc;
@@ -371,8 +370,6 @@ router.post('/visa-applications', auth, upload.any(), compressMultipleImages, as
     
     // Handle file uploads
     if (req.files && req.files.length > 0) {
-      const ApplicationDocument = require('../models/ApplicationDocument');
-      
       for (const file of req.files) {
         await ApplicationDocument.create({
           application: application._id,
@@ -447,10 +444,6 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
       return res.status(401).json({ message: 'User not authenticated' });
     }
     
-    const Application = require('../models/Application');
-    const ApplicationAnswer = require('../models/ApplicationAnswer');
-    const FormField = require('../models/FormField');
-    const Status = require('../models/Status');
     const draftStatus = await Status.findOne({ name: 'Draft' });
     if (!draftStatus) {
       return res.status(500).json({ message: 'Draft status not found' });
@@ -466,8 +459,11 @@ router.post('/visa-applications/draft', auth, async (req, res) => {
     });
     await application.save();
     
-    // Save form answers
-    const fields = await FormField.find().lean();
+    // Save form answers - Get fields specific to this visa type's form sections
+    const formSections = await FormSection.find({ countryVisaType: visaTypeId }).lean();
+    const sectionIds = formSections.map(section => section._id);
+    
+    const fields = await FormField.find({ formSection: { $in: sectionIds } }).lean();
     const fieldMap = fields.reduce((acc, field) => {
       acc[field.name] = field._id;
       return acc;
