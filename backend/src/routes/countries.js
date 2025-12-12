@@ -42,6 +42,10 @@ const upload = multer({
   }
 });
 
+// Public endpoint for getting countries (for filters)
+router.get('/public', getCountries);
+
+// Admin endpoint for managing countries
 router.get('/', auth, role(['admin']), getCountries);
 router.post('/', auth, role(['admin']), upload.single('placeImage'), compressImage, createCountry);
 router.put('/:id', auth, role(['admin']), upload.single('placeImage'), compressImage, updateCountry);

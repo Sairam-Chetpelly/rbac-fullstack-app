@@ -127,7 +127,155 @@ const SearchFilters = ({ onSearch, onFilter, onClear, filters = {}, searchPlaceh
                 <option value="week">This Week</option>
                 <option value="month">This Month</option>
                 <option value="quarter">This Quarter</option>
+                <option value="year">This Year</option>
               </select>
+            </div>
+          )}
+
+          {filters.applicationType && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Application Type</label>
+              <select
+                value={activeFilters.applicationType || ''}
+                onChange={(e) => handleFilterChange('applicationType', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
+              >
+                <option value="">All Types</option>
+                <option value="individual">Individual</option>
+                <option value="family">Family</option>
+                <option value="group">Group</option>
+              </select>
+            </div>
+          )}
+
+          {filters.paymentMethod && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Method</label>
+              <select
+                value={activeFilters.paymentMethod || ''}
+                onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
+              >
+                <option value="">All Methods</option>
+                <option value="razorpay">Online Payment</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="cash">Cash</option>
+                <option value="cheque">Cheque</option>
+              </select>
+            </div>
+          )}
+
+          {filters.amountRange && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Amount Range</label>
+              <select
+                value={activeFilters.amountRange || ''}
+                onChange={(e) => handleFilterChange('amountRange', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
+              >
+                <option value="">All Amounts</option>
+                <option value="under-1000">Under ₹1,000</option>
+                <option value="1000-5000">₹1,000 - ₹5,000</option>
+                <option value="5000-10000">₹5,000 - ₹10,000</option>
+                <option value="above-10000">Above ₹10,000</option>
+              </select>
+            </div>
+          )}
+
+          {filters.paymentStatus && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Status</label>
+              <select
+                value={activeFilters.paymentStatus || ''}
+                onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
+              >
+                <option value="">All Status</option>
+                {filters.paymentStatus.map(status => (
+                  <option key={status.value} value={status.value}>{status.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {filters.sortBy && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Sort By</label>
+              <select
+                value={activeFilters.sortBy || 'createdAt'}
+                onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
+              >
+                <option value="createdAt">Date Created</option>
+                <option value="submittedAt">Date Submitted</option>
+                <option value="applicationNumber">Application Number</option>
+                <option value="amount">Amount</option>
+              </select>
+            </div>
+          )}
+
+          {filters.sortOrder && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Sort Order</label>
+              <select
+                value={activeFilters.sortOrder || 'desc'}
+                onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
+              >
+                <option value="desc">Newest First</option>
+                <option value="asc">Oldest First</option>
+              </select>
+            </div>
+          )}
+
+          {filters.assignedTo && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Assigned To</label>
+              <select
+                value={activeFilters.assignedTo || ''}
+                onChange={(e) => handleFilterChange('assignedTo', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
+              >
+                <option value="">All Assignments</option>
+                {filters.assignedTo.map(employee => (
+                  <option key={employee.value} value={employee.value}>{employee.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {filters.customer && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Customer</label>
+              <input
+                type="text"
+                placeholder="Search by name or email"
+                value={activeFilters.customer || ''}
+                onChange={(e) => handleFilterChange('customer', e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+              />
+            </div>
+          )}
+
+          {filters.customDateRange && (
+            <div className="col-span-full">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Custom Date Range</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  type="date"
+                  value={activeFilters.startDate || ''}
+                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  placeholder="Start Date"
+                />
+                <input
+                  type="date"
+                  value={activeFilters.endDate || ''}
+                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  placeholder="End Date"
+                />
+              </div>
             </div>
           )}
         </div>

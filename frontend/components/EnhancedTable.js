@@ -22,27 +22,38 @@ export default function EnhancedTable({
   totalItems = 0,
   currentPage: externalCurrentPage = 1,
   onPageChange,
+  onFilterChange,
   onExport,
   exportButtonText = "Export CSV"
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(externalCurrentPage);
+  const [sortColumn, setSortColumn] = useState('');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [activeFilters, setActiveFilters] = useState({});
+  const [searchTimeout, setSearchTimeout] = useState(null);
 
   // Sync external current page changes
   useEffect(() => {
     setCurrentPage(externalCurrentPage);
   }, [externalCurrentPage]);
-  const [sortColumn, setSortColumn] = useState('');
-  const [sortDirection, setSortDirection] = useState('asc');
-  const [activeFilters, setActiveFilters] = useState({});
+  
+  // Cleanup search timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
 
   // Helper function to get nested object values
   const getNestedValue = (obj, path) => {
     return path.split('.').reduce((current, key) => current?.[key], obj);
   };
 
-  // Filter data based on search term and filters
-  const filteredData = data.filter(item => {
+  // Filter data based on search term and filters (only for client-side pagination)
+  const filteredData = serverSidePagination ? data : data.filter(item => {
     // Search filter
     const matchesSearch = !searchTerm || columns.some(column => {
       const value = getNestedValue(item, column.key);
@@ -59,8 +70,8 @@ export default function EnhancedTable({
     return matchesSearch && matchesFilters;
   });
 
-  // Sort data
-  const sortedData = [...filteredData].sort((a, b) => {
+  // Sort data (only for client-side pagination)
+  const sortedData = serverSidePagination ? filteredData : [...filteredData].sort((a, b) => {
     if (!sortColumn) return 0;
     
     const aValue = getNestedValue(a, sortColumn);
@@ -91,11 +102,21 @@ export default function EnhancedTable({
 
   // Handle filter change
   const handleFilterChange = (filterKey, value) => {
-    setActiveFilters(prev => ({
-      ...prev,
+    const newFilters = {
+      ...activeFilters,
       [filterKey]: value
-    }));
-    setCurrentPage(1);
+    };
+    if (!value || value === '') delete newFilters[filterKey];
+    
+    setActiveFilters(newFilters);
+    
+    // For server-side pagination, reset to page 1 and call parent handler
+    if (serverSidePagination && onFilterChange) {
+      setCurrentPage(1);
+      onFilterChange(newFilters);
+    } else {
+      setCurrentPage(1);
+    }
   };
 
   // Render cell content
@@ -185,7 +206,31 @@ export default function EnhancedTable({
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchTerm(value);
+                  
+                  // Clear existing timeout
+                  if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                  }
+                  
+                  // Set new timeout for server-side search
+                  if (serverSidePagination && onFilterChange) {
+                    const timeout = setTimeout(() => {
+                      const newFilters = { ...activeFilters };
+                      if (value) {
+                        newFilters.search = value;
+                      } else {
+                        delete newFilters.search;
+                      }
+                      setActiveFilters(newFilters);
+                      setCurrentPage(1);
+                      onFilterChange(newFilters);
+                    }, 500); // 500ms debounce
+                    setSearchTimeout(timeout);
+                  }
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
@@ -222,8 +267,8 @@ export default function EnhancedTable({
                     </select>
                   ) : (
                     <input
-                      type="text"
-                      placeholder={`Filter by ${filter.label.toLowerCase()}`}
+                      type={filter.type || 'text'}
+                      placeholder={filter.placeholder || `Filter by ${filter.label.toLowerCase()}`}
                       value={activeFilters[filter.key] || ''}
                       onChange={(e) => handleFilterChange(filter.key, e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"

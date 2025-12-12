@@ -21,6 +21,7 @@ export default function CustomerDrafts() {
   });
   const [filters, setFilters] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [countryOptions, setCountryOptions] = useState([]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -34,7 +35,21 @@ export default function CustomerDrafts() {
       return;
     }
     fetchDrafts();
+    fetchCountryOptions();
   }, [router]);
+
+  const fetchCountryOptions = async () => {
+    try {
+      const response = await api.get('/countries/public');
+      const options = response.data.map(country => ({
+        value: country.name.toLowerCase(),
+        label: country.name
+      }));
+      setCountryOptions(options);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+    }
+  };
 
   const fetchDrafts = async (page = 1, search = '', filterParams = {}) => {
     try {
@@ -48,7 +63,16 @@ export default function CustomerDrafts() {
       });
       
       const response = await api.get(`/customer/applications?${params}`);
-      setDrafts(response.data.applications || []);
+      let drafts = response.data.applications || [];
+      
+      // Apply country filter if specified
+      if (filterParams.country) {
+        drafts = drafts.filter(draft => 
+          draft.countryVisaType?.country?.name?.toLowerCase().includes(filterParams.country.toLowerCase())
+        );
+      }
+      
+      setDrafts(drafts);
       setPagination(response.data.pagination);
     } catch (error) {
       console.error('Error fetching drafts:', error);
@@ -93,7 +117,12 @@ export default function CustomerDrafts() {
   };
 
   const filterOptions = {
-    dateRange: true
+    dateRange: true,
+    country: countryOptions,
+    applicationType: true,
+    sortBy: true,
+    sortOrder: true,
+    customDateRange: true
   };
 
   return (

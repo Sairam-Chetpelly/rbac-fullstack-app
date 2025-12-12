@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, Download } from 'lucide-react';
 import api from '../../lib/api';
 import Button from '../../components/Button';
 import CustomerLayout from '../../components/CustomerLayout';
@@ -76,6 +76,30 @@ export default function CustomerPayments() {
     fetchPayments(page, searchTerm, filters);
   };
 
+  const handleExport = () => {
+    const csvData = payments.map(payment => ({
+      'Transaction ID': payment.transactionId || 'N/A',
+      'Application Number': payment.application?.applicationNumber || 'N/A',
+      'Amount': payment.amount,
+      'Status': payment.status.toUpperCase(),
+      'Payment Method': payment.paymentMethod || 'N/A',
+      'Payment Date': new Date(payment.paidAt || payment.createdAt).toLocaleDateString()
+    }));
+    
+    const csvContent = [
+      Object.keys(csvData[0] || {}).join(','),
+      ...csvData.map(row => Object.values(row).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `my-payments-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const downloadInvoice = (payment) => {
     const doc = {
       content: [
@@ -116,13 +140,26 @@ export default function CustomerPayments() {
       { value: 'pending', label: 'Pending' },
       { value: 'failed', label: 'Failed' }
     ],
-    dateRange: true
+    dateRange: true,
+    paymentMethod: true,
+    amountRange: true,
+    sortBy: true,
+    sortOrder: true,
+    customDateRange: true
   };
 
   return (
     <CustomerLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Payment History</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">Payment History</h1>
+          {payments.length > 0 && (
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          )}
+        </div>
         
         <SearchFilters
           onSearch={handleSearch}

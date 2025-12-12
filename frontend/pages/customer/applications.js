@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Plus, Clock, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import { Plus, Clock, CheckCircle, AlertCircle, FileText, Download } from 'lucide-react';
 import api from '../../lib/api';
 import Button from '../../components/Button';
 import CustomerLayout from '../../components/CustomerLayout';
@@ -22,10 +22,25 @@ export default function CustomerApplications() {
   const [filters, setFilters] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [statusOptions, setStatusOptions] = useState([]);
+  const [countryOptions, setCountryOptions] = useState([]);
 
   useEffect(() => {
     fetchStatusOptions();
+    fetchCountryOptions();
   }, []);
+
+  const fetchCountryOptions = async () => {
+    try {
+      const response = await api.get('/countries/public');
+      const options = response.data.map(country => ({
+        value: country.name.toLowerCase(),
+        label: country.name
+      }));
+      setCountryOptions(options);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+    }
+  };
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -82,6 +97,31 @@ export default function CustomerApplications() {
     fetchApplications(page, searchTerm, filters);
   };
 
+  const handleExport = () => {
+    const csvData = applications.map(app => ({
+      'Application Number': app.applicationNumber,
+      'Country': app.countryVisaType?.country?.name || 'N/A',
+      'Visa Type': app.countryVisaType?.visaType?.name || 'N/A',
+      'Status': app.status?.name || 'N/A',
+      'Application Type': app.applicationType || 'individual',
+      'Submitted Date': app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : 'Not submitted',
+      'Created Date': new Date(app.createdAt).toLocaleDateString()
+    }));
+    
+    const csvContent = [
+      Object.keys(csvData[0] || {}).join(','),
+      ...csvData.map(row => Object.values(row).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `my-applications-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const getStatusIcon = (status) => {
     const statusName = status?.name?.toLowerCase() || '';
     if (statusName.includes('approved')) {
@@ -116,7 +156,12 @@ export default function CustomerApplications() {
 
   const filterOptions = {
     status: statusOptions,
-    dateRange: true
+    country: countryOptions,
+    dateRange: true,
+    applicationType: true,
+    sortBy: true,
+    sortOrder: true,
+    customDateRange: true
   };
 
   return (
@@ -124,12 +169,20 @@ export default function CustomerApplications() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">My Applications</h1>
-          <Link href="/">
-            <Button variant="primary">
-              <Plus className="h-4 w-4 mr-2" />
-              New Application
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {applications.length > 0 && (
+              <Button variant="outline" onClick={handleExport}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            )}
+            <Link href="/">
+              <Button variant="primary">
+                <Plus className="h-4 w-4 mr-2" />
+                New Application
+              </Button>
+            </Link>
+          </div>
         </div>
         
         <SearchFilters

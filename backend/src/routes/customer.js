@@ -5,6 +5,7 @@ const Payment = require('../models/Payment');
 const User = require('../models/User');
 const Status = require('../models/Status');
 const ApplicationAnswer = require('../models/ApplicationAnswer');
+const ApplicationDocument = require('../models/ApplicationDocument');
 const FormField = require('../models/FormField');
 const FormSection = require('../models/FormSection');
 const Applicant = require('../models/Applicant');
@@ -41,7 +42,19 @@ router.get('/dashboard-stats', auth, role(['customer', 'admin']), async (req, re
 // Get customer applications with pagination and search
 router.get('/applications', auth, role(['customer', 'admin']), async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '', status = '', country = '', dateRange = '' } = req.query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      search = '', 
+      status = '', 
+      country = '', 
+      dateRange = '',
+      applicationType = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      startDate = '',
+      endDate = ''
+    } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     // Build query
@@ -60,30 +73,47 @@ router.get('/applications', auth, role(['customer', 'admin']), async (req, res) 
       if (statusDoc) query.status = statusDoc._id;
     }
     
-    // Date range filter
-    if (dateRange) {
+    // Application type filter
+    if (applicationType) {
+      query.applicationType = applicationType;
+    }
+    
+    // Custom date range filter
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    } else if (dateRange) {
       const now = new Date();
-      let startDate;
+      let startDateCalc;
       
       switch (dateRange) {
         case 'today':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          startDateCalc = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           break;
         case 'week':
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          startDateCalc = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
           break;
         case 'month':
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          startDateCalc = new Date(now.getFullYear(), now.getMonth(), 1);
           break;
         case 'quarter':
-          startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+          startDateCalc = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+          break;
+        case 'year':
+          startDateCalc = new Date(now.getFullYear(), 0, 1);
           break;
       }
       
-      if (startDate) {
-        query.createdAt = { $gte: startDate };
+      if (startDateCalc) {
+        query.createdAt = { $gte: startDateCalc };
       }
     }
+    
+    // Build sort object
+    const sortObj = {};
+    sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
     
     const applications = await Application.find(query)
       .populate('status', 'name color')
@@ -94,7 +124,8 @@ router.get('/applications', auth, role(['customer', 'admin']), async (req, res) 
           { path: 'visaType', select: 'name' }
         ]
       })
-      .sort({ createdAt: -1 })
+      .populate('assignedTo', 'name email')
+      .sort(sortObj)
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
@@ -128,7 +159,19 @@ router.get('/applications', auth, role(['customer', 'admin']), async (req, res) 
 // Get customer payments with pagination and search
 router.get('/payments', auth, role(['customer', 'admin']), async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '', status = '', dateRange = '' } = req.query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      search = '', 
+      status = '', 
+      dateRange = '',
+      paymentMethod = '',
+      amountRange = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      startDate = '',
+      endDate = ''
+    } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     // Build query
@@ -139,34 +182,79 @@ router.get('/payments', auth, role(['customer', 'admin']), async (req, res) => {
       query.status = status;
     }
     
-    // Date range filter
-    if (dateRange) {
-      const now = new Date();
-      let startDate;
-      
-      switch (dateRange) {
-        case 'today':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Payment method filter
+    if (paymentMethod) {
+      query.paymentMethod = paymentMethod;
+    }
+    
+    // Amount range filter
+    if (amountRange) {
+      switch (amountRange) {
+        case 'under-1000':
+          query.amount = { $lt: 1000 };
           break;
-        case 'week':
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case '1000-5000':
+          query.amount = { $gte: 1000, $lt: 5000 };
           break;
-        case 'month':
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        case '5000-10000':
+          query.amount = { $gte: 5000, $lt: 10000 };
           break;
-        case 'quarter':
-          startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+        case 'above-10000':
+          query.amount = { $gte: 10000 };
           break;
-      }
-      
-      if (startDate) {
-        query.createdAt = { $gte: startDate };
       }
     }
     
+    // Custom date range filter
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    } else if (dateRange) {
+      const now = new Date();
+      let startDateCalc;
+      
+      switch (dateRange) {
+        case 'today':
+          startDateCalc = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          startDateCalc = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDateCalc = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'quarter':
+          startDateCalc = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+          break;
+        case 'year':
+          startDateCalc = new Date(now.getFullYear(), 0, 1);
+          break;
+      }
+      
+      if (startDateCalc) {
+        query.createdAt = { $gte: startDateCalc };
+      }
+    }
+    
+    // Build sort object
+    const sortObj = {};
+    sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    
     const payments = await Payment.find(query)
-      .populate('application', 'applicationNumber')
-      .sort({ createdAt: -1 })
+      .populate({
+        path: 'application',
+        select: 'applicationNumber',
+        populate: {
+          path: 'countryVisaType',
+          populate: {
+            path: 'country',
+            select: 'name'
+          }
+        }
+      })
+      .sort(sortObj)
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
@@ -439,8 +527,9 @@ router.get('/application/:id', auth, role(['customer', 'admin']), async (req, re
         { path: 'visaType', select: 'name' }
       ]
     })
-    .populate('user', 'name email')
-    .populate('assignedTo', 'name email mobile');
+    .populate('user', 'name email mobile')
+    .populate('assignedTo', 'name email mobile')
+    .lean();
     
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
@@ -450,26 +539,38 @@ router.get('/application/:id', auth, role(['customer', 'admin']), async (req, re
     const applicants = await Applicant.find({
       application: application._id,
       deletedAt: null
-    }).sort({ applicantIndex: 1 });
+    }).sort({ applicantIndex: 1 }).lean();
     
-    // Get form answers
+    // Get application answers with form section details
     const answers = await ApplicationAnswer.find({
       application: application._id,
       deletedAt: null
-    }).populate('field', 'name label type');
+    }).populate({
+      path: 'field',
+      select: 'name label type order',
+      populate: {
+        path: 'formSection',
+        select: 'name order'
+      }
+    }).lean();
+    
+    // Get application documents
+    const documents = await ApplicationDocument.find({
+      application: application._id
+    }).lean();
     
     // Get status history
     const statusHistory = await ApplicationStatusHistory.find({
       application: application._id
-    }).populate('changedBy', 'name').populate('status', 'name color').sort({ createdAt: -1 });
+    }).populate('changedBy', 'name').populate('status', 'name color').sort({ changedAt: -1 }).lean();
     
     // Get payment info
     const payment = await Payment.findOne({
       application: application._id,
       deletedAt: null
-    });
+    }).lean();
     
-    res.json({ application, applicants, answers, statusHistory, payment });
+    res.json({ application, applicants, answers, documents, statusHistory, payment });
   } catch (error) {
     console.error('Error fetching application details:', error);
     res.status(500).json({ message: 'Error fetching application details', error: error.message });
