@@ -11,6 +11,7 @@ import { useAuth } from "../context/AuthContext"
 const VisaFlowHomepage = () => {
   const router = useRouter()
   const { user } = useAuth()
+  const destinationsRef = React.useRef(null)
   
   // Allow access to home page without authentication
   const isPublicPage = router.pathname === '/' || router.pathname === '/home'
@@ -57,6 +58,13 @@ const VisaFlowHomepage = () => {
     ? destinations 
     : destinations.filter(dest => (dest.continent || dest.region) === selectedRegion)
 
+  // Scroll to destinations section when region changes
+  useEffect(() => {
+    if (selectedRegion !== 'All' && destinationsRef.current) {
+      destinationsRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [selectedRegion])
+
   const handleNewsletterSubmit = () => {
     if (!email) return
     console.log('Newsletter signup:', email)
@@ -70,8 +78,12 @@ const VisaFlowHomepage = () => {
     <VisaLayout showBackButton={false} showHero={true}>
 
       {/* Destinations Section */}
-      <section className="py-16 bg-gray">
+      <section ref={destinationsRef} className="py-16 bg-gray">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Popular Visa Destinations</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">Choose from our wide range of visa services for countries worldwide</p>
+          </div>
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Region Filter Sidebar - Mobile Dropdown */}
             <div className="lg:hidden mb-6">
