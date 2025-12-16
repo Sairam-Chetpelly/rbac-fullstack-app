@@ -14,8 +14,20 @@ export default function FormBuilder() {
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('builder');
+  const [librarySections, setLibrarySections] = useState([]);
+  const [showSectionLibraryModal, setShowSectionLibraryModal] = useState(false);
+  const [showSaveSectionModal, setShowSaveSectionModal] = useState(false);
+  const [selectedSectionForSave, setSelectedSectionForSave] = useState(null);
+  const [sectionSaveForm, setSectionSaveForm] = useState({ category: 'General', description: '' });
+  const [libraryFields, setLibraryFields] = useState([]);
+  const [showFieldLibraryModal, setShowFieldLibraryModal] = useState(false);
+  const [showSaveFieldModal, setShowSaveFieldModal] = useState(false);
+  const [selectedFieldForSave, setSelectedFieldForSave] = useState(null);
+  const [fieldSaveForm, setFieldSaveForm] = useState({ category: 'General', description: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [fieldLibrarySearchTerm, setFieldLibrarySearchTerm] = useState('');
+  const [sectionLibrarySearchTerm, setSectionLibrarySearchTerm] = useState('');
   
   // Modal states
   const [showSectionModal, setShowSectionModal] = useState(false);
@@ -71,7 +83,7 @@ export default function FormBuilder() {
     const header = document.querySelector('header');
     const sidebar = document.querySelector('div[class*="bg-white/10 backdrop-blur-md border-r"]');
     
-    if (showSectionModal || showFieldModal) {
+    if (showSectionModal || showFieldModal || showSectionLibraryModal || showSaveSectionModal || showFieldLibraryModal || showSaveFieldModal) {
       if (header) {
         header.style.zIndex = '-1';
         header.style.visibility = 'hidden';
@@ -98,11 +110,13 @@ export default function FormBuilder() {
         sidebar.style.transform = '';
       }
     };
-  }, [showSectionModal, showFieldModal]);
+  }, [showSectionModal, showFieldModal, showSectionLibraryModal, showSaveSectionModal, showFieldLibraryModal, showSaveFieldModal]);
 
   useEffect(() => {
     fetchVisaTypes();
     fetchStatuses();
+    fetchLibrarySections();
+    fetchLibraryFields();
   }, []);
 
   useEffect(() => {
@@ -117,6 +131,24 @@ export default function FormBuilder() {
       setStatuses(response.data);
     } catch (error) {
       toast.error('Failed to fetch statuses');
+    }
+  };
+
+  const fetchLibrarySections = async () => {
+    try {
+      const response = await api.get('/section-library');
+      setLibrarySections(response.data);
+    } catch (error) {
+      console.error('Failed to fetch library sections:', error);
+    }
+  };
+
+  const fetchLibraryFields = async () => {
+    try {
+      const response = await api.get('/field-library');
+      setLibraryFields(response.data);
+    } catch (error) {
+      console.error('Failed to fetch library fields:', error);
     }
   };
 
@@ -391,6 +423,106 @@ export default function FormBuilder() {
     }
   };
 
+  // Section Library functions
+  const saveSectionToLibrary = async () => {
+    if (!selectedSectionForSave) return;
+    
+    try {
+      await api.post('/section-library/save-section', {
+        sectionId: selectedSectionForSave._id,
+        category: sectionSaveForm.category,
+        description: sectionSaveForm.description
+      });
+      toast.success('Section saved to library!');
+      setShowSaveSectionModal(false);
+      setSelectedSectionForSave(null);
+      setSectionSaveForm({ category: 'General', description: '' });
+      fetchLibrarySections();
+    } catch (error) {
+      toast.error('Failed to save section to library');
+    }
+  };
+
+  const addSectionFromLibrary = async (librarySectionId) => {
+    if (!selectedVisa) {
+      toast.error('Please select a visa first');
+      return;
+    }
+    
+    try {
+      await api.post('/section-library/create-section', {
+        librarySectionId,
+        visaId: selectedVisa._id,
+        order: formSections.length + 1
+      });
+      toast.success('Section added from library!');
+      setShowSectionLibraryModal(false);
+      fetchVisaForm(selectedVisa._id);
+    } catch (error) {
+      toast.error('Failed to add section from library');
+    }
+  };
+
+  const deleteLibrarySection = async (sectionId) => {
+    if (confirm('Are you sure you want to delete this library section?')) {
+      try {
+        await api.delete(`/section-library/${sectionId}`);
+        toast.success('Library section deleted!');
+        fetchLibrarySections();
+      } catch (error) {
+        toast.error('Failed to delete library section');
+      }
+    }
+  };
+
+  // Field Library functions
+  const saveFieldToLibrary = async () => {
+    if (!selectedFieldForSave) return;
+    
+    try {
+      await api.post('/field-library/save-field', {
+        fieldId: selectedFieldForSave._id,
+        category: fieldSaveForm.category,
+        description: fieldSaveForm.description
+      });
+      toast.success('Field saved to library!');
+      setShowSaveFieldModal(false);
+      setSelectedFieldForSave(null);
+      setFieldSaveForm({ category: 'General', description: '' });
+      fetchLibraryFields();
+    } catch (error) {
+      toast.error('Failed to save field to library');
+    }
+  };
+
+  const addFieldFromLibrary = async (libraryFieldId, sectionId) => {
+    const sectionFields = getFieldsBySection(sectionId);
+    try {
+      await api.post('/field-library/create-field', {
+        libraryFieldId,
+        sectionId,
+        order: sectionFields.length + 1
+      });
+      toast.success('Field added from library!');
+      setShowFieldLibraryModal(false);
+      fetchVisaForm(selectedVisa._id);
+    } catch (error) {
+      toast.error('Failed to add field from library');
+    }
+  };
+
+  const deleteLibraryField = async (fieldId) => {
+    if (confirm('Are you sure you want to delete this library field?')) {
+      try {
+        await api.delete(`/field-library/${fieldId}`);
+        toast.success('Library field deleted!');
+        fetchLibraryFields();
+      } catch (error) {
+        toast.error('Failed to delete library field');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -422,6 +554,26 @@ export default function FormBuilder() {
                 }`}
               >
                 Builder
+              </button>
+              <button
+                onClick={() => setActiveTab('sections')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'sections'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                Section Library
+              </button>
+              <button
+                onClick={() => setActiveTab('fields')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'fields'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                Field Library
               </button>
               <button
                 onClick={() => setActiveTab('preview')}
@@ -555,9 +707,14 @@ export default function FormBuilder() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Form Sections</h2>
-              <Button onClick={() => openSectionModal()} icon="➕">
-                Add Section
-              </Button>
+              <div className="flex space-x-2">
+                <Button onClick={() => setShowSectionLibraryModal(true)} variant="outline" icon="📚">
+                  From Library
+                </Button>
+                <Button onClick={() => openSectionModal()} icon="➕">
+                  Add Section
+                </Button>
+              </div>
             </div>
 
             {formLoading ? (
@@ -596,12 +753,29 @@ export default function FormBuilder() {
                             </div>
                             <div className="flex space-x-2">
                               <Button
+                                onClick={() => { setSelectedSectionForSave(section); setShowSaveSectionModal(true); }}
+                                size="sm"
+                                variant="outline"
+                                icon="💾"
+                                title="Save to Library"
+                              >
+                                <span className="hidden sm:inline">Save</span>
+                              </Button>
+                              <Button
                                 onClick={() => openFieldModal(null, section._id)}
                                 size="sm"
                                 variant="outline"
                                 icon="➕"
                               >
                                 <span className="hidden sm:inline">Add Field</span>
+                              </Button>
+                              <Button
+                                onClick={() => { setSelectedSectionId(section._id); setShowFieldLibraryModal(true); }}
+                                size="sm"
+                                variant="outline"
+                                icon="📚"
+                              >
+                                <span className="hidden sm:inline">From Library</span>
                               </Button>
                               <Button
                                 onClick={() => openSectionModal(section)}
@@ -644,6 +818,13 @@ export default function FormBuilder() {
                                     </div>
                                     <div className="flex space-x-1">
                                       <Button
+                                        onClick={() => { setSelectedFieldForSave(field); setShowSaveFieldModal(true); }}
+                                        size="sm"
+                                        variant="outline"
+                                        icon="💾"
+                                        title="Save to Library"
+                                      />
+                                      <Button
                                         onClick={() => openFieldModal(field)}
                                         size="sm"
                                         variant="ghost"
@@ -677,6 +858,213 @@ export default function FormBuilder() {
                   })}
               </div>
             )}
+          </div>
+        ) : activeTab === 'sections' ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Section Library</h2>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <input
+                type="text"
+                placeholder="Search sections..."
+                value={sectionLibrarySearchTerm}
+                onChange={(e) => setSectionLibrarySearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            </div>
+
+            {(() => {
+              const filteredSections = librarySections.filter(section => 
+                section.name.toLowerCase().includes(sectionLibrarySearchTerm.toLowerCase()) ||
+                section.description?.toLowerCase().includes(sectionLibrarySearchTerm.toLowerCase()) ||
+                section.category?.toLowerCase().includes(sectionLibrarySearchTerm.toLowerCase())
+              );
+              
+              return filteredSections.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+                  <div className="text-6xl mb-4">📚</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {sectionLibrarySearchTerm ? 'No sections found' : 'No Library Sections'}
+                  </h3>
+                  <p className="text-gray-600">
+                    {sectionLibrarySearchTerm ? 'No sections match your search' : 'Save commonly used sections to reuse across different forms'}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm border">
+                  <div className="p-6">
+                    {Object.entries(
+                      filteredSections.reduce((acc, section) => {
+                        const category = section.category || 'General';
+                        if (!acc[category]) acc[category] = [];
+                        acc[category].push(section);
+                        return acc;
+                      }, {})
+                    ).map(([category, sections]) => (
+                      <div key={category} className="mb-8 last:mb-0">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                          <span className="text-2xl mr-2">📚</span>
+                          {category}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {sections.map((section) => (
+                            <div key={section._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <h4 className="font-medium text-gray-900">{section.name}</h4>
+                                  {section.description && (
+                                    <p className="text-sm text-gray-600 mt-1">{section.description}</p>
+                                  )}
+                                </div>
+                                <Button
+                                  onClick={() => deleteLibrarySection(section._id)}
+                                  size="sm"
+                                  variant="danger"
+                                  icon="🗑️"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">Fields:</span>
+                                  <span className="font-medium">{section.fields.length}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">Used:</span>
+                                  <span className="font-medium">{section.usageCount} times</span>
+                                </div>
+                                {section.fields.length > 0 && (
+                                  <div className="mt-2">
+                                    <p className="text-xs text-gray-500 mb-1">Field Names:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {section.fields.map((field, index) => (
+                                        <span key={index} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
+                                          {field.label}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        ) : activeTab === 'fields' ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Field Library</h2>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <input
+                type="text"
+                placeholder="Search fields..."
+                value={fieldLibrarySearchTerm}
+                onChange={(e) => setFieldLibrarySearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            </div>
+
+            {(() => {
+              const filteredFields = libraryFields.filter(field => 
+                field.label.toLowerCase().includes(fieldLibrarySearchTerm.toLowerCase()) ||
+                field.name.toLowerCase().includes(fieldLibrarySearchTerm.toLowerCase()) ||
+                field.description?.toLowerCase().includes(fieldLibrarySearchTerm.toLowerCase()) ||
+                field.category?.toLowerCase().includes(fieldLibrarySearchTerm.toLowerCase()) ||
+                field.type.toLowerCase().includes(fieldLibrarySearchTerm.toLowerCase())
+              );
+              
+              return filteredFields.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+                  <div className="text-6xl mb-4">📚</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {fieldLibrarySearchTerm ? 'No fields found' : 'No Library Fields'}
+                  </h3>
+                  <p className="text-gray-600">
+                    {fieldLibrarySearchTerm ? 'No fields match your search' : 'Save commonly used fields to reuse across different forms'}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm border">
+                  <div className="p-6">
+                    {Object.entries(
+                      filteredFields.reduce((acc, field) => {
+                        const category = field.category || 'General';
+                        if (!acc[category]) acc[category] = [];
+                        acc[category].push(field);
+                        return acc;
+                      }, {})
+                    ).map(([category, fields]) => (
+                      <div key={category} className="mb-8 last:mb-0">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                          <span className="text-2xl mr-2">📚</span>
+                          {category}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {fields.map((field) => (
+                            <div key={field._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium text-gray-900">{field.label}</span>
+                                  {field.required && <span className="text-red-500">*</span>}
+                                </div>
+                                <Button
+                                  onClick={() => deleteLibraryField(field._id)}
+                                  size="sm"
+                                  variant="danger"
+                                  icon="🗑️"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex items-center space-x-2">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    field.type === 'file' ? 'bg-purple-100 text-purple-800' : 
+                                    field.type === 'select' ? 'bg-green-100 text-green-800' :
+                                    'bg-blue-100 text-blue-800'
+                                  }`}>
+                                    {field.type}
+                                  </span>
+                                  <span className="text-xs text-gray-500">Used: {field.usageCount}</span>
+                                </div>
+                                {field.description && (
+                                  <p className="text-xs text-gray-600">{field.description}</p>
+                                )}
+                                {field.placeholder && (
+                                  <p className="text-xs text-gray-500">Placeholder: {field.placeholder}</p>
+                                )}
+                                {field.required && (
+                                  <p className="text-xs text-orange-600">Required field</p>
+                                )}
+                                {field.options && field.options.length > 0 && (
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">Options:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {field.options.map((option, index) => (
+                                        <span key={index} className="px-1 py-0.5 text-xs bg-blue-50 text-blue-700 rounded">
+                                          {option}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-sm border">
@@ -1210,6 +1598,349 @@ export default function FormBuilder() {
               </Button>
               <Button 
                 onClick={() => setShowFieldModal(false)} 
+                variant="outline" 
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Section Library Modal */}
+      {showSectionLibraryModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-screen overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add Section from Library</h3>
+              <button
+                onClick={() => setShowSectionLibraryModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search sections..."
+                value={sectionLibrarySearchTerm}
+                onChange={(e) => setSectionLibrarySearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            </div>
+            
+            {(() => {
+              const filteredSections = librarySections.filter(section => 
+                section.name.toLowerCase().includes(sectionLibrarySearchTerm.toLowerCase()) ||
+                section.description?.toLowerCase().includes(sectionLibrarySearchTerm.toLowerCase()) ||
+                section.category?.toLowerCase().includes(sectionLibrarySearchTerm.toLowerCase())
+              );
+              
+              return filteredSections.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">📚</div>
+                  <p className="text-gray-600">
+                    {sectionLibrarySearchTerm ? 'No sections found matching your search' : 'No sections in library'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(
+                    filteredSections.reduce((acc, section) => {
+                      const category = section.category || 'General';
+                      if (!acc[category]) acc[category] = [];
+                      acc[category].push(section);
+                      return acc;
+                    }, {})
+                  ).map(([category, sections]) => (
+                  <div key={category}>
+                    <h4 className="font-medium text-gray-900 mb-3">{category}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {sections.map((section) => (
+                        <div key={section._id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h5 className="font-medium text-gray-900">{section.name}</h5>
+                              {section.description && (
+                                <p className="text-sm text-gray-600 mt-1">{section.description}</p>
+                              )}
+                              <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                                <span>{section.fields.length} fields</span>
+                                <span>Used: {section.usageCount}</span>
+                              </div>
+                            </div>
+                            <Button
+                              onClick={() => addSectionFromLibrary(section._id)}
+                              size="sm"
+                              icon="➕"
+                            >
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+            })()}
+            
+            <div className="flex justify-end pt-6">
+              <Button 
+                onClick={() => setShowSectionLibraryModal(false)} 
+                variant="outline"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Save Section to Library Modal */}
+      {showSaveSectionModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Save Section to Library</h3>
+              <button
+                onClick={() => setShowSaveSectionModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            {selectedSectionForSave && (
+              <div className="space-y-4">
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    Saving section: <strong>{selectedSectionForSave.name}</strong>
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    {getFieldsBySection(selectedSectionForSave._id).length} fields included
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <select
+                    value={sectionSaveForm.category}
+                    onChange={(e) => setSectionSaveForm({ ...sectionSaveForm, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="General">General</option>
+                    <option value="Personal Info">Personal Info</option>
+                    <option value="Contact Details">Contact Details</option>
+                    <option value="Travel Info">Travel Info</option>
+                    <option value="Documents">Documents</option>
+                    <option value="Employment">Employment</option>
+                    <option value="Financial">Financial</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={sectionSaveForm.description}
+                    onChange={(e) => setSectionSaveForm({ ...sectionSaveForm, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    rows={3}
+                    placeholder="Optional description for this section"
+                  />
+                </div>
+              </div>
+            )}
+            
+            <div className="flex gap-3 pt-6">
+              <Button onClick={saveSectionToLibrary} className="flex-1" icon="💾">
+                Save to Library
+              </Button>
+              <Button 
+                onClick={() => setShowSaveSectionModal(false)} 
+                variant="outline" 
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Field Library Modal */}
+      {showFieldLibraryModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-screen overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add Field from Library</h3>
+              <button
+                onClick={() => setShowFieldLibraryModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search fields..."
+                value={fieldLibrarySearchTerm}
+                onChange={(e) => setFieldLibrarySearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+            </div>
+            
+            {(() => {
+              const filteredFields = libraryFields.filter(field => 
+                field.label.toLowerCase().includes(fieldLibrarySearchTerm.toLowerCase()) ||
+                field.name.toLowerCase().includes(fieldLibrarySearchTerm.toLowerCase()) ||
+                field.description?.toLowerCase().includes(fieldLibrarySearchTerm.toLowerCase()) ||
+                field.category?.toLowerCase().includes(fieldLibrarySearchTerm.toLowerCase()) ||
+                field.type.toLowerCase().includes(fieldLibrarySearchTerm.toLowerCase())
+              );
+              
+              return filteredFields.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">📚</div>
+                  <p className="text-gray-600">
+                    {fieldLibrarySearchTerm ? 'No fields found matching your search' : 'No fields in library'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(
+                    filteredFields.reduce((acc, field) => {
+                      const category = field.category || 'General';
+                      if (!acc[category]) acc[category] = [];
+                      acc[category].push(field);
+                      return acc;
+                    }, {})
+                  ).map(([category, fields]) => (
+                  <div key={category}>
+                    <h4 className="font-medium text-gray-900 mb-3">{category}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {fields.map((field) => (
+                        <div key={field._id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <span className="font-medium text-gray-900">{field.label}</span>
+                                {field.required && <span className="text-red-500">*</span>}
+                              </div>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  field.type === 'file' ? 'bg-purple-100 text-purple-800' : 
+                                  field.type === 'select' ? 'bg-green-100 text-green-800' :
+                                  'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {field.type}
+                                </span>
+                                <span className="text-xs text-gray-500">Used: {field.usageCount}</span>
+                              </div>
+                              {field.description && (
+                                <p className="text-xs text-gray-600 mt-1">{field.description}</p>
+                              )}
+                            </div>
+                            <Button
+                              onClick={() => addFieldFromLibrary(field._id, selectedSectionId)}
+                              size="sm"
+                              icon="➕"
+                            >
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+            })()}
+            
+            <div className="flex justify-end pt-6">
+              <Button 
+                onClick={() => setShowFieldLibraryModal(false)} 
+                variant="outline"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Save Field to Library Modal */}
+      {showSaveFieldModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Save Field to Library</h3>
+              <button
+                onClick={() => setShowSaveFieldModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            {selectedFieldForSave && (
+              <div className="space-y-4">
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    Saving field: <strong>{selectedFieldForSave.label}</strong>
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    Type: {selectedFieldForSave.type}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <select
+                    value={fieldSaveForm.category}
+                    onChange={(e) => setFieldSaveForm({ ...fieldSaveForm, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="General">General</option>
+                    <option value="Personal Info">Personal Info</option>
+                    <option value="Contact Details">Contact Details</option>
+                    <option value="Travel Info">Travel Info</option>
+                    <option value="Documents">Documents</option>
+                    <option value="Employment">Employment</option>
+                    <option value="Financial">Financial</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={fieldSaveForm.description}
+                    onChange={(e) => setFieldSaveForm({ ...fieldSaveForm, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    rows={3}
+                    placeholder="Optional description for this field"
+                  />
+                </div>
+              </div>
+            )}
+            
+            <div className="flex gap-3 pt-6">
+              <Button onClick={saveFieldToLibrary} className="flex-1" icon="💾">
+                Save to Library
+              </Button>
+              <Button 
+                onClick={() => setShowSaveFieldModal(false)} 
                 variant="outline" 
                 className="flex-1"
               >
