@@ -129,7 +129,7 @@ export default function VisaTermsConditions() {
       data={terms}
       columns={columns}
       loading={loading}
-      searchPlaceholder="🔍 Search terms by title or content..."
+      searchPlaceholder="Search terms by title or content..."
       onView={handleView}
       onEdit={handleEdit}
       onDelete={handleDelete}

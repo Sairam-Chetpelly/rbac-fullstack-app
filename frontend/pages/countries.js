@@ -151,7 +151,7 @@ export default function Countries() {
       data={countries}
       columns={columns}
       loading={loading}
-      searchPlaceholder="🔍 Search countries by name, code, continent, or description..."
+      searchPlaceholder="Search countries by name, code, continent, or description..."
       onView={handleView}
       onEdit={handleEdit}
       onDelete={handleDelete}

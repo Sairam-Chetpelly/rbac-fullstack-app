@@ -89,7 +89,7 @@ export default function FormBuilder() {
         header.style.visibility = 'hidden';
       }
       if (sidebar) {
-        sidebar.style.transform = 'translateX(-100%)';
+        sidebar.style.zIndex = '0';
       }
     } else {
       if (header) {
@@ -97,7 +97,7 @@ export default function FormBuilder() {
         header.style.visibility = '';
       }
       if (sidebar) {
-        sidebar.style.transform = '';
+        sidebar.style.zIndex = '';
       }
     }
     
@@ -107,7 +107,7 @@ export default function FormBuilder() {
         header.style.visibility = '';
       }
       if (sidebar) {
-        sidebar.style.transform = '';
+        sidebar.style.zIndex = '';
       }
     };
   }, [showSectionModal, showFieldModal, showSectionLibraryModal, showSaveSectionModal, showFieldLibraryModal, showSaveFieldModal]);
@@ -128,7 +128,7 @@ export default function FormBuilder() {
   const fetchStatuses = async () => {
     try {
       const response = await api.get('/status');
-      setStatuses(response.data);
+      setStatuses(Array.isArray(response.data) ? response.data : response.data?.data || []);
     } catch (error) {
       toast.error('Failed to fetch statuses');
     }
@@ -1277,7 +1277,7 @@ export default function FormBuilder() {
                       {status.name}
                     </option>
                   ))} */}
-                  {statuses.filter(status => status.category === "System").map(status => (
+                  {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
                   <option key={status._id} value={status._id}>
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>
@@ -1424,7 +1424,7 @@ export default function FormBuilder() {
                       {status.name}
                     </option>
                   ))} */}
-                  {statuses.filter(status => status.category === "System").map(status => (
+                  {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
                   <option key={status._id} value={status._id}>
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>

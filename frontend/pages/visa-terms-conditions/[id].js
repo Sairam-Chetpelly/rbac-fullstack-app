@@ -146,7 +146,7 @@ export default function EditVisaTermsConditions() {
                       {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                     </option>
                   ))} */}
-                  {statuses.filter(status => status.category === "System").map(status => (
+                  {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
                   <option key={status._id} value={status._id}>
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>

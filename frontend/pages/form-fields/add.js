@@ -48,7 +48,7 @@ export default function AddFormField() {
   const fetchStatuses = async () => {
     try {
       const response = await api.get('/status');
-      setStatuses(response.data);
+      setStatuses(Array.isArray(response.data) ? response.data : response.data?.data || []);
     } catch (error) {
       toast.error('Failed to fetch statuses');
     }
@@ -248,7 +248,7 @@ export default function AddFormField() {
                       {status.name}
                     </option>
                   ))} */}
-                  {statuses.filter(status => status.category === "System").map(status => (
+                  {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
                   <option key={status._id} value={status._id}>
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>

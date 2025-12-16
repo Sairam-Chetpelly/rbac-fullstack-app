@@ -187,7 +187,7 @@ export default function CountryVisaTypes() {
       data={countryVisaTypes}
       columns={columns}
       loading={loading}
-      searchPlaceholder="🔍 Search by name, country, visa type, or pricing..."
+      searchPlaceholder="Search by name, country, visa type, or pricing..."
       onView={handleView}
       onEdit={handleEdit}
       onDelete={handleDelete}

@@ -9,7 +9,8 @@ const statusSchema = new mongoose.Schema({
     enum: ['System', 'Application', 'Payment', 'Document', 'Processing', 'Visa', 'General'],
     default: 'General'
   },
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  deletedAt: { type: Date, default: null }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Status', statusSchema);

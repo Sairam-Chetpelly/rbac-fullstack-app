@@ -43,6 +43,10 @@ const countrySchema = new mongoose.Schema({
   processingTimeMax: {
     type: String,
     required: true
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

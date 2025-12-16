@@ -18,11 +18,13 @@ export default function EnhancedTable({
   showStats = false,
   stats = {},
   filters = [],
+  activeFilters = {},
   serverSidePagination = false,
   totalItems = 0,
   currentPage: externalCurrentPage = 1,
   onPageChange,
   onFilterChange,
+  onClearFilters,
   onExport,
   exportButtonText = "Export CSV"
 }) {
@@ -30,8 +32,8 @@ export default function EnhancedTable({
   const [currentPage, setCurrentPage] = useState(externalCurrentPage);
   const [sortColumn, setSortColumn] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
-  const [activeFilters, setActiveFilters] = useState({});
   const [searchTimeout, setSearchTimeout] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Sync external current page changes
   useEffect(() => {
@@ -108,8 +110,6 @@ export default function EnhancedTable({
     };
     if (!value || value === '') delete newFilters[filterKey];
     
-    setActiveFilters(newFilters);
-    
     // For server-side pagination, reset to page 1 and call parent handler
     if (serverSidePagination && onFilterChange) {
       setCurrentPage(1);
@@ -185,7 +185,7 @@ export default function EnhancedTable({
       </div>
 
       {/* Statistics */}
-      {showStats && stats && Object.keys(stats).length > 0 && (
+      {/* {showStats && stats && Object.keys(stats).length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {Object.entries(stats).map(([key, value]) => (
             <div key={key} className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-center">
@@ -194,91 +194,107 @@ export default function EnhancedTable({
             </div>
           ))}
         </div>
-      )}
+      )} */}
 
       {/* Search and Filters */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200">
-        <div className="flex flex-col gap-4">
-          {/* Search */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder={searchPlaceholder}
-                value={searchTerm}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setSearchTerm(value);
-                  
-                  // Clear existing timeout
-                  if (searchTimeout) {
-                    clearTimeout(searchTimeout);
-                  }
-                  
-                  // Set new timeout for server-side search
-                  if (serverSidePagination && onFilterChange) {
-                    const timeout = setTimeout(() => {
-                      const newFilters = { ...activeFilters };
-                      if (value) {
-                        newFilters.search = value;
-                      } else {
-                        delete newFilters.search;
-                      }
-                      setActiveFilters(newFilters);
-                      setCurrentPage(1);
-                      onFilterChange(newFilters);
-                    }, 500); // 500ms debounce
-                    setSearchTimeout(timeout);
-                  }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
+      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-6 w-6">
+              🔍
             </div>
-            <div className="flex gap-2">
-              <span className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
-                Total: {serverSidePagination ? totalItems : data.length}
-              </span>
-              {!serverSidePagination && (searchTerm || Object.values(activeFilters).some(v => v)) && (
-                <span className="px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
-                  Filtered: {filteredData.length}
-                </span>
-              )}
-            </div>
+            <input
+              type="text"
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchTerm(value);
+                
+                // Clear existing timeout
+                if (searchTimeout) {
+                  clearTimeout(searchTimeout);
+                }
+                
+                // Set new timeout for server-side search
+                if (serverSidePagination && onFilterChange) {
+                  const timeout = setTimeout(() => {
+                    const newFilters = { ...activeFilters };
+                    if (value) {
+                      newFilters.search = value;
+                    } else {
+                      delete newFilters.search;
+                    }
+                    setCurrentPage(1);
+                    onFilterChange(newFilters);
+                  }, 500); // 500ms debounce
+                  setSearchTimeout(timeout);
+                }
+              }}
+              className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+            />
           </div>
 
-          {/* Filters */}
-          {filters.length > 0 && (
-            <div className="flex flex-wrap gap-4">
-              {filters.map((filter) => (
-                <div key={filter.key} className="flex flex-col">
-                  <label className="text-sm font-medium text-gray-700 mb-1">{filter.label}</label>
-                  {filter.type === 'select' ? (
-                    <select
-                      value={activeFilters[filter.key] || ''}
-                      onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    >
-                      <option value="">All {filter.label}</option>
-                      {filter.options.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type={filter.type || 'text'}
-                      placeholder={filter.placeholder || `Filter by ${filter.label.toLowerCase()}`}
-                      value={activeFilters[filter.key] || ''}
-                      onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+          {/* Filter Toggle */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 font-medium transition-colors min-w-fit"
+          >
+            <span className="h-6 w-6 mr-1">📋</span>
+            <span className="hidden sm:inline">Filters</span>
+            <span className="sm:hidden">Filter</span>
+            {Object.keys(activeFilters).length > 0 && (
+              <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                {Object.keys(activeFilters).length}
+              </span>
+            )}
+          </button>
+
+          {/* Clear Filters */}
+          {(searchTerm || Object.keys(activeFilters).length > 0) && onClearFilters && (
+            <button
+              onClick={onClearFilters}
+              className="flex items-center px-4 py-3 text-gray-600 font-medium transition-colors min-w-fit"
+            >
+              <span className="h-6 w-6 mr-1">✕</span>
+              <span className="hidden sm:inline">Clear</span>
+            </button>
           )}
         </div>
+
+        {/* Filter Options */}
+        {showFilters && filters.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filters.map((filter) => (
+              <div key={filter.key}>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{filter.label}</label>
+                {filter.type === 'select' ? (
+                  <select
+                    value={activeFilters[filter.key] || ''}
+                    onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
+                  >
+                    <option value="">All {filter.label}</option>
+                    {filter.options.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type={filter.type || 'text'}
+                    placeholder={filter.placeholder || `Filter by ${filter.label.toLowerCase()}`}
+                    value={activeFilters[filter.key] || ''}
+                    onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Table */}

@@ -25,9 +25,8 @@ export default function ViewStatus() {
 
   const fetchStatus = async () => {
     try {
-      const response = await api.get('/status');
-      const foundStatus = response.data.find(s => s._id === id);
-      setStatusData(foundStatus);
+      const response = await api.get(`/status/${id}`);
+      setStatusData(response.data);
     } catch (error) {
       console.error('Failed to fetch status:', error);
     } finally {

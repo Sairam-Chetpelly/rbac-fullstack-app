@@ -35,8 +35,8 @@ export default function AddUser() {
         api.get('/roles'),
         api.get('/status')
       ]);
-      setRoles(rolesRes.data);
-      setStatuses(statusesRes.data);
+      setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : rolesRes.data?.data || []);
+      setStatuses(Array.isArray(statusesRes.data) ? statusesRes.data : statusesRes.data?.data || []);
       
       // Set default values
       const customerRole = rolesRes.data.find(r => r.name === 'customer');
@@ -219,7 +219,7 @@ export default function AddUser() {
                 required
               >
                 <option disabled value="">Select Status</option>
-                {statuses.filter(status => status.category === "System").map(status => (
+                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
                   <option key={status._id} value={status._id}>
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>

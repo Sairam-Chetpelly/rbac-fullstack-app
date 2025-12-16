@@ -4,7 +4,7 @@ const path = require('path');
 
 const getCountries = async (req, res) => {
   try {
-    const countries = await Country.find().populate('continent').populate('status');
+    const countries = await Country.find({ deletedAt: null }).populate('continent').populate('status');
     res.json(countries);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -53,7 +53,7 @@ const updateCountry = async (req, res) => {
 
 const deleteCountry = async (req, res) => {
   try {
-    const country = await Country.findByIdAndDelete(req.params.id);
+    const country = await Country.findByIdAndUpdate(req.params.id, { deletedAt: new Date() }, { new: true });
     if (!country) return res.status(404).json({ message: 'Country not found' });
     res.json({ message: 'Country deleted' });
   } catch (error) {

@@ -205,7 +205,7 @@ export default function AddCountryVisaType() {
                     </option>
                   ))} */}
                 <option disabled value="">Select Status</option>
-                {statuses.filter(status => status.category === "System").map(status => (
+                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
                   <option key={status._id} value={status._id}>
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>

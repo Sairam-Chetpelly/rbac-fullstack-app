@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const sharp = require('sharp');
 const fs = require('fs');
-const { getUsers, createUser, updateUser, deleteUser, changePassword, getProfile, updateProfile, toggleUserStatus } = require('../controllers/userController');
+const { getUsers, getUserById, createUser, updateUser, deleteUser, changePassword, getProfile, updateProfile, toggleUserStatus } = require('../controllers/userController');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
 const json2csv = require('json2csv').parse;
@@ -105,6 +105,7 @@ const compressUserFiles = async (req, res, next) => {
 };
 
 router.get('/', auth, role(['admin', 'manager', 'employee']), getUsers);
+router.get('/:id', auth, role(['admin', 'manager', 'employee']), getUserById);
 router.post('/', auth, role(['admin', 'manager', 'employee']), createUser);
 router.put('/change-password', auth, changePassword);
 router.get('/profile', auth, getProfile);

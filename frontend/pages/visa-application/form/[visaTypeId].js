@@ -41,7 +41,7 @@ const VisaApplicationForm = () => {
         header.style.visibility = 'hidden';
       }
       if (sidebar) {
-        sidebar.style.transform = 'translateX(-100%)';
+        sidebar.style.zIndex = '0';
       }
     } else {
       if (header) {
@@ -49,7 +49,7 @@ const VisaApplicationForm = () => {
         header.style.visibility = '';
       }
       if (sidebar) {
-        sidebar.style.transform = '';
+        sidebar.style.zIndex = '';
       }
     }
     
@@ -59,7 +59,7 @@ const VisaApplicationForm = () => {
         header.style.visibility = '';
       }
       if (sidebar) {
-        sidebar.style.transform = '';
+        sidebar.style.zIndex = '';
       }
     };
   }, [fileModal.show]);

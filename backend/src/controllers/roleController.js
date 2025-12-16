@@ -2,7 +2,7 @@ const Role = require('../models/Role');
 
 const getRoles = async (req, res) => {
   try {
-    const roles = await Role.find({ isActive: true });
+    const roles = await Role.find({ isActive: true, deletedAt: null });
     res.json(roles);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -37,7 +37,7 @@ const updateRole = async (req, res) => {
 const deleteRole = async (req, res) => {
   try {
     const { id } = req.params;
-    const role = await Role.findByIdAndUpdate(id, { isActive: false }, { new: true });
+    const role = await Role.findByIdAndUpdate(id, { deletedAt: new Date() }, { new: true });
     if (!role) {
       return res.status(404).json({ message: 'Role not found' });
     }

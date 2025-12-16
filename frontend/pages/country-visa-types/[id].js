@@ -38,9 +38,9 @@ export default function EditCountryVisaType() {
         api.get('/visa-types'),
         api.get('/countries')
       ]);
-      setStatuses(statusRes.data);
-      setVisaTypes(visaTypeRes.data);
-      setCountries(countryRes.data);
+      setStatuses(Array.isArray(statusRes.data) ? statusRes.data : statusRes.data?.data || []);
+      setVisaTypes(Array.isArray(visaTypeRes.data) ? visaTypeRes.data : visaTypeRes.data?.data || []);
+      setCountries(Array.isArray(countryRes.data) ? countryRes.data : countryRes.data?.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -231,7 +231,7 @@ export default function EditCountryVisaType() {
                     </option>
                   ))} */}
                 <option disabled value="">Select Status</option>
-                {statuses.filter(status => status.category === "System").map(status => (
+                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
                   <option key={status._id} value={status._id}>
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>

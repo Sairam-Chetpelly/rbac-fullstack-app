@@ -2,7 +2,7 @@ const VisaType = require('../models/VisaType');
 
 const getVisaTypes = async (req, res) => {
   try {
-    const visaTypes = await VisaType.find().populate('status');
+    const visaTypes = await VisaType.find({ deletedAt: null }).populate('status');
     res.json(visaTypes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -32,7 +32,7 @@ const updateVisaType = async (req, res) => {
 
 const deleteVisaType = async (req, res) => {
   try {
-    const visaType = await VisaType.findByIdAndDelete(req.params.id);
+    const visaType = await VisaType.findByIdAndUpdate(req.params.id, { deletedAt: new Date() }, { new: true });
     if (!visaType) return res.status(404).json({ message: 'Visa type not found' });
     res.json({ message: 'Visa type deleted' });
   } catch (error) {

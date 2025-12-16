@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { canAccess } from '../lib/roles';
 import api from '../lib/api';
 import EnhancedTable from '../components/EnhancedTable';
+import ConfirmationModal from '../components/ConfirmationModal';
 import toast from 'react-hot-toast';
 
 export default function Users() {
@@ -12,34 +13,70 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+  const [activeFilters, setActiveFilters] = useState({});
+  const [filterTimeout, setFilterTimeout] = useState(null);
   const [toggleLoading, setToggleLoading] = useState({});
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: '', user: null, action: null });
 
   useEffect(() => {
     if (!user || !canAccess(user.role, 'users')) {
       window.location.href = '/dashboard';
       return;
     }
-    fetchUsers(pagination.page);
+    fetchUsers(pagination.page, activeFilters);
   }, [user]);
 
-  const fetchUsers = async (page = 1) => {
+  useEffect(() => {
+    return () => {
+      if (filterTimeout) {
+        clearTimeout(filterTimeout);
+      }
+    };
+  }, [filterTimeout]);
+
+  const handleFilterChange = (filters) => {
+    setActiveFilters(filters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+    
+    if (filterTimeout) {
+      clearTimeout(filterTimeout);
+    }
+    
+    const timeout = setTimeout(() => {
+      fetchUsers(1, filters);
+    }, 500);
+    
+    setFilterTimeout(timeout);
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilters({});
+    setPagination(prev => ({ ...prev, page: 1 }));
+    fetchUsers(1, {});
+  };
+
+  const fetchUsers = async (page = 1, filters = {}) => {
     try {
-      const response = await api.get(`/users?page=${page}&limit=12`);
-      setUsers(response.data.data || response.data);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10'
+      });
+      
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          params.append(key, value);
+        }
+      });
+      
+      const response = await api.get(`/users?${params.toString()}`);
+      const userData = response.data.data || response.data;
+      
+      setUsers(userData);
       if (response.data.pagination) {
         setPagination(response.data.pagination);
-      } else {
-        // Fallback pagination if backend doesn't provide it
-        const totalUsers = response.data.length || 0;
-        setPagination({
-          page: page,
-          limit: 10,
-          total: totalUsers,
-          pages: Math.ceil(totalUsers / 10)
-        });
       }
-      console.log('Pagination:', response.data.pagination || 'No pagination from backend');
     } catch (error) {
+      console.error('Error fetching users:', error);
       toast.error('Failed to fetch users');
     } finally {
       setLoading(false);
@@ -48,16 +85,35 @@ export default function Users() {
 
 
 
-  const toggleUserStatus = async (userId) => {
+  const toggleUserStatus = (userId) => {
+    const user = users.find(u => u._id === userId);
+    const currentStatus = user?.status?.name || user?.status || 'unknown';
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    
+    setConfirmModal({
+      isOpen: true,
+      type: newStatus === 'active' ? 'success' : 'warning',
+      user: user,
+      action: 'toggle',
+      title: `${newStatus === 'active' ? 'Activate' : 'Deactivate'} User`,
+      message: `Are you sure you want to ${newStatus === 'active' ? 'activate' : 'deactivate'} user "${user?.name}"?`,
+      confirmText: newStatus === 'active' ? 'Activate' : 'Deactivate'
+    });
+  };
+
+  const handleToggleConfirm = async () => {
+    const userId = confirmModal.user?._id;
     setToggleLoading(prev => ({ ...prev, [userId]: true }));
+    
     try {
       const response = await api.patch(`/users/${userId}/toggle-status`);
       toast.success(response.data.message);
-      fetchUsers(pagination.page);
+      fetchUsers(pagination.page, activeFilters);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to toggle status');
     } finally {
       setToggleLoading(prev => ({ ...prev, [userId]: false }));
+      setConfirmModal({ isOpen: false, type: '', user: null, action: null });
     }
   };
 
@@ -102,16 +158,40 @@ export default function Users() {
     router.push(`/users/${item._id}/edit`);
   };
 
-  const handleDelete = async (item) => {
-    if (confirm(`Are you sure you want to delete user "${item.name}"?`)) {
-      try {
-        await api.delete(`/users/${item._id}`);
-        toast.success('User deleted successfully!');
-        fetchUsers(pagination.page);
-      } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to delete user');
-      }
+  const handleDelete = (item) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'danger',
+      user: item,
+      action: 'delete',
+      title: 'Delete User',
+      message: `Are you sure you want to permanently delete user "${item.name}"? This action cannot be undone.`,
+      confirmText: 'Delete User'
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await api.delete(`/users/${confirmModal.user._id}`);
+      toast.success('User deleted successfully!');
+      fetchUsers(pagination.page, activeFilters);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete user');
+    } finally {
+      setConfirmModal({ isOpen: false, type: '', user: null, action: null });
     }
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmModal.action === 'delete') {
+      handleDeleteConfirm();
+    } else if (confirmModal.action === 'toggle') {
+      handleToggleConfirm();
+    }
+  };
+
+  const handleCloseModal = () => {
+    setConfirmModal({ isOpen: false, type: '', user: null, action: null });
   };
 
   const handleAdd = () => {
@@ -202,23 +282,63 @@ export default function Users() {
 
   const filters = [
     {
-      key: 'role.name',
+      key: 'role',
       label: 'Role',
       type: 'select',
-      options: [...new Set(users.map(user => user.role?.name || user.role).filter(Boolean))].map(role => ({
-        value: role,
-        label: role.charAt(0).toUpperCase() + role.slice(1)
-      }))
+      options: [
+        { value: 'admin', label: 'Admin' },
+        { value: 'manager', label: 'Manager' },
+        { value: 'employee', label: 'Employee' },
+        { value: 'customer', label: 'Customer' }
+      ]
     },
     {
-      key: 'status.name',
+      key: 'status',
       label: 'Status',
       type: 'select',
       options: [
         { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' },
-        { value: 'pending', label: 'Pending' }
+        { value: 'inactive', label: 'Inactive' }
       ]
+    },
+    {
+      key: 'isAgent',
+      label: 'Agent Status',
+      type: 'select',
+      options: [
+        { value: 'true', label: 'Agent' },
+        { value: 'false', label: 'Regular User' }
+      ]
+    },
+    {
+      key: 'name',
+      label: 'Name',
+      type: 'text',
+      placeholder: 'Enter user name'
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      type: 'text',
+      placeholder: 'Enter email address'
+    },
+    {
+      key: 'mobile',
+      label: 'Mobile',
+      type: 'text',
+      placeholder: 'Enter mobile number'
+    },
+    {
+      key: 'dateFrom',
+      label: 'Created From',
+      type: 'date',
+      placeholder: 'Select start date'
+    },
+    {
+      key: 'dateTo',
+      label: 'Created To',
+      type: 'date',
+      placeholder: 'Select end date'
     }
   ];
 
@@ -231,32 +351,47 @@ export default function Users() {
   };
 
   return (
-    <EnhancedTable
-      title="👥 Users Management"
-      data={users}
-      columns={columns}
-      loading={loading}
-      searchPlaceholder="🔍 Search users by name, email, or role..."
-      onView={handleView}
-      onEdit={handleEdit}
-      onDelete={canDelete ? handleDelete : undefined}
-      onAdd={canCreate ? handleAdd : undefined}
-      addButtonText="Add New User"
-      emptyMessage="No users found"
-      emptyIcon="👥"
-      showStats={true}
-      stats={stats}
-      filters={filters}
-      itemsPerPage={pagination.limit || 12}
-      serverSidePagination={true}
-      totalItems={pagination.total}
-      currentPage={pagination.page}
-      onPageChange={(page) => {
-        setPagination(prev => ({ ...prev, page }));
-        fetchUsers(page);
-      }}
-      onExport={(user?.role === 'admin' || user?.role === 'manager') ? handleExport : undefined}
-      exportButtonText="Export CSV"
-    />
+    <>
+      <EnhancedTable
+        title="👥 Users Management"
+        data={users}
+        columns={columns}
+        loading={loading}
+        searchPlaceholder="Search users by name, email, or role..."
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={canDelete ? handleDelete : undefined}
+        onAdd={canCreate ? handleAdd : undefined}
+        addButtonText="Add New User"
+        emptyMessage="No users found"
+        emptyIcon="👥"
+        showStats={true}
+        stats={stats}
+        filters={filters}
+        activeFilters={activeFilters}
+        itemsPerPage={pagination.limit || 10}
+        serverSidePagination={true}
+        totalItems={pagination.total}
+        currentPage={pagination.page}
+        onPageChange={(page) => {
+          setPagination(prev => ({ ...prev, page }));
+          fetchUsers(page, activeFilters);
+        }}
+        onFilterChange={handleFilterChange}
+        onClearFilters={handleClearFilters}
+        onExport={(user?.role === 'admin' || user?.role === 'manager') ? handleExport : undefined}
+        exportButtonText="Export CSV"
+      />
+      
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmAction}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        type={confirmModal.type}
+      />
+    </>
   );
 }

@@ -17,6 +17,39 @@ export default function ViewUser() {
   const [toggleLoading, setToggleLoading] = useState(false);
 
   useEffect(() => {
+    const header = document.querySelector('header');
+    const sidebar = document.querySelector('div[class*="bg-white/10 backdrop-blur-md border-r"]');
+    
+    if (fileViewer.show) {
+      if (header) {
+        header.style.zIndex = '-1';
+        header.style.visibility = 'hidden';
+      }
+      if (sidebar) {
+        sidebar.style.zIndex = '0';
+      }
+    } else {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.zIndex = '';
+      }
+    }
+    
+    return () => {
+      if (header) {
+        header.style.zIndex = '';
+        header.style.visibility = '';
+      }
+      if (sidebar) {
+        sidebar.style.zIndex = '';
+      }
+    };
+  }, [fileViewer.show]);
+
+  useEffect(() => {
     if (!user || !canAccess(user.role, 'users')) {
       router.push('/users');
       return;
@@ -28,10 +61,8 @@ export default function ViewUser() {
 
   const fetchUser = async () => {
     try {
-      const response = await api.get('/users');
-      const users = response.data.data || response.data;
-      const foundUser = users.find(u => u._id === id);
-      setUserData(foundUser);
+      const response = await api.get(`/users/${id}`);
+      setUserData(response.data);
     } catch (error) {
       console.error('Failed to fetch user:', error);
     } finally {

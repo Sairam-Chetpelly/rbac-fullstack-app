@@ -69,7 +69,7 @@ const scheduleEmbassyReminders = async (applicationId, userEmail, userName, appl
 // Get all available statuses
 router.get('/statuses', auth, async (req, res) => {
   try {
-    const statuses = await Status.find({ isActive: true }).sort({ name: 1 });
+    const statuses = await Status.find({ isActive: true, deletedAt: null }).sort({ name: 1 });
     res.json(statuses);
   } catch (error) {
     console.error('Error fetching statuses:', error);
@@ -86,7 +86,7 @@ router.get('/employees', auth, role(['admin', 'manager']), async (req, res) => {
       return res.status(500).json({ message: 'employee role not found' });
     }
     
-    const employees = await User.find({ role: employee }).select('name email');
+    const employees = await User.find({ role: employee, deletedAt: null }).select('name email');
     res.json(employees);
   } catch (error) {
     console.error('Error fetching employees:', error);
@@ -190,6 +190,23 @@ const upload = multer({
 // Get payments for assigned applications (employee)
 router.get('/assigned/payments', auth, role(['employee']), async (req, res) => {
   try {
+    const {
+      page = 1,
+      limit = 12,
+      status,
+      paymentMethod,
+      amountFrom,
+      amountTo,
+      dateFrom,
+      dateTo,
+      paidFrom,
+      paidTo,
+      customerEmail,
+      customerName,
+      transactionId,
+      search
+    } = req.query;
+
     // Get applications assigned to this employee
     const assignedApps = await Application.find({ 
       assignedTo: req.user._id,
@@ -198,25 +215,152 @@ router.get('/assigned/payments', auth, role(['employee']), async (req, res) => {
     
     const appIds = assignedApps.map(app => app._id);
     
-    const payments = await Payment.find({ 
+    // Build match conditions
+    const matchConditions = { 
       application: { $in: appIds },
       deletedAt: null 
-    })
-      .populate({
-        path: 'application',
-        populate: {
-          path: 'countryVisaType',
-          populate: {
-            path: 'country',
-            select: 'name placeImage'
-          }
-        }
-      })
-      .populate('user', 'name email')
-      .sort({ createdAt: -1 })
-      .lean();
+    };
 
-    res.json(payments);
+    // Status filter
+    if (status) {
+      matchConditions.status = status;
+    }
+
+    // Payment method filter
+    if (paymentMethod) {
+      matchConditions.paymentMethod = paymentMethod;
+    }
+
+    // Amount range filter
+    if (amountFrom || amountTo) {
+      matchConditions.amount = {};
+      if (amountFrom) {
+        matchConditions.amount.$gte = parseFloat(amountFrom);
+      }
+      if (amountTo) {
+        matchConditions.amount.$lte = parseFloat(amountTo);
+      }
+    }
+
+    // Date range filters
+    if (dateFrom || dateTo) {
+      matchConditions.createdAt = {};
+      if (dateFrom) {
+        matchConditions.createdAt.$gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        matchConditions.createdAt.$lte = endDate;
+      }
+    }
+
+    // Paid date range filters
+    if (paidFrom || paidTo) {
+      matchConditions.paidAt = {};
+      if (paidFrom) {
+        matchConditions.paidAt.$gte = new Date(paidFrom);
+      }
+      if (paidTo) {
+        const endDate = new Date(paidTo);
+        endDate.setHours(23, 59, 59, 999);
+        matchConditions.paidAt.$lte = endDate;
+      }
+    }
+
+    // Transaction ID filter
+    if (transactionId) {
+      matchConditions.transactionId = { $regex: transactionId, $options: 'i' };
+    }
+
+    // Build aggregation pipeline
+    const pipeline = [
+      { $match: matchConditions },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      {
+        $lookup: {
+          from: 'applications',
+          localField: 'application',
+          foreignField: '_id',
+          as: 'application'
+        }
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $unwind: {
+          path: '$application',
+          preserveNullAndEmptyArrays: true
+        }
+      }
+    ];
+
+    // Add customer filters after lookup
+    const additionalMatch = {};
+    
+    if (customerEmail) {
+      additionalMatch['user.email'] = { $regex: customerEmail, $options: 'i' };
+    }
+    
+    if (customerName) {
+      additionalMatch['user.name'] = { $regex: customerName, $options: 'i' };
+    }
+
+    // Search across multiple fields
+    if (search) {
+      additionalMatch.$or = [
+        { transactionId: { $regex: search, $options: 'i' } },
+        { 'user.name': { $regex: search, $options: 'i' } },
+        { 'user.email': { $regex: search, $options: 'i' } },
+        { 'application.applicationNumber': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    if (Object.keys(additionalMatch).length > 0) {
+      pipeline.push({ $match: additionalMatch });
+    }
+
+    // Add sorting
+    pipeline.push({ $sort: { createdAt: -1 } });
+
+    // Get total count
+    const totalPipeline = [...pipeline, { $count: 'total' }];
+    const totalResult = await Payment.aggregate(totalPipeline);
+    const total = totalResult.length > 0 ? totalResult[0].total : 0;
+
+    // Add pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    pipeline.push(
+      { $skip: skip },
+      { $limit: parseInt(limit) }
+    );
+
+    // Execute aggregation
+    const payments = await Payment.aggregate(pipeline);
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(total / parseInt(limit));
+
+    res.json({
+      data: payments,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: totalPages
+      }
+    });
   } catch (error) {
     console.error('Error fetching assigned payments:', error);
     res.status(500).json({ message: 'Error fetching assigned payments', error: error.message });
@@ -229,10 +373,9 @@ router.get('/assigned', auth, role(['employee']), async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const { search, status, country, visaType, paymentStatus, submissionStatus, dateFrom, dateTo, customerEmail, customerName, submittedFrom, submittedTo, paymentMethod, amountFrom, amountTo, embassyVisitStatus, hasVisaFiles } = req.query;
 
-    const filter = { assignedTo: req.user._id, deletedAt: null };
-    const total = await Application.countDocuments(filter);
-    const applications = await Application.find(filter)
+    let applications = await Application.find({ assignedTo: req.user._id, deletedAt: null })
       .populate('user', 'name email')
       .populate('status', 'name color')
       .populate('assignedTo', 'name email')
@@ -244,12 +387,131 @@ router.get('/assigned', auth, role(['employee']), async (req, res) => {
         }
       })
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
       .lean();
 
+    // Get payment data for each application
+    const appsWithPayments = await Promise.all(
+      applications.map(async (app) => {
+        try {
+          const payment = await Payment.findOne({ application: app._id }).lean();
+          return { 
+            ...app, 
+            paymentStatus: payment?.status || 'pending',
+            payment: payment 
+          };
+        } catch (error) {
+          return { ...app, paymentStatus: 'pending', payment: null };
+        }
+      })
+    );
+
+    // Apply filters
+    let filteredApps = appsWithPayments;
+
+    if (search) {
+      filteredApps = filteredApps.filter(app => 
+        app.applicationNumber?.toLowerCase().includes(search.toLowerCase()) ||
+        app.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
+        app.user?.email?.toLowerCase().includes(search.toLowerCase()) ||
+        app.countryVisaType?.country?.name?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    if (status) {
+      filteredApps = filteredApps.filter(app => app.status?.name === status);
+    }
+
+    if (country) {
+      filteredApps = filteredApps.filter(app => app.countryVisaType?.country?.name === country);
+    }
+
+    if (visaType) {
+      filteredApps = filteredApps.filter(app => app.countryVisaType?.name === visaType);
+    }
+
+    if (paymentStatus) {
+      filteredApps = filteredApps.filter(app => app.paymentStatus === paymentStatus);
+    }
+
+    if (submissionStatus) {
+      if (submissionStatus === 'submitted') {
+        filteredApps = filteredApps.filter(app => app.submittedAt);
+      } else if (submissionStatus === 'draft') {
+        filteredApps = filteredApps.filter(app => !app.submittedAt);
+      }
+    }
+
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      filteredApps = filteredApps.filter(app => new Date(app.createdAt) >= fromDate);
+    }
+
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filteredApps = filteredApps.filter(app => new Date(app.createdAt) <= toDate);
+    }
+
+    if (customerEmail) {
+      filteredApps = filteredApps.filter(app => 
+        app.user?.email?.toLowerCase().includes(customerEmail.toLowerCase())
+      );
+    }
+
+    if (customerName) {
+      filteredApps = filteredApps.filter(app => 
+        app.user?.name?.toLowerCase().includes(customerName.toLowerCase())
+      );
+    }
+
+    if (submittedFrom) {
+      const fromDate = new Date(submittedFrom);
+      filteredApps = filteredApps.filter(app => app.submittedAt && new Date(app.submittedAt) >= fromDate);
+    }
+
+    if (submittedTo) {
+      const toDate = new Date(submittedTo);
+      toDate.setHours(23, 59, 59, 999);
+      filteredApps = filteredApps.filter(app => app.submittedAt && new Date(app.submittedAt) <= toDate);
+    }
+
+    if (paymentMethod) {
+      filteredApps = filteredApps.filter(app => app.payment?.paymentMethod === paymentMethod);
+    }
+
+    if (amountFrom) {
+      const minAmount = parseFloat(amountFrom);
+      filteredApps = filteredApps.filter(app => app.payment?.amount >= minAmount);
+    }
+
+    if (amountTo) {
+      const maxAmount = parseFloat(amountTo);
+      filteredApps = filteredApps.filter(app => app.payment?.amount <= maxAmount);
+    }
+
+    if (embassyVisitStatus) {
+      if (embassyVisitStatus === 'scheduled') {
+        filteredApps = filteredApps.filter(app => app.embassyVisitDateTime);
+      } else if (embassyVisitStatus === 'not_scheduled') {
+        filteredApps = filteredApps.filter(app => !app.embassyVisitDateTime);
+      }
+    }
+
+    if (hasVisaFiles) {
+      if (hasVisaFiles === 'yes') {
+        filteredApps = filteredApps.filter(app => app.visaFiles && app.visaFiles.length > 0);
+      } else if (hasVisaFiles === 'no') {
+        filteredApps = filteredApps.filter(app => !app.visaFiles || app.visaFiles.length === 0);
+      }
+    }
+
+
+
+    const total = filteredApps.length;
+    const paginatedApps = filteredApps.slice(skip, skip + limit);
+
     res.json({
-      data: applications,
+      data: paginatedApps,
       pagination: {
         page,
         limit,
@@ -269,9 +531,10 @@ router.get('/', auth, role(['admin', 'manager']), async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    console.log('Backend received query params:', req.query);
+    const { search, status, country, visaType, paymentStatus, assignedTo, submissionStatus, dateFrom, dateTo, customerEmail, customerName, submittedFrom, submittedTo, paymentMethod, amountFrom, amountTo, embassyVisitStatus, hasVisaFiles } = req.query;
 
-    const total = await Application.countDocuments({ deletedAt: null });
-    const applications = await Application.find({ deletedAt: null })
+    let applications = await Application.find({ deletedAt: null })
       .populate('user', 'name email')
       .populate('status', 'name color')
       .populate('assignedTo', 'name email')
@@ -283,12 +546,182 @@ router.get('/', auth, role(['admin', 'manager']), async (req, res) => {
         }
       })
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
       .lean();
+    
+    // Get payment data for each application
+    const appsWithPayments = await Promise.all(
+      applications.map(async (app) => {
+        try {
+          const payment = await Payment.findOne({ application: app._id }).lean();
+          return { 
+            ...app, 
+            paymentStatus: payment?.status || 'pending',
+            payment: payment 
+          };
+        } catch (error) {
+          return { ...app, paymentStatus: 'pending', payment: null };
+        }
+      })
+    );
+
+    // Apply filters
+    let filteredApps = appsWithPayments;
+
+    if (search) {
+      filteredApps = filteredApps.filter(app => 
+        app.applicationNumber?.toLowerCase().includes(search.toLowerCase()) ||
+        app.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
+        app.user?.email?.toLowerCase().includes(search.toLowerCase()) ||
+        app.countryVisaType?.country?.name?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    if (status) {
+      filteredApps = filteredApps.filter(app => app.status?.name === status);
+    }
+
+    if (country) {
+      filteredApps = filteredApps.filter(app => app.countryVisaType?.country?.name === country);
+    }
+
+    if (visaType) {
+      filteredApps = filteredApps.filter(app => app.countryVisaType?.name === visaType);
+    }
+
+    if (paymentStatus) {
+      filteredApps = filteredApps.filter(app => app.paymentStatus === paymentStatus);
+    }
+
+    if (assignedTo !== undefined) {
+      if (assignedTo === '') {
+        filteredApps = filteredApps.filter(app => !app.assignedTo);
+      } else {
+        filteredApps = filteredApps.filter(app => app.assignedTo?.name === assignedTo);
+      }
+    }
+
+    if (submissionStatus) {
+      if (submissionStatus === 'submitted') {
+        filteredApps = filteredApps.filter(app => app.submittedAt);
+      } else if (submissionStatus === 'draft') {
+        filteredApps = filteredApps.filter(app => !app.submittedAt);
+      }
+    }
+
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      filteredApps = filteredApps.filter(app => new Date(app.createdAt) >= fromDate);
+    }
+
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filteredApps = filteredApps.filter(app => new Date(app.createdAt) <= toDate);
+    }
+
+    if (customerEmail) {
+      filteredApps = filteredApps.filter(app => 
+        app.user?.email?.toLowerCase().includes(customerEmail.toLowerCase())
+      );
+    }
+
+    if (customerName) {
+      console.log('Filtering by customerName:', customerName);
+      console.log('Before filter - apps count:', filteredApps.length);
+      
+      const filteredByName = await Promise.all(
+        filteredApps.map(async (app) => {
+          const searchTerm = customerName.toLowerCase();
+          
+          // Check user name
+          if (app.user?.name?.toLowerCase().includes(searchTerm)) {
+            return app;
+          }
+          
+          // Check courier details
+          if (app.courierDetails?.courierName?.toLowerCase().includes(searchTerm)) {
+            return app;
+          }
+          
+          // Check payment remarks
+          if (app.payment?.remarks?.toLowerCase().includes(searchTerm)) {
+            return app;
+          }
+          
+          // Check application answers
+          const answers = await ApplicationAnswer.find({ application: app._id }).lean();
+          const hasMatchingAnswer = answers.some(answer => 
+            answer.answerText?.toLowerCase().includes(searchTerm)
+          );
+          
+          if (hasMatchingAnswer) {
+            return app;
+          }
+          
+          // Check applicant names
+          const applicants = await Applicant.find({ application: app._id, deletedAt: null }).lean();
+          const hasMatchingApplicant = applicants.some(applicant => 
+            applicant.firstName?.toLowerCase().includes(searchTerm) ||
+            applicant.lastName?.toLowerCase().includes(searchTerm) ||
+            `${applicant.firstName} ${applicant.lastName}`.toLowerCase().includes(searchTerm)
+          );
+          
+          return hasMatchingApplicant ? app : null;
+        })
+      );
+      
+      filteredApps = filteredByName.filter(app => app !== null);
+      console.log('After filter - apps count:', filteredApps.length);
+    }
+
+    if (submittedFrom) {
+      const fromDate = new Date(submittedFrom);
+      filteredApps = filteredApps.filter(app => app.submittedAt && new Date(app.submittedAt) >= fromDate);
+    }
+
+    if (submittedTo) {
+      const toDate = new Date(submittedTo);
+      toDate.setHours(23, 59, 59, 999);
+      filteredApps = filteredApps.filter(app => app.submittedAt && new Date(app.submittedAt) <= toDate);
+    }
+
+    if (paymentMethod) {
+      filteredApps = filteredApps.filter(app => app.payment?.paymentMethod === paymentMethod);
+    }
+
+    if (amountFrom) {
+      const minAmount = parseFloat(amountFrom);
+      filteredApps = filteredApps.filter(app => app.payment?.amount >= minAmount);
+    }
+
+    if (amountTo) {
+      const maxAmount = parseFloat(amountTo);
+      filteredApps = filteredApps.filter(app => app.payment?.amount <= maxAmount);
+    }
+
+    if (embassyVisitStatus) {
+      if (embassyVisitStatus === 'scheduled') {
+        filteredApps = filteredApps.filter(app => app.embassyVisitDateTime);
+      } else if (embassyVisitStatus === 'not_scheduled') {
+        filteredApps = filteredApps.filter(app => !app.embassyVisitDateTime);
+      }
+    }
+
+    if (hasVisaFiles) {
+      if (hasVisaFiles === 'yes') {
+        filteredApps = filteredApps.filter(app => app.visaFiles && app.visaFiles.length > 0);
+      } else if (hasVisaFiles === 'no') {
+        filteredApps = filteredApps.filter(app => !app.visaFiles || app.visaFiles.length === 0);
+      }
+    }
+
+
+
+    const total = filteredApps.length;
+    const paginatedApps = filteredApps.slice(skip, skip + limit);
 
     res.json({
-      data: applications,
+      data: paginatedApps,
       pagination: {
         page,
         limit,

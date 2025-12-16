@@ -54,16 +54,15 @@ export default function EditUser() {
   const fetchUser = async () => {
     try {
       const [userRes, rolesRes, statusesRes] = await Promise.all([
-        api.get('/users'),
+        api.get(`/users/${id}`),
         api.get('/roles'),
         api.get('/status')
       ]);
       
-      setRoles(rolesRes.data);
-      setStatuses(statusesRes.data);
+      setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : rolesRes.data?.data || []);
+      setStatuses(Array.isArray(statusesRes.data) ? statusesRes.data : statusesRes.data?.data || []);
       
-      const users = userRes.data.data || userRes.data;
-      const foundUser = users.find(u => u._id === id);
+      const foundUser = userRes.data;
       if (foundUser) {
         setIsAgent(foundUser.isAgent || false);
         setFormData({
@@ -427,7 +426,7 @@ export default function EditUser() {
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>
                 ))} */}
-                {statuses.filter(status => status.category === "System").map(status => (
+                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
                   <option key={status._id} value={status._id}>
                     {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
                   </option>

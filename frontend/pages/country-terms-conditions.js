@@ -135,7 +135,7 @@ export default function CountryTermsConditions() {
       data={terms}
       columns={columns}
       loading={loading}
-      searchPlaceholder="🔍 Search terms by title, country, or content..."
+      searchPlaceholder="Search terms by title, country, or content..."
       onView={handleView}
       onEdit={handleEdit}
       onDelete={handleDelete}

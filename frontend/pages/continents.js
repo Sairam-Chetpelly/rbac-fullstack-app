@@ -97,8 +97,7 @@ export default function Continents() {
       type: 'select',
       options: [
         { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' },
-        { value: 'pending', label: 'Pending' }
+        { value: 'inactive', label: 'Inactive' }
       ]
     }
   ];
@@ -115,7 +114,7 @@ export default function Continents() {
       data={continents}
       columns={columns}
       loading={loading}
-      searchPlaceholder="🔍 Search continents by name, slug, or description..."
+      searchPlaceholder="Search continents by name, slug, or description..."
       onView={handleView}
       onEdit={handleEdit}
       onDelete={handleDelete}

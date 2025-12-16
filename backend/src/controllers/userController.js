@@ -7,18 +7,89 @@ const { sendNotifications } = require('../services/notificationService');
 
 const getUsers = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const {
+      page = 1,
+      limit = 10,
+      role,
+      status,
+      isAgent,
+      name,
+      email,
+      mobile,
+      dateFrom,
+      dateTo,
+      search
+    } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    let query = {};
+    let query = { deletedAt: null };
     
-    // Role-based filtering
+    // Role-based filtering for employees
     if (req.user.role === 'employee') {
       const customerRole = await Role.findOne({ name: 'customer' });
       if (customerRole) {
         query.role = customerRole._id;
       }
+    }
+    
+    // Role filter
+    if (role) {
+      const roleDoc = await Role.findOne({ name: role });
+      if (roleDoc) {
+        query.role = roleDoc._id;
+      }
+    }
+    
+    // Status filter
+    if (status) {
+      const statusDoc = await Status.findOne({ name: status });
+      if (statusDoc) {
+        query.status = statusDoc._id;
+      }
+    }
+    
+    // Agent filter
+    if (isAgent !== undefined) {
+      query.isAgent = isAgent === 'true';
+    }
+    
+    // Name filter
+    if (name) {
+      query.name = { $regex: name, $options: 'i' };
+    }
+    
+    // Email filter
+    if (email) {
+      query.email = { $regex: email, $options: 'i' };
+    }
+    
+    // Mobile filter
+    if (mobile) {
+      query.mobile = { $regex: mobile, $options: 'i' };
+    }
+    
+    // Date range filters
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) {
+        query.createdAt.$gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = endDate;
+      }
+    }
+    
+    // Search across multiple fields
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { mobile: { $regex: search, $options: 'i' } },
+        { companyName: { $regex: search, $options: 'i' } }
+      ];
     }
     
     const total = await User.countDocuments(query);
@@ -27,19 +98,20 @@ const getUsers = async (req, res) => {
       .populate('role')
       .populate('status')
       .skip(skip)
-      .limit(limit)
+      .limit(parseInt(limit))
       .sort({ createdAt: -1 });
     
     res.json({
       data: users,
       pagination: {
-        page,
-        limit,
+        page: parseInt(page),
+        limit: parseInt(limit),
         total,
-        pages: Math.ceil(total / limit)
+        pages: Math.ceil(total / parseInt(limit))
       }
     });
   } catch (error) {
+    console.error('Error fetching users:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -222,7 +294,7 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const user = await User.findByIdAndDelete(id);
+    const user = await User.findByIdAndUpdate(id, { deletedAt: new Date() }, { new: true });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -308,6 +380,26 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findOne({ _id: id, deletedAt: null })
+      .select('-password')
+      .populate('role')
+      .populate('status');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const toggleUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -343,4 +435,4 @@ const toggleUserStatus = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, createUser, updateUser, deleteUser, changePassword, getProfile, updateProfile, toggleUserStatus };
+module.exports = { getUsers, getUserById, createUser, updateUser, deleteUser, changePassword, getProfile, updateProfile, toggleUserStatus };

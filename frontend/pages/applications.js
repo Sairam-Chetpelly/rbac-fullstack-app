@@ -15,10 +15,12 @@ export default function Applications() {
   const [countries, setCountries] = useState([]);
   const [visaTypes, setVisaTypes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
   const [statusModal, setStatusModal] = useState({ isOpen: false, applicationId: null, currentStatus: null });
   const [assignModal, setAssignModal] = useState({ isOpen: false, applicationId: null, currentEmployee: null });
   const [paymentModal, setPaymentModal] = useState({ isOpen: false, applicationId: null, payment: null });
+  const [activeFilters, setActiveFilters] = useState({});
+  const [filterTimeout, setFilterTimeout] = useState(null);
   const { user } = useAuth();
   const router = useRouter();
 
@@ -32,7 +34,7 @@ export default function Applications() {
         header.style.visibility = 'hidden';
       }
       if (sidebar) {
-        sidebar.style.transform = 'translateX(-100%)';
+        sidebar.style.zIndex = '0';
       }
     } else {
       if (header) {
@@ -40,7 +42,7 @@ export default function Applications() {
         header.style.visibility = '';
       }
       if (sidebar) {
-        sidebar.style.transform = '';
+        sidebar.style.zIndex = '';
       }
     }
     
@@ -50,13 +52,22 @@ export default function Applications() {
         header.style.visibility = '';
       }
       if (sidebar) {
-        sidebar.style.transform = '';
+        sidebar.style.zIndex = '';
       }
     };
   }, [statusModal.isOpen, assignModal.isOpen, paymentModal.isOpen]);
 
+  // Cleanup timeout on unmount
   useEffect(() => {
-    fetchApplications(pagination.page);
+    return () => {
+      if (filterTimeout) {
+        clearTimeout(filterTimeout);
+      }
+    };
+  }, [filterTimeout]);
+
+  useEffect(() => {
+    fetchApplications(pagination.page, activeFilters);
     fetchStatuses();
     fetchCountries();
     fetchVisaTypes();
@@ -64,6 +75,31 @@ export default function Applications() {
       fetchEmployees();
     }
   }, [user]);
+
+  // Handle filter changes with debouncing
+  const handleFilterChange = (filters) => {
+    setActiveFilters(filters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+    
+    // Clear existing timeout
+    if (filterTimeout) {
+      clearTimeout(filterTimeout);
+    }
+    
+    // Set new timeout for API call
+    const timeout = setTimeout(() => {
+      fetchApplications(1, filters);
+    }, 500); // 500ms delay
+    
+    setFilterTimeout(timeout);
+  };
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setActiveFilters({});
+    setPagination(prev => ({ ...prev, page: 1 }));
+    fetchApplications(1, {});
+  };
 
   const fetchEmployees = async () => {
     if (user?.role !== 'admin' && user?.role !== 'manager') {
@@ -79,23 +115,57 @@ export default function Applications() {
     }
   };
 
-  const fetchApplications = async (page = 1) => {
+  const fetchApplications = async (page = 1, filters = {}) => {
     try {
       const endpoint = user?.role === 'employee' ? '/applications/assigned' : '/applications';
-      const response = await api.get(`${endpoint}?page=${page}&limit=12`);
+      
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10'
+      });
+      
+      console.log('Active filters:', filters);
+      
+      // Add filter parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          // Map frontend filter keys to backend keys
+          const filterMap = {
+            'status.name': 'status',
+            'countryVisaType.country.name': 'country',
+            'countryVisaType.name': 'visaType',
+            'paymentStatus': 'paymentStatus',
+            'assignedTo.name': 'assignedTo',
+            'submissionStatus': 'submissionStatus',
+            'dateFrom': 'dateFrom',
+            'dateTo': 'dateTo',
+            'customerEmail': 'customerEmail',
+            'customerName': 'customerName',
+            'submittedFrom': 'submittedFrom',
+            'submittedTo': 'submittedTo',
+            'paymentMethod': 'paymentMethod',
+            'amountFrom': 'amountFrom',
+            'amountTo': 'amountTo',
+            'embassyVisitStatus': 'embassyVisitStatus',
+            'hasVisaFiles': 'hasVisaFiles',
+            'search': 'search'
+          };
+          const backendKey = filterMap[key] || key;
+          params.append(backendKey, value);
+          console.log(`Adding filter: ${key} -> ${backendKey} = ${value}`);
+        }
+      });
+      
+      console.log('API URL:', `${endpoint}?${params.toString()}`);
+      const response = await api.get(`${endpoint}?${params.toString()}`);
       const apps = response.data.data || response.data;
       
-      // Fetch payment status for each application
-      const appsWithPayments = await Promise.all(
-        apps.map(async (app) => {
-          try {
-            const paymentResponse = await api.get(`/applications/${app._id}`);
-            return { ...app, paymentStatus: paymentResponse.data.payment?.status || 'pending' };
-          } catch (error) {
-            return { ...app, paymentStatus: 'pending' };
-          }
-        })
-      );
+      // Add payment status from aggregation result or fetch individually for backward compatibility
+      const appsWithPayments = apps.map(app => ({
+        ...app,
+        paymentStatus: app.payment?.status || 'pending'
+      }));
       
       setApplications(appsWithPayments);
       if (response.data.pagination) {
@@ -170,7 +240,7 @@ export default function Applications() {
           'Content-Type': 'multipart/form-data'
         }
       });
-      fetchApplications();
+      fetchApplications(pagination.page, activeFilters);
       toast.success('Status updated successfully!');
       
       if (visaDetails || (visaFiles && visaFiles.length > 0) || courierDetails || (courierFiles && courierFiles.length > 0)) {
@@ -185,7 +255,7 @@ export default function Applications() {
   const handleAssignEmployee = async (employeeId) => {
     try {
       await api.put(`/applications/${assignModal.applicationId}/assign`, { employeeId });
-      fetchApplications();
+      fetchApplications(pagination.page, activeFilters);
     } catch (error) {
       console.error('Error assigning employee:', error);
       toast.error('Failed to assign employee');
@@ -195,7 +265,7 @@ export default function Applications() {
   const handlePaymentUpdate = async (paymentData) => {
     try {
       await api.put(`/applications/${paymentModal.applicationId}/payment`, paymentData);
-      fetchApplications();
+      fetchApplications(pagination.page, activeFilters);
       toast.success('Payment status updated successfully');
     } catch (error) {
       console.error('Error updating payment:', error);
@@ -243,7 +313,7 @@ export default function Applications() {
       try {
         await api.delete(`/applications/${item._id}`);
         toast.success('Application deleted successfully!');
-        fetchApplications();
+        fetchApplications(pagination.page, activeFilters);
       } catch (error) {
         toast.error('Failed to delete application');
       }
@@ -435,7 +505,96 @@ export default function Applications() {
         { value: 'failed', label: 'Failed' },
         { value: 'refunded', label: 'Refunded' }
       ]
-    }
+    },
+    {
+      key: 'submissionStatus',
+      label: 'Submission Status',
+      type: 'select',
+      options: [
+        { value: 'submitted', label: 'Submitted' },
+        { value: 'draft', label: 'Draft' }
+      ]
+    },
+    {
+      key: 'dateFrom',
+      label: 'Created From',
+      type: 'date',
+      placeholder: 'Select start date'
+    },
+    {
+      key: 'dateTo',
+      label: 'Created To',
+      type: 'date',
+      placeholder: 'Select end date'
+    },
+    {
+      key: 'customerEmail',
+      label: 'Customer Email',
+      type: 'text',
+      placeholder: 'Enter customer email'
+    },
+    {
+      key: 'customerName',
+      label: 'Customer Name',
+      type: 'text',
+      placeholder: 'Enter customer name'
+    },
+    {
+      key: 'submittedFrom',
+      label: 'Submitted From',
+      type: 'date',
+      placeholder: 'Select submission start date'
+    },
+    {
+      key: 'submittedTo',
+      label: 'Submitted To',
+      type: 'date',
+      placeholder: 'Select submission end date'
+    },
+    {
+      key: 'paymentMethod',
+      label: 'Payment Method',
+      type: 'select',
+      options: [
+        { value: 'cash', label: 'Cash Payment' },
+        { value: 'bank_transfer', label: 'Bank Transfer' },
+        { value: 'upi', label: 'UPI Payment' },
+        { value: 'card', label: 'Card Payment' },
+        { value: 'cheque', label: 'Cheque Payment' },
+        { value: 'agent_contact', label: 'Agent Contact' }
+      ]
+    },
+    {
+      key: 'amountFrom',
+      label: 'Amount From',
+      type: 'number',
+      placeholder: 'Min amount'
+    },
+    {
+      key: 'amountTo',
+      label: 'Amount To',
+      type: 'number',
+      placeholder: 'Max amount'
+    },
+    {
+      key: 'embassyVisitStatus',
+      label: 'Embassy Visit',
+      type: 'select',
+      options: [
+        { value: 'scheduled', label: 'Scheduled' },
+        { value: 'not_scheduled', label: 'Not Scheduled' }
+      ]
+    },
+    {
+      key: 'hasVisaFiles',
+      label: 'Visa Files',
+      type: 'select',
+      options: [
+        { value: 'yes', label: 'Has Visa Files' },
+        { value: 'no', label: 'No Visa Files' }
+      ]
+    },
+
   ];
 
   // Add assignment filter for admin/manager
@@ -455,7 +614,7 @@ export default function Applications() {
   }
 
   const stats = {
-    total: applications.length,
+    total: pagination.total || 0,
     pending: applications.filter(app => app.paymentStatus === 'pending').length,
     success: applications.filter(app => app.paymentStatus === 'success').length,
     submitted: applications.filter(app => app.submittedAt).length,
@@ -469,7 +628,7 @@ export default function Applications() {
         data={applications}
         columns={columns}
         loading={loading}
-        searchPlaceholder="🔍 Search by application number, name, email, or country..."
+        searchPlaceholder="Search by application number, name, email, or country..."
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
@@ -478,14 +637,17 @@ export default function Applications() {
         showStats={true}
         stats={stats}
         filters={filters}
+        activeFilters={activeFilters}
         itemsPerPage={pagination.limit || 12}
         serverSidePagination={true}
         totalItems={pagination.total}
         currentPage={pagination.page}
         onPageChange={(page) => {
           setPagination(prev => ({ ...prev, page }));
-          fetchApplications(page);
+          fetchApplications(page, activeFilters);
         }}
+        onFilterChange={handleFilterChange}
+        onClearFilters={handleClearFilters}
         onExport={(user?.role === 'admin' || user?.role === 'manager') ? handleExport : undefined}
         exportButtonText="Export CSV"
       />

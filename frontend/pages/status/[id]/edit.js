@@ -16,7 +16,8 @@ export default function EditStatus() {
     name: '',
     description: '',
     color: '#3b82f6',
-    category: 'General'
+    category: 'General',
+    isActive: true
   });
 
   useEffect(() => {
@@ -31,14 +32,15 @@ export default function EditStatus() {
 
   const fetchStatus = async () => {
     try {
-      const response = await api.get('/status');
-      const foundStatus = response.data.find(s => s._id === id);
+      const response = await api.get(`/status/${id}`);
+      const foundStatus = response.data;
       if (foundStatus) {
         setFormData({
           name: foundStatus.name,
           description: foundStatus.description || '',
           color: foundStatus.color,
-          category: foundStatus.category || 'General'
+          category: foundStatus.category || 'General',
+          isActive: foundStatus.isActive !== undefined ? foundStatus.isActive : true
         });
       }
     } catch (error) {
@@ -148,6 +150,22 @@ export default function EditStatus() {
               <option value="Document">Document</option>
               <option value="Processing">Processing</option>
               <option value="Visa">Visa</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              ⚡ Status
+            </label>
+            <select
+              name="isActive"
+              value={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+              required
+            >
+              <option value={true}>✅ Active</option>
+              <option value={false}>❌ Inactive</option>
             </select>
           </div>
 

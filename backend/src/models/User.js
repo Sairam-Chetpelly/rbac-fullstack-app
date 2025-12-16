@@ -36,7 +36,8 @@ const userSchema = new mongoose.Schema({
   aadhaarFile: { type: String, default: null },
   msmeNumber: { type: String, default: null },
   msmeFile: { type: String, default: null },
-  cancelledChequeFile: { type: String, default: null }
+  cancelledChequeFile: { type: String, default: null },
+  deletedAt: { type: Date, default: null }
 }, { timestamps: true });
 
 userSchema.pre('save', async function(next) {
