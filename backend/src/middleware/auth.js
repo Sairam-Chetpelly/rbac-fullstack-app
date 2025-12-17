@@ -9,17 +9,16 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password').populate('role').populate('status');
+    const user = await User.findById(decoded.id).select('-password').populate('role');
     
-    if (!user || user.status.name !== 'active') {
+    if (!user || !user.isActive) {
       return res.status(401).json({ message: 'Invalid token or inactive user.' });
     }
 
     // Add role name for easier access
     req.user = {
       ...user.toObject(),
-      role: user.role.name,
-      status: user.status.name
+      role: user.role.name
     };
     console.log('Auth middleware - User ID:', req.user._id);
     next();

@@ -1,6 +1,5 @@
 const User = require('../models/User');
 const Role = require('../models/Role');
-const Status = require('../models/Status');
 const { generateDefaultPassword } = require('../utils/passwordGenerator');
 const { sendEmail } = require('../services/emailService');
 const { sendNotifications } = require('../services/notificationService');
@@ -11,7 +10,7 @@ const getUsers = async (req, res) => {
       page = 1,
       limit = 10,
       role,
-      status,
+      isActive,
       isAgent,
       name,
       email,
@@ -41,12 +40,9 @@ const getUsers = async (req, res) => {
       }
     }
     
-    // Status filter
-    if (status) {
-      const statusDoc = await Status.findOne({ name: status });
-      if (statusDoc) {
-        query.status = statusDoc._id;
-      }
+    // Active status filter
+    if (isActive !== undefined) {
+      query.isActive = isActive === 'true';
     }
     
     // Agent filter
@@ -96,7 +92,6 @@ const getUsers = async (req, res) => {
     const users = await User.find(query)
       .select('-password')
       .populate('role')
-      .populate('status')
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
@@ -118,23 +113,15 @@ const getUsers = async (req, res) => {
 
 const createUser = async (req, res) => {
   try {
-    const { name, email, role, status, mobile } = req.body;
+    const { name, email, role, mobile } = req.body;
     
-    // Find role and status by ID or name
+    // Find role by ID or name
     const roleDoc = await Role.findOne({ 
       $or: [{ _id: role }, { name: role }], 
       isActive: true 
     });
     if (!roleDoc) {
       return res.status(400).json({ message: 'Invalid role' });
-    }
-    
-    const statusDoc = await Status.findOne({ 
-      $or: [{ _id: status }, { name: status }], 
-      isActive: true 
-    });
-    if (!statusDoc) {
-      return res.status(400).json({ message: 'Invalid status' });
     }
     
     // Role-based creation restrictions
@@ -146,9 +133,16 @@ const createUser = async (req, res) => {
       return res.status(403).json({ message: 'Managers can only create employees and customers' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email, deletedAt: null });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
+    }
+
+    if (mobile) {
+      const existingMobileUser = await User.findOne({ mobile, deletedAt: null });
+      if (existingMobileUser) {
+        return res.status(400).json({ message: 'Mobile number already exists' });
+      }
     }
 
     // Generate default password
@@ -159,12 +153,12 @@ const createUser = async (req, res) => {
       email, 
       mobile,
       password: defaultPassword, 
-      role: roleDoc._id, 
-      status: statusDoc._id 
+      role: roleDoc._id,
+      isActive: true
     });
     await user.save();
     
-    const populatedUser = await User.findById(user._id).populate('role').populate('status');
+    const populatedUser = await User.findById(user._id).populate('role');
 
     // Send welcome notifications with login credentials
     sendNotifications(email, mobile, 'accountCreated', {
@@ -184,7 +178,7 @@ const createUser = async (req, res) => {
         name: populatedUser.name, 
         email: populatedUser.email, 
         role: populatedUser.role.name, 
-        status: populatedUser.status.name 
+        isActive: populatedUser.isActive 
       }
     });
   } catch (error) {
@@ -225,7 +219,7 @@ const updateUser = async (req, res) => {
       }
     }
     
-    // Convert role and status names to IDs if provided
+    // Convert role name to ID if provided
     if (updates.role) {
       const roleDoc = await Role.findOne({ 
         $or: [{ _id: updates.role }, { name: updates.role }], 
@@ -236,16 +230,30 @@ const updateUser = async (req, res) => {
       }
     }
     
-    if (updates.status) {
-      const statusDoc = await Status.findOne({ 
-        $or: [{ _id: updates.status }, { name: updates.status }], 
-        isActive: true 
+    // Check for email uniqueness if email is being updated
+    if (updates.email) {
+      const existingEmailUser = await User.findOne({ 
+        email: updates.email, 
+        _id: { $ne: id }, 
+        deletedAt: null 
       });
-      if (statusDoc) {
-        updates.status = statusDoc._id;
+      if (existingEmailUser) {
+        return res.status(400).json({ message: 'Email already exists' });
       }
     }
-    
+
+    // Check for mobile uniqueness if mobile is being updated
+    if (updates.mobile) {
+      const existingMobileUser = await User.findOne({ 
+        mobile: updates.mobile, 
+        _id: { $ne: id }, 
+        deletedAt: null 
+      });
+      if (existingMobileUser) {
+        return res.status(400).json({ message: 'Mobile number already exists' });
+      }
+    }
+
     // Role-based update restrictions
     if (req.user.role === 'employee') {
       const user = await User.findById(id).populate('role');
@@ -254,35 +262,14 @@ const updateUser = async (req, res) => {
       }
     }
 
-    // Get original user for comparison
-    const originalUser = await User.findById(id).populate('status');
-    
     const user = await User.findByIdAndUpdate(id, updates, { new: true })
       .select('-password')
-      .populate('role')
-      .populate('status');
+      .populate('role');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Send email notifications for agent status changes
-    if (user.isAgent && originalUser && originalUser.status && user.status) {
-      const oldStatus = originalUser.status.name;
-      const newStatus = user.status.name;
-      
-      if (oldStatus !== newStatus) {
-        if (oldStatus === 'inactive' && newStatus === 'active') {
-          // Agent activated
-          sendNotifications(user.email, user.mobile, 'agentActivated', {
-            userName: user.name,
-            companyName: user.companyName
-          }, 'agentActivated', {
-            name: user.name,
-            company: user.companyName
-          });
-        }
-      }
-    }
+
 
     res.json({ message: 'User updated successfully', user });
   } catch (error) {
@@ -294,10 +281,17 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const user = await User.findByIdAndUpdate(id, { deletedAt: new Date() }, { new: true });
+    const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+
+    const timestamp = Date.now();
+    const updatedUser = await User.findByIdAndUpdate(id, { 
+      deletedAt: new Date(),
+      email: `deleted-${timestamp}-${user.email}`,
+      mobile: user.mobile ? `deleted-${timestamp}-${user.mobile}` : null
+    }, { new: true });
 
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
@@ -338,8 +332,7 @@ const getProfile = async (req, res) => {
     const userId = req.user._id || req.user.id;
     const user = await User.findById(userId)
       .select('-password')
-      .populate('role')
-      .populate('status');
+      .populate('role');
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -362,7 +355,7 @@ const updateProfile = async (req, res) => {
     }
 
     if (email && email !== user.email) {
-      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      const existingUser = await User.findOne({ email, _id: { $ne: userId }, deletedAt: null });
       if (existingUser) {
         return res.status(400).json({ message: 'Email already exists' });
       }
@@ -372,7 +365,7 @@ const updateProfile = async (req, res) => {
       userId,
       { name, email, mobile, nationality },
       { new: true }
-    ).select('-password').populate('role').populate('status');
+    ).select('-password').populate('role');
 
     res.json({ message: 'Profile updated successfully', user: updatedUser });
   } catch (error) {
@@ -386,8 +379,7 @@ const getUserById = async (req, res) => {
     
     const user = await User.findOne({ _id: id, deletedAt: null })
       .select('-password')
-      .populate('role')
-      .populate('status');
+      .populate('role');
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -404,30 +396,22 @@ const toggleUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const user = await User.findById(id).populate('status');
+    const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Get active and inactive status
-    const activeStatus = await Status.findOne({ name: 'active' });
-    const inactiveStatus = await Status.findOne({ name: 'inactive' });
-    
-    if (!activeStatus || !inactiveStatus) {
-      return res.status(500).json({ message: 'Status not found' });
-    }
-
-    // Toggle status
-    const newStatus = user.status.name === 'active' ? inactiveStatus._id : activeStatus._id;
+    // Toggle isActive status
+    const newActiveStatus = !user.isActive;
     
     const updatedUser = await User.findByIdAndUpdate(
       id, 
-      { status: newStatus }, 
+      { isActive: newActiveStatus }, 
       { new: true }
-    ).populate('role').populate('status');
+    ).populate('role');
 
     res.json({ 
-      message: `User ${updatedUser.status.name === 'active' ? 'activated' : 'deactivated'} successfully`, 
+      message: `User ${newActiveStatus ? 'activated' : 'deactivated'} successfully`, 
       user: updatedUser 
     });
   } catch (error) {

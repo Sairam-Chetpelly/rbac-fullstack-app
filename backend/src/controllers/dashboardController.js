@@ -11,15 +11,15 @@ const getDashboardStats = async (req, res) => {
 
     if (role === 'admin' || role === 'manager') {
       // Admin/Manager stats
-      // Get users with populated status
-      const users = await User.find().populate('status');
+      // Get users
+      const users = await User.find();
       const applications = await Application.find().populate('status');
       const payments = await Payment.find();
       
       const totalUsers = users.length;
-      const activeUsers = users.filter(u => u.status?.name === 'active').length;
+      const activeUsers = users.filter(u => u.isActive).length;
       const pendingUsers = users.filter(u => u.status?.name === 'pending').length;
-      const inactiveUsers = users.filter(u => u.status?.name === 'inactive').length;
+      const inactiveUsers = users.filter(u => !u.isActive).length;
       
       const totalApplications = applications.length;
       const pendingApplications = applications.filter(app => ['submitted', 'under_review', 'pending_documents'].includes(app.status?.name)).length;
@@ -268,9 +268,9 @@ const getChartData = async (req, res) => {
           dateGroups[date] = { total: 0, active: 0, pending: 0, inactive: 0 };
         }
         dateGroups[date].total++;
-        if (user.status?.name === 'active') dateGroups[date].active++;
+        if (user.isActive) dateGroups[date].active++;
         else if (user.status?.name === 'pending') dateGroups[date].pending++;
-        else if (user.status?.name === 'inactive') dateGroups[date].inactive++;
+        else if (!user.isActive) dateGroups[date].inactive++;
       });
 
       chartData = {
@@ -309,7 +309,7 @@ const exportDashboardData = async (req, res) => {
     if (role === 'admin' || role === 'manager') {
       // Export user and application data
       const [users, applications] = await Promise.all([
-        User.find({ createdAt: { $gte: startDate } }).populate('status role'),
+        User.find({ createdAt: { $gte: startDate } }).populate('role'),
         Application.find({ createdAt: { $gte: startDate } }).populate('status userId')
       ]);
       
@@ -321,7 +321,7 @@ const exportDashboardData = async (req, res) => {
             user.createdAt.toISOString().split('T')[0],
             user.name,
             user.email,
-            user.status?.name || 'N/A',
+            user.isActive ? 'active' : 'inactive',
             user.role?.name || user.role
           ]),
           ...applications.map(app => [

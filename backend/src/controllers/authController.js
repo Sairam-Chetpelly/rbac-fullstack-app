@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const Role = require('../models/Role');
-const Status = require('../models/Status');
 const PasswordReset = require('../models/PasswordReset');
 const { sendPasswordResetEmail } = require('../utils/email');
 const { sendEmail } = require('../services/emailService');
@@ -42,14 +41,14 @@ const register = async (req, res) => {
     const errors = [];
     
     // Check for existing email
-    const existingEmailUser = await User.findOne({ email });
+    const existingEmailUser = await User.findOne({ email, deletedAt: null });
     if (existingEmailUser) {
       errors.push({ field: 'email', message: 'User already exists with this email' });
     }
     
     // Check for existing mobile
     if (mobile) {
-      const existingMobileUser = await User.findOne({ mobile });
+      const existingMobileUser = await User.findOne({ mobile, deletedAt: null });
       if (existingMobileUser) {
         errors.push({ field: 'mobile', message: 'Mobile number already exists' });
       }
@@ -74,12 +73,11 @@ const register = async (req, res) => {
       return res.status(400).json({ errors });
     }
 
-    // Get default customer role and active status
+    // Get default customer role
     const customerRole = await Role.findOne({ name: 'customer' });
-    const activeStatus = await Status.findOne({ name: 'active' });
     
-    if (!customerRole || !activeStatus) {
-      return res.status(500).json({ message: 'Default role or status not found' });
+    if (!customerRole) {
+      return res.status(500).json({ message: 'Default role not found' });
     }
 
     const user = new User({ 
@@ -89,11 +87,11 @@ const register = async (req, res) => {
       mobile, 
       nationality,
       role: customerRole._id,
-      status: activeStatus._id
+      isActive: true
     });
     await user.save();
     
-    const populatedUser = await User.findById(user._id).populate('role').populate('status');
+    const populatedUser = await User.findById(user._id).populate('role');
     
     // Send welcome notifications
     sendNotifications(email, mobile, 'welcome', { userName: name }, 'welcome', { userName: name  });
@@ -105,7 +103,7 @@ const register = async (req, res) => {
         name: populatedUser.name, 
         email: populatedUser.email, 
         role: populatedUser.role.name, 
-        status: populatedUser.status.name 
+        isActive: populatedUser.isActive 
       }
     });
   } catch (error) {
@@ -121,6 +119,14 @@ const register = async (req, res) => {
       return res.status(400).json({ errors: validationErrors });
     }
     
+    // Handle MongoDB duplicate key error
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ 
+        errors: [{ field, message: `${field} already exists` }] 
+      });
+    }
+    
     res.status(500).json({ message: error.message });
   }
 };
@@ -129,12 +135,12 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    const user = await User.findOne({ email }).populate('role').populate('status');
+    const user = await User.findOne({ email, deletedAt: null }).populate('role');
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    if (user.status.name !== 'active') {
+    if (!user.isActive) {
       return res.status(401).json({ message: 'Account is not active' });
     }
 
@@ -147,7 +153,7 @@ const login = async (req, res) => {
         name: user.name, 
         email: user.email, 
         role: user.role.name, 
-        status: user.status.name,
+        isActive: user.isActive,
         isAgent: user.isAgent || false
       },
       accessToken,
@@ -168,9 +174,9 @@ const refresh = async (req, res) => {
     }
 
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findById(decoded.id).populate('status');
+    const user = await User.findById(decoded.id);
     
-    if (!user || user.status.name !== 'active') {
+    if (!user || !user.isActive) {
       return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
@@ -186,7 +192,7 @@ const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email, deletedAt: null });
     if (!user) {
       return res.status(404).json({ message: 'User not found with this email' });
     }

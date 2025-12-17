@@ -87,17 +87,17 @@ export default function Users() {
 
   const toggleUserStatus = (userId) => {
     const user = users.find(u => u._id === userId);
-    const currentStatus = user?.status?.name || user?.status || 'unknown';
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const currentStatus = user?.isActive;
+    const newStatus = !currentStatus;
     
     setConfirmModal({
       isOpen: true,
-      type: newStatus === 'active' ? 'success' : 'warning',
+      type: newStatus ? 'success' : 'warning',
       user: user,
       action: 'toggle',
-      title: `${newStatus === 'active' ? 'Activate' : 'Deactivate'} User`,
-      message: `Are you sure you want to ${newStatus === 'active' ? 'activate' : 'deactivate'} user "${user?.name}"?`,
-      confirmText: newStatus === 'active' ? 'Activate' : 'Deactivate'
+      title: `${newStatus ? 'Activate' : 'Deactivate'} User`,
+      message: `Are you sure you want to ${newStatus ? 'activate' : 'deactivate'} user "${user?.name}"?`,
+      confirmText: newStatus ? 'Activate' : 'Deactivate'
     });
   };
 
@@ -209,14 +209,10 @@ export default function Users() {
     return colors[roleName] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  const getStatusColor = (status) => {
-    const statusName = status?.name || status || '';
-    const colors = {
-      active: 'bg-green-100 text-green-800 border-green-200',
-      inactive: 'bg-red-100 text-red-800 border-red-200',
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    };
-    return colors[statusName] || 'bg-gray-100 text-gray-800 border-gray-200';
+  const getStatusColor = (isActive) => {
+    return isActive 
+      ? 'bg-green-100 text-green-800 border-green-200'
+      : 'bg-red-100 text-red-800 border-red-200';
   };
 
   const columns = [
@@ -253,7 +249,7 @@ export default function Users() {
       )
     },
     {
-      key: 'status.name',
+      key: 'isActive',
       label: 'Status',
       sortable: true,
       render: (value, item) => {
@@ -262,12 +258,12 @@ export default function Users() {
           <button
             onClick={() => canToggle && toggleUserStatus(item._id)}
             disabled={!canToggle}
-            className={`px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(item.status)} ${
+            className={`px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(item.isActive)} ${
               canToggle ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'
             } transition-opacity flex items-center gap-1`}
           >
             {toggleLoading[item._id] && <span className="text-xs">⏳</span>}
-            {(value || item.status || '').toUpperCase()}
+            {item.isActive ? 'ACTIVE' : 'INACTIVE'}
           </button>
         );
       }
@@ -293,12 +289,12 @@ export default function Users() {
       ]
     },
     {
-      key: 'status',
+      key: 'isActive',
       label: 'Status',
       type: 'select',
       options: [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' }
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' }
       ]
     },
     {
@@ -344,8 +340,8 @@ export default function Users() {
 
   const stats = {
     total: pagination.total || users.length,
-    active: users.filter(u => (u.status?.name || u.status) === 'active').length,
-    inactive: users.filter(u => (u.status?.name || u.status) === 'inactive').length,
+    active: users.filter(u => u.isActive).length,
+    inactive: users.filter(u => !u.isActive).length,
     admins: users.filter(u => (u.role?.name || u.role) === 'admin').length,
     agents: users.filter(u => u.isAgent).length
   };

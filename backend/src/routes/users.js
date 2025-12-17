@@ -105,19 +105,10 @@ const compressUserFiles = async (req, res, next) => {
 };
 
 router.get('/', auth, role(['admin', 'manager', 'employee']), getUsers);
-router.get('/:id', auth, role(['admin', 'manager', 'employee']), getUserById);
 router.post('/', auth, role(['admin', 'manager', 'employee']), createUser);
 router.put('/change-password', auth, changePassword);
 router.get('/profile', auth, getProfile);
 router.put('/profile', auth, updateProfile);
-router.put('/:id', auth, role(['admin', 'manager', 'employee']), upload.fields([
-  { name: 'panCardPhoto', maxCount: 1 }, 
-  { name: 'gstFile', maxCount: 1 },
-  { name: 'aadhaarFile', maxCount: 1 },
-  { name: 'msmeFile', maxCount: 1 },
-  { name: 'cancelledChequeFile', maxCount: 1 }
-]), compressUserFiles, updateUser);
-router.patch('/:id/toggle-status', auth, role(['admin', 'manager']), toggleUserStatus);
 
 // Export users data
 router.get('/export/csv', auth, role(['admin', 'manager']), async (req, res) => {
@@ -131,7 +122,7 @@ router.get('/export/csv', auth, role(['admin', 'manager']), async (req, res) => 
       email: user.email || 'N/A',
       mobile: user.mobile || 'N/A',
       role: user.role?.name || 'N/A',
-      status: user.status || 'active',
+      isActive: user.isActive ? 'Active' : 'Inactive',
       companyName: user.companyName || 'N/A',
       gstNumber: user.gstNumber || 'N/A',
       panNumber: user.panNumber || 'N/A',
@@ -149,7 +140,7 @@ router.get('/export/csv', auth, role(['admin', 'manager']), async (req, res) => 
       'email', 
       'mobile',
       'role',
-      'status',
+      'isActive',
       'companyName',
       'gstNumber',
       'panNumber',
@@ -173,6 +164,15 @@ router.get('/export/csv', auth, role(['admin', 'manager']), async (req, res) => 
   }
 });
 
+router.get('/:id', auth, role(['admin', 'manager', 'employee']), getUserById);
+router.put('/:id', auth, role(['admin', 'manager', 'employee']), upload.fields([
+  { name: 'panCardPhoto', maxCount: 1 }, 
+  { name: 'gstFile', maxCount: 1 },
+  { name: 'aadhaarFile', maxCount: 1 },
+  { name: 'msmeFile', maxCount: 1 },
+  { name: 'cancelledChequeFile', maxCount: 1 }
+]), compressUserFiles, updateUser);
+router.patch('/:id/toggle-status', auth, role(['admin', 'manager']), toggleUserStatus);
 router.delete('/:id', auth, role(['admin']), deleteUser);
 
 module.exports = router;

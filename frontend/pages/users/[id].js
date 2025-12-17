@@ -81,14 +81,10 @@ export default function ViewUser() {
     return colors[roleName] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
-  const getStatusColor = (status) => {
-    const statusName = status?.name || status || '';
-    const colors = {
-      active: 'bg-green-100 text-green-800 border-green-200',
-      inactive: 'bg-red-100 text-red-800 border-red-200',
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    };
-    return colors[statusName] || 'bg-gray-100 text-gray-800 border-gray-200';
+  const getStatusColor = (isActive) => {
+    return isActive 
+      ? 'bg-green-100 text-green-800 border-green-200'
+      : 'bg-red-100 text-red-800 border-red-200';
   };
 
   const viewFile = (filename) => {
@@ -172,8 +168,8 @@ export default function ViewUser() {
                 <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getRoleColor(userData.role)}`}>
                   🛡️ {(userData.role?.name || userData.role || '').toUpperCase()}
                 </span>
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(userData.status)}`}>
-                  ⚡ {(userData.status?.name || userData.status || '').toUpperCase()}
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(userData.isActive)}`}>
+                  ⚡ {userData.isActive ? 'ACTIVE' : 'INACTIVE'}
                 </span>
                 {userData.isAgent && (
                   <span className="px-4 py-2 rounded-full text-sm font-semibold border bg-orange-100 text-orange-800 border-orange-200">
@@ -231,8 +227,8 @@ export default function ViewUser() {
               <div>
                 <label className="block text-sm font-semibold text-gray-500 mb-1">Account Status</label>
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: userData.status?.color || '#6B7280' }}></div>
-                  <span className="text-gray-900 capitalize">{userData.status?.name || userData.status}</span>
+                  <div className={`w-3 h-3 rounded-full ${userData.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className="text-gray-900 capitalize">{userData.isActive ? 'Active' : 'Inactive'}</span>
                 </div>
               </div>
             </div>
@@ -385,10 +381,10 @@ export default function ViewUser() {
             <Button 
               onClick={toggleUserStatus}
               disabled={toggleLoading}
-              className={`flex-1 ${userData.status?.name === 'active' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white`}
-              icon={userData.status?.name === 'active' ? '🔴' : '🟢'}
+              className={`flex-1 ${userData.isActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white`}
+              icon={userData.isActive ? '🔴' : '🟢'}
             >
-              {toggleLoading ? 'Processing...' : userData.status?.name === 'active' ? 'Deactivate' : 'Activate'}
+              {toggleLoading ? 'Processing...' : userData.isActive ? 'Deactivate' : 'Activate'}
             </Button>
             <Button 
               variant="outline" 

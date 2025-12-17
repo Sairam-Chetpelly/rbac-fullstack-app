@@ -12,13 +12,11 @@ export default function AddUser() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState([]);
-  const [statuses, setStatuses] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     mobile: '',
-    role: '',
-    status: ''
+    role: ''
   });
 
   useEffect(() => {
@@ -31,25 +29,19 @@ export default function AddUser() {
 
   const fetchRolesAndStatuses = async () => {
     try {
-      const [rolesRes, statusesRes] = await Promise.all([
-        api.get('/roles'),
-        api.get('/status')
-      ]);
+      const rolesRes = await api.get('/roles');
       setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : rolesRes.data?.data || []);
-      setStatuses(Array.isArray(statusesRes.data) ? statusesRes.data : statusesRes.data?.data || []);
       
       // Set default values
       const customerRole = rolesRes.data.find(r => r.name === 'customer');
-      const activeStatus = statusesRes.data.find(s => s.name === 'active');
-      if (customerRole && activeStatus) {
+      if (customerRole) {
         setFormData(prev => ({
           ...prev,
-          role: customerRole._id,
-          status: activeStatus._id
+          role: customerRole._id
         }));
       }
     } catch (error) {
-      toast.error('Failed to fetch roles and statuses');
+      toast.error('Failed to fetch roles');
     }
   };
 
@@ -207,25 +199,7 @@ export default function AddUser() {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
-                ⚡ Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
-                required
-              >
-                <option disabled value="">Select Status</option>
-                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
+
           </div>
 
           <div className="flex gap-4 pt-6 border-t border-gray-100">

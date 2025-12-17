@@ -12,11 +12,7 @@ const userSchema = new mongoose.Schema({
     ref: 'Role',
     required: true
   },
-  status: { 
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Status',
-    required: true
-  },
+  isActive: { type: Boolean, default: true },
   // Agent fields
   isAgent: { type: Boolean, default: null },
   companyName: { type: String, default: null },

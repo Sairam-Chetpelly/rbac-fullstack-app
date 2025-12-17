@@ -86,7 +86,7 @@ router.get('/employees', auth, role(['admin', 'manager']), async (req, res) => {
       return res.status(500).json({ message: 'employee role not found' });
     }
     
-    const employees = await User.find({ role: employee, deletedAt: null }).select('name email');
+    const employees = await User.find({ role: employee, deletedAt: null, isActive: true }).select('name email');
     res.json(employees);
   } catch (error) {
     console.error('Error fetching employees:', error);

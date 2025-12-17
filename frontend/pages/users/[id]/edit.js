@@ -14,7 +14,6 @@ export default function EditUser() {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [roles, setRoles] = useState([]);
-  const [statuses, setStatuses] = useState([]);
   const [isAgent, setIsAgent] = useState(false);
   const [files, setFiles] = useState({ panCardPhoto: null, gstFile: null, aadhaarFile: null, msmeFile: null, cancelledChequeFile: null });
   const [fieldErrors, setFieldErrors] = useState({});
@@ -25,7 +24,7 @@ export default function EditUser() {
     mobile: '',
     nationality: '',
     role: '',
-    status: '',
+    isActive: true,
     companyName: '',
     companyAddress: {
       line1: '',
@@ -53,14 +52,12 @@ export default function EditUser() {
 
   const fetchUser = async () => {
     try {
-      const [userRes, rolesRes, statusesRes] = await Promise.all([
+      const [userRes, rolesRes] = await Promise.all([
         api.get(`/users/${id}`),
-        api.get('/roles'),
-        api.get('/status')
+        api.get('/roles')
       ]);
       
       setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : rolesRes.data?.data || []);
-      setStatuses(Array.isArray(statusesRes.data) ? statusesRes.data : statusesRes.data?.data || []);
       
       const foundUser = userRes.data;
       if (foundUser) {
@@ -71,7 +68,7 @@ export default function EditUser() {
           mobile: foundUser.mobile || '',
           nationality: foundUser.nationality || '',
           role: foundUser.role?._id || foundUser.role,
-          status: foundUser.status?._id || foundUser.status,
+          isActive: foundUser.isActive !== undefined ? foundUser.isActive : true,
           companyName: foundUser.companyName || '',
           companyAddress: foundUser.companyAddress || {
             line1: '',
@@ -414,23 +411,14 @@ export default function EditUser() {
                 ⚡ Status
               </label>
               <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
+                name="isActive"
+                value={formData.isActive}
+                onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
                 required
               >
-                <option disabled value="">Select Status</option>
-                {/* {statuses.map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))} */}
-                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                <option value={true}>Active</option>
+                <option value={false}>Inactive</option>
               </select>
             </div>
           </div>

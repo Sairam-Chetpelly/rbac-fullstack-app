@@ -3,7 +3,6 @@ const path = require('path');
 const fs = require('fs');
 const User = require('../models/User');
 const Role = require('../models/Role');
-const Status = require('../models/Status');
 const { sendEmail } = require('../services/emailService');
 const { sendNotifications } = require('../services/notificationService');
 
@@ -49,17 +48,23 @@ const registerAgent = async (req, res) => {
       aadhaarNumber, msmeNumber
     } = req.body;
     
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    const existingEmailUser = await User.findOne({ email, deletedAt: null });
+    if (existingEmailUser) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // Get default customer role and inactive status
+    if (mobile) {
+      const existingMobileUser = await User.findOne({ mobile, deletedAt: null });
+      if (existingMobileUser) {
+        return res.status(400).json({ message: 'Mobile number already exists' });
+      }
+    }
+
+    // Get default customer role
     const customerRole = await Role.findOne({ name: 'customer' });
-    const inactiveStatus = await Status.findOne({ name: 'inactive' });
     
-    if (!customerRole || !inactiveStatus) {
-      return res.status(500).json({ message: 'Default role or status not found' });
+    if (!customerRole) {
+      return res.status(500).json({ message: 'Default role not found' });
     }
 
     // Parse company address if it's a string
@@ -75,7 +80,7 @@ const registerAgent = async (req, res) => {
       mobile, 
       nationality,
       role: customerRole._id,
-      status: inactiveStatus._id,
+      isActive: false,
       isAgent: true,
       companyName,
       companyAddress: parsedCompanyAddress,
@@ -107,7 +112,7 @@ const registerAgent = async (req, res) => {
     const user = new User(userData);
     await user.save();
     
-    const populatedUser = await User.findById(user._id).populate('role').populate('status');
+    const populatedUser = await User.findById(user._id).populate('role');
     
     // Send registration confirmation email
     try {
@@ -135,7 +140,7 @@ const registerAgent = async (req, res) => {
         name: populatedUser.name, 
         email: populatedUser.email, 
         role: populatedUser.role.name, 
-        status: populatedUser.status.name,
+        isActive: populatedUser.isActive,
         isAgent: populatedUser.isAgent
       }
     });
@@ -172,8 +177,7 @@ const updateAgent = async (req, res) => {
     }
     
     const user = await User.findByIdAndUpdate(id, updates, { new: true })
-      .populate('role')
-      .populate('status');
+      .populate('role');
       
     if (!user) {
       return res.status(404).json({ message: 'Agent not found' });
