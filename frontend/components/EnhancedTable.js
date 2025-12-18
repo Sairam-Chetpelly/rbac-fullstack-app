@@ -34,6 +34,7 @@ export default function EnhancedTable({
   const [sortDirection, setSortDirection] = useState('asc');
   const [searchTimeout, setSearchTimeout] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [internalFilters, setInternalFilters] = useState(activeFilters || {});
 
   // Sync external current page changes
   useEffect(() => {
@@ -63,10 +64,21 @@ export default function EnhancedTable({
     });
 
     // Custom filters
-    const matchesFilters = Object.entries(activeFilters).every(([filterKey, filterValue]) => {
+    const matchesFilters = Object.entries(internalFilters).every(([filterKey, filterValue]) => {
       if (!filterValue) return true;
       const itemValue = getNestedValue(item, filterKey);
-      return itemValue && itemValue.toString().toLowerCase().includes(filterValue.toLowerCase());
+      
+      // Handle boolean values (like isActive)
+      if (typeof itemValue === 'boolean') {
+        const matches = itemValue.toString() === filterValue;
+        console.log(`Boolean filter: ${filterKey} = ${itemValue} (${typeof itemValue}) vs ${filterValue} -> ${matches}`);
+        return matches;
+      }
+      
+      // Handle other values
+      const matches = itemValue && itemValue.toString().toLowerCase().includes(filterValue.toLowerCase());
+      console.log(`String filter: ${filterKey} = ${itemValue} vs ${filterValue} -> ${matches}`);
+      return matches;
     });
 
     return matchesSearch && matchesFilters;
@@ -105,10 +117,12 @@ export default function EnhancedTable({
   // Handle filter change
   const handleFilterChange = (filterKey, value) => {
     const newFilters = {
-      ...activeFilters,
+      ...internalFilters,
       [filterKey]: value
     };
     if (!value || value === '') delete newFilters[filterKey];
+    
+    setInternalFilters(newFilters);
     
     // For server-side pagination, reset to page 1 and call parent handler
     if (serverSidePagination && onFilterChange) {
@@ -220,7 +234,7 @@ export default function EnhancedTable({
                 // Set new timeout for server-side search
                 if (serverSidePagination && onFilterChange) {
                   const timeout = setTimeout(() => {
-                    const newFilters = { ...activeFilters };
+                    const newFilters = { ...internalFilters };
                     if (value) {
                       newFilters.search = value;
                     } else {
@@ -244,15 +258,30 @@ export default function EnhancedTable({
             <span className="h-6 w-6 mr-1">📋</span>
             <span className="hidden sm:inline">Filters</span>
             <span className="sm:hidden">Filter</span>
-            {Object.keys(activeFilters).length > 0 && (
+            {Object.keys(internalFilters).length > 0 && (
               <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                {Object.keys(activeFilters).length}
+                {Object.keys(internalFilters).length}
               </span>
             )}
           </button>
 
           {/* Clear Filters */}
-          {(searchTerm || Object.keys(activeFilters).length > 0) && onClearFilters && (
+          {(searchTerm || Object.keys(internalFilters).length > 0) && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setInternalFilters({});
+                if (serverSidePagination && onFilterChange) {
+                  onFilterChange({});
+                }
+              }}
+              className="flex items-center px-4 py-3 text-gray-600 font-medium transition-colors min-w-fit"
+            >
+              <span className="h-6 w-6 mr-1">✕</span>
+              <span className="hidden sm:inline">Clear</span>
+            </button>
+          )}
+          {false && (
             <button
               onClick={onClearFilters}
               className="flex items-center px-4 py-3 text-gray-600 font-medium transition-colors min-w-fit"
@@ -271,7 +300,7 @@ export default function EnhancedTable({
                 <label className="block text-sm font-semibold text-gray-700 mb-2">{filter.label}</label>
                 {filter.type === 'select' ? (
                   <select
-                    value={activeFilters[filter.key] || ''}
+                    value={internalFilters[filter.key] || ''}
                     onChange={(e) => handleFilterChange(filter.key, e.target.value)}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm bg-white"
                   >
@@ -286,7 +315,7 @@ export default function EnhancedTable({
                   <input
                     type={filter.type || 'text'}
                     placeholder={filter.placeholder || `Filter by ${filter.label.toLowerCase()}`}
-                    value={activeFilters[filter.key] || ''}
+                    value={internalFilters[filter.key] || ''}
                     onChange={(e) => handleFilterChange(filter.key, e.target.value)}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                   />
@@ -309,7 +338,7 @@ export default function EnhancedTable({
             <div className="text-6xl mb-4">{emptyIcon}</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">{emptyMessage}</h3>
             <p className="text-gray-600">
-              {searchTerm || Object.values(activeFilters).some(v => v) ? 'Try adjusting your search criteria' : 'No records found'}
+              {searchTerm || Object.values(internalFilters).some(v => v) ? 'Try adjusting your search criteria' : 'No records found'}
             </p>
           </div>
         ) : (

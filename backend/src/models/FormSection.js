@@ -19,10 +19,13 @@ const formSectionSchema = new mongoose.Schema({
     ref: 'CountryVisaType',
     required: true
   },
-  status: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Status',
-    required: true
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

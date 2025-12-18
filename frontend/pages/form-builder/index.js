@@ -41,9 +41,13 @@ export default function FormBuilder() {
     name: '',
     description: '',
     order: 1,
+    country: '',
     countryVisaType: '',
-    status: ''
+    isActive: true
   });
+  
+  const [countries, setCountries] = useState([]);
+  const [availableVisaTypes, setAvailableVisaTypes] = useState([]);
   
   const [fieldForm, setFieldForm] = useState({
     name: '',
@@ -53,14 +57,20 @@ export default function FormBuilder() {
     defaultValue: '',
     required: false,
     order: 1,
+    country: '',
+    countryVisaType: '',
     formSection: '',
-    status: '',
+    isActive: true,
     options: [],
     validationRules: {}
   });
   
+  const [fieldCountries, setFieldCountries] = useState([]);
+  const [fieldVisaTypes, setFieldVisaTypes] = useState([]);
+  const [fieldSections, setFieldSections] = useState([]);
+  
   const [newOption, setNewOption] = useState('');
-  const [statuses, setStatuses] = useState([]);
+
   
   const fieldTypes = [
     { value: 'text', label: 'Text' },
@@ -114,10 +124,35 @@ export default function FormBuilder() {
 
   useEffect(() => {
     fetchVisaTypes();
-    fetchStatuses();
+    fetchCountries();
     fetchLibrarySections();
     fetchLibraryFields();
   }, []);
+
+  useEffect(() => {
+    if (sectionForm.country) {
+      fetchVisaTypesForCountry(sectionForm.country);
+    } else {
+      setAvailableVisaTypes([]);
+    }
+  }, [sectionForm.country]);
+
+  useEffect(() => {
+    if (fieldForm.country) {
+      fetchVisaTypesForField(fieldForm.country);
+    } else {
+      setFieldVisaTypes([]);
+      setFieldSections([]);
+    }
+  }, [fieldForm.country]);
+
+  useEffect(() => {
+    if (fieldForm.countryVisaType) {
+      fetchSectionsForField(fieldForm.countryVisaType);
+    } else {
+      setFieldSections([]);
+    }
+  }, [fieldForm.countryVisaType]);
 
   useEffect(() => {
     if (selectedVisa) {
@@ -125,12 +160,42 @@ export default function FormBuilder() {
     }
   }, [selectedVisa]);
 
-  const fetchStatuses = async () => {
+
+
+  const fetchCountries = async () => {
     try {
-      const response = await api.get('/status');
-      setStatuses(Array.isArray(response.data) ? response.data : response.data?.data || []);
+      const response = await api.get('/countries/dropdown');
+      setCountries(response.data || []);
+      setFieldCountries(response.data || []);
     } catch (error) {
-      toast.error('Failed to fetch statuses');
+      console.error('Failed to fetch countries:', error);
+    }
+  };
+
+  const fetchVisaTypesForCountry = async (countryId) => {
+    try {
+      const response = await api.get(`/form-fields/country-visa-types/${countryId}`);
+      setAvailableVisaTypes(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch visa types:', error);
+    }
+  };
+
+  const fetchVisaTypesForField = async (countryId) => {
+    try {
+      const response = await api.get(`/form-fields/country-visa-types/${countryId}`);
+      setFieldVisaTypes(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch visa types:', error);
+    }
+  };
+
+  const fetchSectionsForField = async (countryVisaTypeId) => {
+    try {
+      const response = await api.get(`/form-fields/form-sections/${countryVisaTypeId}`);
+      setFieldSections(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch form sections:', error);
     }
   };
 
@@ -154,8 +219,10 @@ export default function FormBuilder() {
 
   const fetchVisaTypes = async () => {
     try {
-      const response = await api.get('/country-visa-types');
-      setCountryVisaTypes(response.data);
+      const response = await api.get('/country-visa-types', {
+        params: { limit: 1000 } // Get all visa types for form builder
+      });
+      setCountryVisaTypes(response.data.data || response.data);
     } catch (error) {
       toast.error('Failed to fetch visa types');
     } finally {
@@ -167,9 +234,15 @@ export default function FormBuilder() {
     setFormLoading(true);
     try {
       const response = await api.get(`/visa-form/${visaId}`);
-      setFormSections(response.data.sections);
-      setFormFields(response.data.fields);
+      console.log('Visa form response:', response.data);
+      setFormSections(response.data.sections || []);
+      setFormFields(response.data.fields || []);
+      
+      if (!response.data.sections?.length) {
+        toast.info('No form sections found for this visa type');
+      }
     } catch (error) {
+      console.error('Error fetching visa form:', error);
       toast.error('Failed to fetch visa form');
     } finally {
       setFormLoading(false);
@@ -201,8 +274,9 @@ export default function FormBuilder() {
         name: section.name,
         description: section.description || '',
         order: section.order,
-        countryVisaType: section.countryVisaType?._id || selectedVisa?._id || '',
-        status: section.status?._id || (statuses.find(s => s.name === 'active')?._id || '')
+        country: selectedVisa?.country?._id || '',
+        countryVisaType: selectedVisa?._id || '',
+        isActive: section.isActive !== undefined ? section.isActive : true
       });
     } else {
       setEditingSection(null);
@@ -210,8 +284,9 @@ export default function FormBuilder() {
         name: '',
         description: '',
         order: formSections.length + 1,
+        country: selectedVisa?.country?._id || '',
         countryVisaType: selectedVisa?._id || '',
-        status: statuses.find(s => s.name === 'active')?._id || ''
+        isActive: true
       });
     }
     setShowSectionModal(true);
@@ -242,10 +317,19 @@ export default function FormBuilder() {
   };
 
   const handleSectionChange = (e) => {
-    setSectionForm({
-      ...sectionForm,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    if (name === 'country') {
+      setSectionForm({
+        ...sectionForm,
+        [name]: value,
+        countryVisaType: '' // Reset visa type when country changes
+      });
+    } else {
+      setSectionForm({
+        ...sectionForm,
+        [name]: value
+      });
+    }
   };
 
   const deleteSection = async (sectionId) => {
@@ -274,8 +358,10 @@ export default function FormBuilder() {
         defaultValue: field.defaultValue || '',
         required: field.required || false,
         order: field.order,
+        country: selectedVisa?.country?._id || '',
+        countryVisaType: selectedVisa?._id || '',
         formSection: field.formSection?._id || '',
-        status: field.status?._id || '',
+        isActive: field.isActive !== undefined ? field.isActive : true,
         options: field.options || [],
         validationRules: field.validationRules || {}
       });
@@ -291,8 +377,10 @@ export default function FormBuilder() {
         defaultValue: '',
         required: false,
         order: sectionFields.length + 1,
+        country: selectedVisa?.country?._id || '',
+        countryVisaType: selectedVisa?._id || '',
         formSection: sectionId,
-        status: statuses.find(s => s.name === 'active')?._id || '',
+        isActive: true,
         options: [],
         validationRules: {}
       });
@@ -349,8 +437,22 @@ export default function FormBuilder() {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
     
-    // Auto-generate name from label with section prefix and duplicate prevention
-    if (name === 'label' && newValue) {
+    // Handle cascading dropdowns
+    if (name === 'country') {
+      setFieldForm({
+        ...fieldForm,
+        [name]: newValue,
+        countryVisaType: '',
+        formSection: ''
+      });
+    } else if (name === 'countryVisaType') {
+      setFieldForm({
+        ...fieldForm,
+        [name]: newValue,
+        formSection: ''
+      });
+    } else if (name === 'label' && newValue) {
+      // Auto-generate name from label with section prefix and duplicate prevention
       const baseName = newValue.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
       const selectedSection = formSections.find(s => s._id === (fieldForm.formSection || selectedSectionId));
       const sectionPrefix = selectedSection ? selectedSection.name.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') : 'section';
@@ -747,7 +849,14 @@ export default function FormBuilder() {
                                 <span className="text-white text-sm">📝</span>
                               </div>
                               <div>
-                                <h3 className="text-lg font-semibold text-gray-900">{section.name}</h3>
+                                <div className="flex items-center space-x-2">
+                                  <h3 className="text-lg font-semibold text-gray-900">{section.name}</h3>
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    section.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {section.isActive !== false ? 'Active' : 'Inactive'}
+                                  </span>
+                                </div>
                                 <p className="text-sm text-gray-600">{section.description}</p>
                               </div>
                             </div>
@@ -815,6 +924,11 @@ export default function FormBuilder() {
                                     <div className="flex items-center space-x-2">
                                       <span className="font-medium text-gray-900">{field.label}</span>
                                       {field.required && <span className="text-red-500">*</span>}
+                                      <span className={`px-2 py-1 text-xs rounded-full ${
+                                        field.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                      }`}>
+                                        {field.isActive !== false ? 'Active' : 'Inactive'}
+                                      </span>
                                     </div>
                                     <div className="flex space-x-1">
                                       <Button
@@ -1098,7 +1212,7 @@ export default function FormBuilder() {
                     {formSections
                       .sort((a, b) => a.order - b.order)
                       .map((section) => {
-                        const sectionFields = getFieldsBySection(section._id);
+                        const sectionFields = getFieldsBySection(section._id).filter(field => field.isActive !== false);
                         if (sectionFields.length === 0) return null;
 
                         return (
@@ -1244,44 +1358,36 @@ export default function FormBuilder() {
                 />
               </div>
 
-              <div className="lg:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Visa Type *</label>
-                <select
-                  name="countryVisaType"
-                  value={sectionForm.countryVisaType}
-                  onChange={handleSectionChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  <option value="">Select Visa Type</option>
-                  {countryVisaTypes.map((cvt) => (
-                    <option key={cvt._id} value={cvt._id}>
-                      {cvt.name} - {cvt.country?.name}
-                    </option>
-                  ))}
-                </select>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
+                <input
+                  type="text"
+                  value={selectedVisa?.country?.name || ''}
+                  readOnly
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-600"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Country Visa Type</label>
+                <input
+                  type="text"
+                  value={selectedVisa?.name || ''}
+                  readOnly
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
                 <select
-                  name="status"
-                  value={sectionForm.status}
-                  onChange={handleSectionChange}
-                  required
+                  name="isActive"
+                  value={sectionForm.isActive}
+                  onChange={(e) => setSectionForm({...sectionForm, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
-                  <option disabled value="">Select Status</option>
-                  {/* {statuses.map((status) => (
-                    <option key={status._id} value={status._id}>
-                      {status.name}
-                    </option>
-                  ))} */}
-                  {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
                 </select>
               </div>
 
@@ -1393,42 +1499,25 @@ export default function FormBuilder() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Form Section</label>
-                <select
-                  name="formSection"
-                  value={fieldForm.formSection}
-                  onChange={handleFieldChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  <option disabled value="">Select Form Section</option>
-                  {formSections.map((section) => (
-                    <option key={section._id} value={section._id}>
-                      {section.name} - {section.countryVisaType?.name || 'No Visa'}
-                    </option>
-                  ))}
-                </select>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Form Section *</label>
+                <input
+                  type="text"
+                  value={formSections.find(s => s._id === fieldForm.formSection)?.name || ''}
+                  readOnly
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-600"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
                 <select
-                  name="status"
-                  value={fieldForm.status}
-                  onChange={handleFieldChange}
-                  required
+                  name="isActive"
+                  value={fieldForm.isActive}
+                  onChange={(e) => setFieldForm({...fieldForm, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
-                  <option disabled value="">Select Status</option>
-                  {/* {statuses.map((status) => (
-                    <option key={status._id} value={status._id}>
-                      {status.name}
-                    </option>
-                  ))} */}
-                  {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
                 </select>
               </div>
 

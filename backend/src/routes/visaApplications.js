@@ -679,7 +679,7 @@ router.get('/customer/payments', auth, async (req, res) => {
 });
 
 // Get visa type with user-specific pricing
-router.get('/visa-types/:id', auth, async (req, res) => {
+router.get('/visa-type/:id', auth, async (req, res) => {
   try {
     const visaType = await CountryVisaType.findById(req.params.id)
       .populate('country', 'name placeImage')

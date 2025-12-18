@@ -11,7 +11,8 @@ export default function AddCountryTermsConditions() {
     country: '',
     title: '',
     description: '',
-    content: ''
+    content: '',
+    isActive: true
   });
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -117,6 +118,20 @@ export default function AddCountryTermsConditions() {
                   onChange={(content) => setFormData({...formData, content})}
                   placeholder="Enter terms and conditions content"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
+                  🔄 Status
+                </label>
+                <select
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
+                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
+                >
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
+                </select>
               </div>
             </div>
 

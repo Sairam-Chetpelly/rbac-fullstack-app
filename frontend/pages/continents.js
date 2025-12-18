@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import EnhancedTable from '../components/EnhancedTable';
+import ConfirmationModal from '../components/ConfirmationModal';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -8,6 +9,7 @@ import toast from 'react-hot-toast';
 export default function Continents() {
   const [continents, setContinents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, continent: null });
   const { user } = useAuth();
   const router = useRouter();
 
@@ -34,15 +36,18 @@ export default function Continents() {
     router.push(`/continents/${continent._id}`);
   };
 
-  const handleDelete = async (continent) => {
-    if (confirm(`Are you sure you want to delete "${continent.name}"?`)) {
-      try {
-        await api.delete(`/continents/${continent._id}`);
-        toast.success('Continent deleted successfully!');
-        fetchContinents();
-      } catch (error) {
-        toast.error('Failed to delete continent');
-      }
+  const handleDelete = (continent) => {
+    setDeleteModal({ isOpen: true, continent });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/continents/${deleteModal.continent._id}`);
+      toast.success('Continent deleted successfully!');
+      setDeleteModal({ isOpen: false, continent: null });
+      fetchContinents();
+    } catch (error) {
+      toast.error('Failed to delete continent');
     }
   };
 
@@ -77,10 +82,16 @@ export default function Continents() {
       )
     },
     {
-      key: 'status.name',
+      key: 'isActive',
       label: 'Status',
-      type: 'status',
-      sortable: true
+      sortable: true,
+      render: (value) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+          value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {value ? 'Active' : 'Inactive'}
+        </span>
+      )
     },
     {
       key: 'createdAt',
@@ -92,39 +103,52 @@ export default function Continents() {
 
   const filters = [
     {
-      key: 'status.name',
+      key: 'isActive',
       label: 'Status',
       type: 'select',
       options: [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' }
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' }
       ]
     }
   ];
 
   const stats = {
     total: continents.length,
-    active: continents.filter(c => c.status?.name === 'active').length,
-    inactive: continents.filter(c => c.status?.name === 'inactive').length
+    active: continents.filter(c => c.isActive).length,
+    inactive: continents.filter(c => !c.isActive).length
   };
 
   return (
-    <EnhancedTable
-      title="🌍 Continents Management"
-      data={continents}
-      columns={columns}
-      loading={loading}
-      searchPlaceholder="Search continents by name, slug, or description..."
-      onView={handleView}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onAdd={handleAdd}
-      addButtonText="Add New Continent"
-      emptyMessage="No continents found"
-      emptyIcon="🌍"
-      showStats={true}
-      stats={stats}
-      filters={filters}
-    />
+    <>
+      <EnhancedTable
+        title="🌍 Continents Management"
+        data={continents}
+        columns={columns}
+        loading={loading}
+        searchPlaceholder="Search continents by name, slug, or description..."
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onAdd={handleAdd}
+        addButtonText="Add New Continent"
+        emptyMessage="No continents found"
+        emptyIcon="🌍"
+        showStats={true}
+        stats={stats}
+        filters={filters}
+      />
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, continent: null })}
+        onConfirm={confirmDelete}
+        title="Delete Continent"
+        message={`Are you sure you want to delete "${deleteModal.continent?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+    </>
   );
 }

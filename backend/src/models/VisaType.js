@@ -10,10 +10,9 @@ const visaTypeSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  status: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Status',
-    required: true
+  isActive: {
+    type: Boolean,
+    default: true
   },
   deletedAt: {
     type: Date,

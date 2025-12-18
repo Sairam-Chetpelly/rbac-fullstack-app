@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import EnhancedTable from '../components/EnhancedTable';
+import ConfirmationModal from '../components/ConfirmationModal';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -8,22 +9,54 @@ import toast from 'react-hot-toast';
 export default function CountryTermsConditions() {
   const [terms, setTerms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+  const [filters, setFilters] = useState({});
+  const [countries, setCountries] = useState([]);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, term: null });
   const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     fetchTerms();
-  }, []);
+    fetchCountries();
+  }, [pagination.page, pagination.limit, filters]);
 
   const fetchTerms = async () => {
     try {
-      const response = await api.get('/country-terms-conditions');
-      setTerms(response.data);
+      setLoading(true);
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        ...filters
+      };
+      const response = await api.get('/country-terms-conditions', { params });
+      setTerms(response.data.data || response.data);
+      if (response.data.pagination) {
+        setPagination(prev => ({ ...prev, ...response.data.pagination }));
+      }
     } catch (error) {
       toast.error('Failed to fetch terms');
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchCountries = async () => {
+    try {
+      const response = await api.get('/countries/dropdown');
+      setCountries(response.data || []);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+    }
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handlePageChange = (page) => {
+    setPagination(prev => ({ ...prev, page }));
   };
 
   const handleView = (term) => {
@@ -34,15 +67,18 @@ export default function CountryTermsConditions() {
     router.push(`/country-terms-conditions/${term._id}`);
   };
 
-  const handleDelete = async (term) => {
-    if (confirm(`Are you sure you want to delete "${term.title}"?`)) {
-      try {
-        await api.delete(`/country-terms-conditions/${term._id}`);
-        toast.success('Terms deleted successfully!');
-        fetchTerms();
-      } catch (error) {
-        toast.error('Failed to delete terms');
-      }
+  const handleDelete = (term) => {
+    setDeleteModal({ isOpen: true, term });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/country-terms-conditions/${deleteModal.term._id}`);
+      toast.success('Terms deleted successfully!');
+      setDeleteModal({ isOpen: false, term: null });
+      fetchTerms();
+    } catch (error) {
+      toast.error('Failed to delete terms');
     }
   };
 
@@ -104,6 +140,17 @@ export default function CountryTermsConditions() {
       }
     },
     {
+      key: 'isActive',
+      label: 'Status',
+      render: (value) => (
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+          value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {value ? 'Active' : 'Inactive'}
+        </span>
+      )
+    },
+    {
       key: 'createdAt',
       label: 'Created',
       type: 'date',
@@ -111,41 +158,65 @@ export default function CountryTermsConditions() {
     }
   ];
 
-  const filters = [
+  const filterOptions = [
     {
-      key: 'country.name',
+      key: 'country',
       label: 'Country',
       type: 'select',
-      options: [...new Set(terms.map(t => t.country?.name).filter(Boolean))].map(name => ({
-        value: name,
-        label: name
-      }))
+      options: countries.map(c => ({ value: c._id, label: c.name }))
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' }
+      ]
     }
   ];
 
   const stats = {
-    total: terms.length,
-    active: terms.filter(t => t.status?.name === 'active').length,
+    total: pagination.total,
+    active: terms.filter(t => t.isActive).length,
+    inactive: terms.filter(t => !t.isActive).length,
     countries: [...new Set(terms.map(t => t.country?.name).filter(Boolean))].length
   };
 
   return (
-    <EnhancedTable
-      title="📜 Country Terms & Conditions"
-      data={terms}
-      columns={columns}
-      loading={loading}
-      searchPlaceholder="Search terms by title, country, or content..."
-      onView={handleView}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onAdd={handleAdd}
-      addButtonText="Add New Terms"
-      emptyMessage="No terms found"
-      emptyIcon="📜"
-      showStats={true}
-      stats={stats}
-      filters={filters}
-    />
+    <>
+      <EnhancedTable
+        title="📜 Country Terms & Conditions"
+        data={terms}
+        columns={columns}
+        loading={loading}
+        searchPlaceholder="Search terms by title or content..."
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onAdd={handleAdd}
+        addButtonText="Add New Terms"
+        emptyMessage="No terms found"
+        emptyIcon="📜"
+        showStats={true}
+        stats={stats}
+        filters={filterOptions}
+        serverSidePagination={true}
+        totalItems={pagination.total}
+        currentPage={pagination.page}
+        itemsPerPage={pagination.limit}
+        onPageChange={handlePageChange}
+        onFilterChange={handleFilterChange}
+      />
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, term: null })}
+        onConfirm={confirmDelete}
+        title="Delete Terms & Conditions"
+        message={`Are you sure you want to delete "${deleteModal.term?.title}"? This action cannot be undone.`}
+        type="danger"
+      />
+    </>
   );
 }

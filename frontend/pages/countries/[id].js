@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import api from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export default function EditCountry() {
   const [formData, setFormData] = useState({
@@ -10,7 +11,7 @@ export default function EditCountry() {
     slug: '',
     description: '',
     code: '',
-    status: '',
+    isActive: true,
     continent: '',
     processingTimeMin: '',
     processingTimeMax: ''
@@ -18,7 +19,6 @@ export default function EditCountry() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [currentImage, setCurrentImage] = useState(null);
-  const [statuses, setStatuses] = useState([]);
   const [continents, setContinents] = useState([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -27,41 +27,32 @@ export default function EditCountry() {
   useEffect(() => {
     if (id) {
       fetchCountry();
-      fetchStatuses();
       fetchContinents();
     }
   }, [id]);
 
   const fetchCountry = async () => {
     try {
-      const response = await api.get(`/countries`);
-      const country = response.data.find(c => c._id === id);
-      if (country) {
-        setFormData({
-          name: country.name,
-          slug: country.slug,
-          description: country.description,
-          code: country.code,
-          status: country.status._id,
-          continent: country.continent._id,
-          processingTimeMin: country.processingTimeMin,
-          processingTimeMax: country.processingTimeMax
-        });
-        setCurrentImage(country.placeImage);
-      }
+      const response = await api.get(`/countries/${id}`);
+      const country = response.data;
+      setFormData({
+        name: country.name,
+        slug: country.slug,
+        description: country.description,
+        code: country.code,
+        isActive: country.isActive !== undefined ? country.isActive : true,
+        continent: country.continent?._id || '',
+        processingTimeMin: country.processingTimeMin,
+        processingTimeMax: country.processingTimeMax
+      });
+      setCurrentImage(country.placeImage);
     } catch (error) {
       console.error('Error fetching country:', error);
+      toast.error('Failed to fetch country details');
     }
   };
 
-  const fetchStatuses = async () => {
-    try {
-      const response = await api.get('/status');
-      setStatuses(Array.isArray(response.data) ? response.data : response.data?.data || []);
-    } catch (error) {
-      console.error('Error fetching statuses:', error);
-    }
-  };
+
 
   const fetchContinents = async () => {
     try {
@@ -101,9 +92,11 @@ export default function EditCountry() {
           'Content-Type': 'multipart/form-data'
         }
       });
+      toast.success('Country updated successfully!');
       router.push('/countries');
     } catch (error) {
-      console.error('Error updating country:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update country';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -265,23 +258,13 @@ export default function EditCountry() {
                   ⚡ Status
                 </label>
                 <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  {/* <option disabled value="">Select Status</option>
-                  {statuses.map(status => (
-                    <option key={status._id} value={status._id}>
-                      {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                    </option>
-                  ))} */}
-                <option disabled value="">Select Status</option>
-                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </select>
               </div>
             </div>

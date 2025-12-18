@@ -58,9 +58,11 @@ const upload = multer({
 // Get countries for home page (public)
 router.get('/countries', async (req, res) => {
   try {
-    const countries = await Country.find()
+    const countries = await Country.find({ 
+      deletedAt: null,
+      $or: [{ isActive: true }, { isActive: { $exists: false } }]
+    })
       .populate('continent', 'name')
-      .populate('status', 'name')
       .lean();
 
     // Get visa types for each country
@@ -100,8 +102,9 @@ router.get('/countries', async (req, res) => {
 // Get continents for home page (public)
 router.get('/continents', async (req, res) => {
   try {
-    const continents = await Continent.find()
-      .populate('status', 'name')
+    const continents = await Continent.find({ 
+      $or: [{ isActive: true }, { isActive: { $exists: false } }]
+    })
       .lean();
 
     const continentNames = continents.map(continent => continent.name);
@@ -117,7 +120,6 @@ router.get('/countries/:id', async (req, res) => {
   try {
     const country = await Country.findById(req.params.id)
       .populate('continent', 'name')
-      .populate('status', 'name')
       .lean();
 
     if (!country) {
@@ -144,7 +146,6 @@ router.get('/countries/:id/visa-types', async (req, res) => {
   try {
     const visaTypes = await CountryVisaType.find({ country: req.params.id })
       .populate('visaType', 'name')
-      .populate('status', 'name')
       .lean();
 
     const formattedVisaTypes = visaTypes.map(vt => ({
@@ -206,13 +207,19 @@ router.get('/visa-types/:id/terms-conditions', async (req, res) => {
       return res.status(404).json({ message: 'Visa type not found' });
     }
     
-    // Get visa-specific terms and conditions
-    const visaTerms = await VisaTermsConditions.find({ countryVisaType: req.params.id })
-      .lean();
+    // Get visa-specific terms and conditions (active only)
+    const visaTerms = await VisaTermsConditions.find({ 
+      countryVisaType: req.params.id,
+      $or: [{ isActive: true }, { isActive: { $exists: false } }],
+      deletedAt: null
+    }).lean();
     
-    // Get country-specific terms and conditions
-    const countryTerms = await CountryTermsConditions.find({ country: visaType.country._id })
-      .lean();
+    // Get country-specific terms and conditions (active only)
+    const countryTerms = await CountryTermsConditions.find({ 
+      country: visaType.country._id,
+      $or: [{ isActive: true }, { isActive: { $exists: false } }],
+      deletedAt: null
+    }).lean();
     
     // Combine both types of terms
     const allTerms = [

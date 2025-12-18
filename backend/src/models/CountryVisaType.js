@@ -10,10 +10,9 @@ const countryVisaTypeSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  status: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Status',
-    required: true
+  isActive: {
+    type: Boolean,
+    default: true
   },
   visaType: {
     type: mongoose.Schema.Types.ObjectId,
@@ -40,6 +39,10 @@ const countryVisaTypeSchema = new mongoose.Schema({
   agentDiscount: {
     type: String,
     default: '0'
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

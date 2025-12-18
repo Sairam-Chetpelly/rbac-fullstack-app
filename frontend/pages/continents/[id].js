@@ -3,15 +3,15 @@ import { useRouter } from 'next/router';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import api from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export default function EditContinent() {
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     description: '',
-    status: ''
+    isActive: true
   });
-  const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { id } = router.query;
@@ -19,7 +19,6 @@ export default function EditContinent() {
   useEffect(() => {
     if (id) {
       fetchContinent();
-      fetchStatuses();
     }
   }, [id]);
 
@@ -32,20 +31,11 @@ export default function EditContinent() {
           name: continent.name,
           slug: continent.slug,
           description: continent.description,
-          status: continent.status._id
+          isActive: continent.isActive !== undefined ? continent.isActive : true
         });
       }
     } catch (error) {
       console.error('Error fetching continent:', error);
-    }
-  };
-
-  const fetchStatuses = async () => {
-    try {
-      const response = await api.get('/status');
-      setStatuses(Array.isArray(response.data) ? response.data : response.data?.data || []);
-    } catch (error) {
-      console.error('Error fetching statuses:', error);
     }
   };
 
@@ -54,9 +44,11 @@ export default function EditContinent() {
     setLoading(true);
     try {
       await api.put(`/continents/${id}`, formData);
+      toast.success('Continent updated successfully!');
       router.push('/continents');
     } catch (error) {
-      console.error('Error updating continent:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update continent';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -129,23 +121,13 @@ export default function EditContinent() {
                   ⚡ Status
                 </label>
                 <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  {/* <option value="">Select Status</option>
-                  {statuses.map(status => (
-                    <option key={status._id} value={status._id}>
-                      {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                    </option>
-                  ))} */}
-                <option disabled value="">Select Status</option>
-                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </select>
               </div>
             </div>

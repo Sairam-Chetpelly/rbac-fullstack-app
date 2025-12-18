@@ -14,13 +14,17 @@ export default function AddFormField() {
     defaultValue: '',
     required: false,
     order: '',
+    country: '',
+    countryVisaType: '',
     formSection: '',
-    status: '',
+    isActive: true,
     options: [],
     validationRules: {}
   });
   const [newOption, setNewOption] = useState('');
-  const [statuses, setStatuses] = useState([]);
+
+  const [countries, setCountries] = useState([]);
+  const [countryVisaTypes, setCountryVisaTypes] = useState([]);
   const [formSections, setFormSections] = useState([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -41,25 +45,63 @@ export default function AddFormField() {
   ];
 
   useEffect(() => {
-    fetchStatuses();
-    fetchFormSections();
+    fetchCountries();
   }, []);
 
-  const fetchStatuses = async () => {
+  useEffect(() => {
+    if (formData.country) {
+      fetchCountryVisaTypes(formData.country);
+      setFormSections([]);
+      setFormData(prev => ({ ...prev, countryVisaType: '', formSection: '' }));
+    } else {
+      setCountryVisaTypes([]);
+      setFormSections([]);
+      setFormData(prev => ({ ...prev, countryVisaType: '', formSection: '' }));
+    }
+  }, [formData.country]);
+
+  useEffect(() => {
+    if (formData.countryVisaType) {
+      fetchFormSections(formData.countryVisaType);
+      setFormData(prev => ({ ...prev, formSection: '' }));
+    } else {
+      setFormSections([]);
+      setFormData(prev => ({ ...prev, formSection: '' }));
+    }
+  }, [formData.countryVisaType]);
+
+
+
+  const fetchCountries = async () => {
     try {
-      const response = await api.get('/status');
-      setStatuses(Array.isArray(response.data) ? response.data : response.data?.data || []);
+      const response = await api.get('/countries/dropdown');
+      setCountries(response.data || []);
     } catch (error) {
-      toast.error('Failed to fetch statuses');
+      toast.error('Failed to fetch countries');
+      setCountries([]);
     }
   };
 
-  const fetchFormSections = async () => {
+  const fetchCountryVisaTypes = async (countryId) => {
     try {
-      const response = await api.get('/form-sections');
-      setFormSections(response.data);
+      const response = await api.get(`/form-fields/country-visa-types/${countryId}`);
+      setCountryVisaTypes(response.data || []);
     } catch (error) {
+      toast.error('Failed to fetch visa types');
+      setCountryVisaTypes([]);
+    }
+  };
+
+  const fetchFormSections = async (countryVisaTypeId) => {
+    try {
+      console.log('Fetching form sections for countryVisaTypeId:', countryVisaTypeId);
+      const response = await api.get(`/form-fields/form-sections/${countryVisaTypeId}`);
+      console.log('Form sections response:', response.data);
+      setFormSections(response.data || []);
+    } catch (error) {
+      console.error('Error fetching form sections:', error);
       toast.error('Failed to fetch form sections');
+      setFormSections([]);
     }
   };
 
@@ -214,18 +256,19 @@ export default function AddFormField() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Form Section
+                  Country *
                 </label>
                 <select
-                  name="formSection"
-                  value={formData.formSection}
+                  name="country"
+                  value={formData.country}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
-                  <option disabled value="">Select Form Section</option>
-                  {formSections.map((section) => (
-                    <option key={section._id} value={section._id}>
-                      {section.name} - {section.countryVisaType?.name || 'No Visa'}
+                  <option disabled value="">Select Country</option>
+                  {countries.map((country) => (
+                    <option key={country._id} value={country._id}>
+                      {country.name}
                     </option>
                   ))}
                 </select>
@@ -233,26 +276,58 @@ export default function AddFormField() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Status *
+                  Country Visa Type *
                 </label>
                 <select
-                  name="status"
-                  value={formData.status}
+                  name="countryVisaType"
+                  value={formData.countryVisaType}
                   onChange={handleChange}
                   required
+                  disabled={!formData.country}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100"
+                >
+                  <option disabled value="">Select Country Visa Type</option>
+                  {countryVisaTypes.map((cvt) => (
+                    <option key={cvt._id} value={cvt._id}>
+                      {cvt.name || 'Unknown Country Visa Type'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Form Section *
+                </label>
+                <select
+                  name="formSection"
+                  value={formData.formSection}
+                  onChange={handleChange}
+                  required
+                  disabled={!formData.countryVisaType}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100"
+                >
+                  <option disabled value="">Select Form Section</option>
+                  {formSections.map((section) => (
+                    <option key={section._id} value={section._id}>
+                      {section.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  name="isActive"
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
-                  <option disabled value="">Select Status</option>
-                  {/* {statuses.map((status) => (
-                    <option key={status._id} value={status._id}>
-                      {status.name}
-                    </option>
-                  ))} */}
-                  {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
                 </select>
               </div>
 

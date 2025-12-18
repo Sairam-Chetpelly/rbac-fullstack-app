@@ -1,198 +1,300 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-
-import Button from '../../components/Button';
-import Card from '../../components/Card';
+import EnhancedTable from '../../components/EnhancedTable';
+import ConfirmationModal from '../../components/ConfirmationModal';
 import api from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export default function FormFields() {
   const [formFields, setFormFields] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+  const [filters, setFilters] = useState({});
+  const [countries, setCountries] = useState([]);
+  const [countryVisaTypes, setCountryVisaTypes] = useState([]);
+  const [formSections, setFormSectionsFilter] = useState([]);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, field: null });
   const router = useRouter();
 
   useEffect(() => {
     fetchFormFields();
-  }, []);
+    fetchCountries();
+  }, [pagination.page, pagination.limit, filters]);
+
+  useEffect(() => {
+    if (filters.country) {
+      fetchCountryVisaTypes(filters.country);
+    } else {
+      setCountryVisaTypes([]);
+      setFormSectionsFilter([]);
+    }
+  }, [filters.country]);
+
+  useEffect(() => {
+    if (filters.countryVisaType) {
+      fetchFormSectionsForFilter(filters.countryVisaType);
+    } else {
+      setFormSectionsFilter([]);
+    }
+  }, [filters.countryVisaType]);
 
   const fetchFormFields = async () => {
     try {
-      const response = await api.get('/form-fields');
-      setFormFields(response.data);
+      setLoading(true);
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        ...filters
+      };
+      const response = await api.get('/form-fields', { params });
+      setFormFields(response.data.data || response.data);
+      if (response.data.pagination) {
+        setPagination(prev => ({ ...prev, ...response.data.pagination }));
+      }
     } catch (error) {
-      console.error('Error fetching form fields:', error);
+      toast.error('Failed to fetch form fields');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this form field?')) {
-      try {
-        await api.delete(`/form-fields/${id}`);
-        setFormFields(formFields.filter(item => item._id !== id));
-      } catch (error) {
-        console.error('Error deleting form field:', error);
-      }
+  const fetchCountries = async () => {
+    try {
+      const response = await api.get('/countries/dropdown');
+      setCountries(response.data || []);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
     }
   };
 
-  const filteredFormFields = formFields.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.label?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.type?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const fetchCountryVisaTypes = async (countryId) => {
+    try {
+      const response = await api.get(`/form-fields/country-visa-types/${countryId}`);
+      setCountryVisaTypes(response.data || []);
+    } catch (error) {
+      console.error('Error fetching visa types:', error);
+    }
+  };
 
-  if (loading) {
-    return (
-      
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading form fields...</p>
+  const fetchFormSectionsForFilter = async (countryVisaTypeId) => {
+    try {
+      const response = await api.get(`/form-fields/form-sections/${countryVisaTypeId}`);
+      setFormSectionsFilter(response.data || []);
+    } catch (error) {
+      console.error('Error fetching form sections:', error);
+    }
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handlePageChange = (page) => {
+    setPagination(prev => ({ ...prev, page }));
+  };
+
+  const handleView = (field) => {
+    router.push(`/form-fields/view/${field._id}`);
+  };
+
+  const handleEdit = (field) => {
+    router.push(`/form-fields/${field._id}`);
+  };
+
+  const handleDelete = (field) => {
+    setDeleteModal({ isOpen: true, field });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/form-fields/${deleteModal.field._id}`);
+      toast.success('Form field deleted successfully!');
+      setDeleteModal({ isOpen: false, field: null });
+      fetchFormFields();
+    } catch (error) {
+      toast.error('Failed to delete form field');
+    }
+  };
+
+  const handleAdd = () => {
+    router.push('/form-fields/add');
+  };
+
+  const columns = [
+    {
+      key: 'label',
+      label: 'Label',
+      sortable: true,
+      render: (value, item) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-teal-600 rounded-lg flex items-center justify-center text-white text-lg">
+            📝
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900">{value}</div>
+            <div className="text-sm text-gray-500">
+              {item.name} • Order: {item.order}
+            </div>
+          </div>
         </div>
-      
-    );
-  }
+      )
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      sortable: true,
+      render: (value) => (
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'country',
+      label: 'Country',
+      render: (value, item) => (
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+          {item.formSection?.countryVisaType?.country?.name || 'No country'}
+        </span>
+      )
+    },
+    {
+      key: 'countryVisaType',
+      label: 'Visa Type',
+      render: (value, item) => (
+        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+          {item.formSection?.countryVisaType?.name || 'No visa type'}
+        </span>
+      )
+    },
+    {
+      key: 'formSection.name',
+      label: 'Section',
+      sortable: true,
+      render: (value) => (
+        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+          {value || 'No section'}
+        </span>
+      )
+    },
+    {
+      key: 'required',
+      label: 'Required',
+      render: (value) => (
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+          value ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+        }`}>
+          {value ? 'Required' : 'Optional'}
+        </span>
+      )
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      render: (value) => (
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+          value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {value ? 'Active' : 'Inactive'}
+        </span>
+      )
+    },
+    {
+      key: 'createdAt',
+      label: 'Created',
+      type: 'date',
+      sortable: true
+    }
+  ];
+
+  const filterOptions = [
+    {
+      key: 'country',
+      label: 'Country',
+      type: 'select',
+      options: countries.map(c => ({ value: c._id, label: c.name }))
+    },
+    {
+      key: 'countryVisaType',
+      label: 'Visa Type',
+      type: 'select',
+      options: countryVisaTypes.map(cvt => ({ value: cvt._id, label: cvt.name }))
+    },
+    {
+      key: 'formSection',
+      label: 'Form Section',
+      type: 'select',
+      options: formSections.map(fs => ({ value: fs._id, label: fs.name }))
+    },
+    {
+      key: 'type',
+      label: 'Field Type',
+      type: 'select',
+      options: [
+        { value: 'text', label: 'Text' },
+        { value: 'email', label: 'Email' },
+        { value: 'number', label: 'Number' },
+        { value: 'select', label: 'Select' },
+        { value: 'checkbox', label: 'Checkbox' },
+        { value: 'radio', label: 'Radio' },
+        { value: 'file', label: 'File' },
+        { value: 'date', label: 'Date' },
+        { value: 'textarea', label: 'Textarea' }
+      ]
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' }
+      ]
+    }
+  ];
+
+  const stats = {
+    total: pagination.total,
+    active: formFields.filter(f => f.isActive).length,
+    inactive: formFields.filter(f => !f.isActive).length,
+    required: formFields.filter(f => f.required).length
+  };
 
   return (
-      <div className="max-w-full mx-auto space-y-6 lg:space-y-8 p-4 sm:p-6 lg:p-0">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
-          <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">📝 Form Fields</h1>
-            <p className="text-sm sm:text-base text-gray-600">Manage form fields and their configurations</p>
-          </div>
-          <Button onClick={() => router.push('/form-fields/add')} icon="➕" className="w-full sm:w-auto">
-            Add Form Field
-          </Button>
-        </div>
-
-        <Card>
-          <div className="mb-6">
-            <input
-              type="text"
-              placeholder="Search form fields..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredFormFields.map((formField) => (
-              <div key={formField._id} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-200 hover:scale-105">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{formField.label}</h3>
-                    <p className="text-sm text-gray-600 mb-3">Name: {formField.name}</p>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
-                        {formField.type}
-                      </span>
-                      <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
-                        Order: {formField.order}
-                      </span>
-                      {formField.required && (
-                        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">
-                          Required
-                        </span>
-                      )}
-                    </div>
-                    {formField.options && formField.options.length > 0 && (
-                      <div className="mb-3">
-                        <span className="text-xs text-gray-500">Options: </span>
-                        <span className="text-sm text-gray-700">
-                          {formField.options.slice(0, 3).join(', ')}
-                          {formField.options.length > 3 && ` (+${formField.options.length - 3} more)`}
-                        </span>
-                      </div>
-                    )}
-                    {formField.validationRules && Object.keys(formField.validationRules).length > 0 && (
-                      <div className="mb-3">
-                        <span className="text-xs text-gray-500">Validation: </span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {formField.validationRules.minLength && (
-                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
-                              Min: {formField.validationRules.minLength}
-                            </span>
-                          )}
-                          {formField.validationRules.maxLength && (
-                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
-                              Max: {formField.validationRules.maxLength}
-                            </span>
-                          )}
-                          {formField.validationRules.min && (
-                            <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
-                              Min: {formField.validationRules.min}
-                            </span>
-                          )}
-                          {formField.validationRules.max && (
-                            <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
-                              Max: {formField.validationRules.max}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div className="mb-3">
-                      <span className="text-xs text-gray-500">Section: </span>
-                      <span className="text-sm font-medium text-gray-700">
-                        {formField.formSection?.name || 'No section'}
-                      </span>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      formField.status?.name === 'active' ? 'bg-green-100 text-green-800' :
-                      formField.status?.name === 'inactive' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {formField.status?.name?.toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push(`/form-fields/view/${formField._id}`)}
-                    icon="👁️"
-                    className="flex-1"
-                  >
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push(`/form-fields/${formField._id}`)}
-                    icon="✏️"
-                    className="flex-1"
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(formField._id)}
-                    icon="🗑️"
-                    className="flex-1"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {filteredFormFields.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No form fields found</h3>
-              <p className="text-gray-600 mb-6">Get started by creating your first form field.</p>
-              <Button onClick={() => router.push('/form-fields/add')} icon="➕">
-                Add Form Field
-              </Button>
-            </div>
-          )}
-        </Card>
-      </div>
+    <>
+      <EnhancedTable
+        title="📝 Form Fields"
+        data={formFields}
+        columns={columns}
+        loading={loading}
+        searchPlaceholder="Search fields by name, label, or type..."
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onAdd={handleAdd}
+        addButtonText="Add Form Field"
+        emptyMessage="No form fields found"
+        emptyIcon="📝"
+        showStats={true}
+        stats={stats}
+        filters={filterOptions}
+        serverSidePagination={true}
+        totalItems={pagination.total}
+        currentPage={pagination.page}
+        itemsPerPage={pagination.limit}
+        onPageChange={handlePageChange}
+        onFilterChange={handleFilterChange}
+      />
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, field: null })}
+        onConfirm={confirmDelete}
+        title="Delete Form Field"
+        message={`Are you sure you want to delete "${deleteModal.field?.label}"? This action cannot be undone.`}
+        type="danger"
+      />
+    </>
   );
 }

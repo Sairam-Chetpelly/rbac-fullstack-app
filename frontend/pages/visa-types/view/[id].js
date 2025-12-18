@@ -19,9 +19,8 @@ export default function ViewVisaType() {
 
   const fetchVisaType = async () => {
     try {
-      const response = await api.get(`/visa-types`);
-      const item = response.data.find(v => v._id === id);
-      setVisaType(item);
+      const response = await api.get(`/visa-types/${id}`);
+      setVisaType(response.data);
     } catch (error) {
       console.error('Error fetching visa type:', error);
     } finally {
@@ -67,7 +66,7 @@ export default function ViewVisaType() {
             <p className="text-sm sm:text-base text-gray-600">Visa type details and information</p>
           </div>
           <Button 
-            onClick={() => router.push(`/visa-types/${id}`)}
+            onClick={() => router.push(`/visa-types/admin/${id}`)}
             icon="✏️"
             className="w-full sm:w-auto"
           >
@@ -89,11 +88,9 @@ export default function ViewVisaType() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
                 <div className="px-4 py-3 bg-gray-50 rounded-xl">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    visaType.status?.name === 'active' ? 'bg-green-100 text-green-800' :
-                    visaType.status?.name === 'inactive' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
+                    visaType.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   }`}>
-                    {visaType.status?.name?.toUpperCase()}
+                    {visaType.isActive ? 'ACTIVE' : 'INACTIVE'}
                   </span>
                 </div>
               </div>

@@ -11,24 +11,10 @@ export default function AddContinent() {
     name: '',
     slug: '',
     description: '',
-    status: ''
+    isActive: true
   });
-  const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    fetchStatuses();
-  }, []);
-
-  const fetchStatuses = async () => {
-    try {
-      const response = await api.get('/status');
-      setStatuses(Array.isArray(response.data) ? response.data : response.data?.data || []);
-    } catch (error) {
-      toast.error('Failed to fetch statuses');
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +24,8 @@ export default function AddContinent() {
       toast.success('Continent created successfully!');
       setTimeout(() => router.push('/continents'), 1000);
     } catch (error) {
-      toast.error('Failed to create continent');
+      const errorMessage = error.response?.data?.message || 'Failed to create continent';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -111,23 +98,13 @@ export default function AddContinent() {
                   ⚡ Status
                 </label>
                 <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  {/* <option value="">Select Status</option>
-                  {statuses.map(status => (
-                    <option key={status._id} value={status._id}>
-                      {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                    </option>
-                  ))} */}
-                <option disabled value="">Select Status</option>
-                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </select>
               </div>
             </div>

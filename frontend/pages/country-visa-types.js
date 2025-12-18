@@ -8,21 +8,54 @@ import toast from 'react-hot-toast';
 export default function CountryVisaTypes() {
   const [countryVisaTypes, setCountryVisaTypes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+  const [filters, setFilters] = useState({});
+  const [countries, setCountries] = useState([]);
+  const [visaTypes, setVisaTypes] = useState([]);
   const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     fetchCountryVisaTypes();
-  }, []);
+    fetchCountries();
+    fetchVisaTypes();
+  }, [pagination.page, pagination.limit, filters]);
 
   const fetchCountryVisaTypes = async () => {
     try {
-      const response = await api.get('/country-visa-types');
-      setCountryVisaTypes(response.data);
+      setLoading(true);
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        ...filters
+      };
+      const response = await api.get('/country-visa-types', { params });
+      setCountryVisaTypes(response.data.data || response.data);
+      if (response.data.pagination) {
+        setPagination(prev => ({ ...prev, ...response.data.pagination }));
+      }
     } catch (error) {
       toast.error('Failed to fetch country visa types');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCountries = async () => {
+    try {
+      const response = await api.get('/countries/dropdown');
+      setCountries(response.data || []);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+    }
+  };
+
+  const fetchVisaTypes = async () => {
+    try {
+      const response = await api.get('/visa-types');
+      setVisaTypes(response.data || []);
+    } catch (error) {
+      console.error('Error fetching visa types:', error);
     }
   };
 
@@ -32,6 +65,15 @@ export default function CountryVisaTypes() {
 
   const handleEdit = (item) => {
     router.push(`/country-visa-types/${item._id}`);
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handlePageChange = (page) => {
+    setPagination(prev => ({ ...prev, page }));
   };
 
   const handleDelete = async (item) => {
@@ -128,10 +170,16 @@ export default function CountryVisaTypes() {
       )
     },
     {
-      key: 'status.name',
+      key: 'isActive',
       label: 'Status',
-      type: 'status',
-      sortable: true
+      sortable: true,
+      render: (value) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+          value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {value ? 'Active' : 'Inactive'}
+        </span>
+      )
     },
     {
       key: 'createdAt',
@@ -141,41 +189,34 @@ export default function CountryVisaTypes() {
     }
   ];
 
-  const filters = [
+  const filterOptions = [
     {
-      key: 'country.name',
+      key: 'country',
       label: 'Country',
       type: 'select',
-      options: [...new Set(countryVisaTypes.map(item => item.country?.name).filter(Boolean))].map(name => ({
-        value: name,
-        label: name
-      }))
+      options: countries.map(c => ({ value: c._id, label: c.name }))
     },
     {
-      key: 'visaType.name',
+      key: 'visaType',
       label: 'Visa Type',
       type: 'select',
-      options: [...new Set(countryVisaTypes.map(item => item.visaType?.name).filter(Boolean))].map(name => ({
-        value: name,
-        label: name
-      }))
+      options: visaTypes.map(vt => ({ value: vt._id, label: vt.name }))
     },
     {
-      key: 'status.name',
+      key: 'isActive',
       label: 'Status',
       type: 'select',
       options: [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' }
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' }
       ]
     }
   ];
 
   const stats = {
-    total: countryVisaTypes.length,
-    active: countryVisaTypes.filter(item => item.status?.name === 'active').length,
-    countries: [...new Set(countryVisaTypes.map(item => item.country?.name))].length,
-    visaTypes: [...new Set(countryVisaTypes.map(item => item.visaType?.name))].length,
+    total: pagination.total,
+    active: countryVisaTypes.filter(item => item.isActive).length,
+    inactive: countryVisaTypes.filter(item => !item.isActive).length,
     avgPrice: countryVisaTypes.length > 0 
       ? Math.round(countryVisaTypes.reduce((sum, item) => sum + parseFloat(item.totalAmount || 0), 0) / countryVisaTypes.length)
       : 0
@@ -197,7 +238,13 @@ export default function CountryVisaTypes() {
       emptyIcon="🎫"
       showStats={true}
       stats={stats}
-      filters={filters}
+      filters={filterOptions}
+      serverSidePagination={true}
+      totalItems={pagination.total}
+      currentPage={pagination.page}
+      itemsPerPage={pagination.limit}
+      onPageChange={handlePageChange}
+      onFilterChange={handleFilterChange}
     />
   );
 }

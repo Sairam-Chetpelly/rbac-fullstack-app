@@ -86,11 +86,11 @@ const CustomerLayout = ({ children }) => {
       )}
       
       {/* Sidebar */}
-      <div className={`bg-white/10 backdrop-blur-md border-r border-white/10 h-screen transition-all duration-300 fixed left-0 top-0 z-40 flex flex-col ${
+      <div className={`bg-white border-r border-gray-200 h-screen transition-all duration-300 fixed left-0 top-0 z-40 flex flex-col ${
         isMobile 
           ? (sidebarCollapsed ? '-translate-x-full w-72' : 'translate-x-0 w-72')
           : (sidebarCollapsed ? 'w-20' : 'w-72')
-      }`} style={{ boxShadow: "0 2px 2px 2px rgba(255, 255, 255, 0.3)" }}>
+      }`} style={{ boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)" }}>
         <div className="p-3 sm:p-4 lg:p-6 flex-shrink-0 pt-20 sm:pt-24">
           <div className="flex justify-between items-center mb-4 sm:mb-6 lg:mb-8">
             {!sidebarCollapsed && (
@@ -233,7 +233,7 @@ const CustomerLayout = ({ children }) => {
       </main>
 
       {/* WhatsApp Floating Button */}
-      <div className="fixed bottom-6 right-6 z-50 p-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl" style={{ boxShadow: "0 2px 2px 2px rgba(255, 255, 255, 0.3)" }}>
+      <div className="fixed bottom-6 right-6 z-50">
         <a
           href="https://wa.me/919167447700"
           target="_blank"

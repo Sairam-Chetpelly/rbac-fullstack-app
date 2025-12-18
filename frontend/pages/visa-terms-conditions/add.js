@@ -10,10 +10,10 @@ export default function AddVisaTermsConditions() {
     countryVisaType: '',
     title: '',
     content: '',
-    status: ''
+    isActive: true
   });
   const [countryVisaTypes, setCountryVisaTypes] = useState([]);
-  const [statuses, setStatuses] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -23,12 +23,8 @@ export default function AddVisaTermsConditions() {
 
   const fetchData = async () => {
     try {
-      const [countryVisaTypesRes, statusRes] = await Promise.all([
-        api.get('/country-visa-types'),
-        api.get('/status')
-      ]);
+      const countryVisaTypesRes = await api.get('/country-visa-types');
       setCountryVisaTypes(countryVisaTypesRes.data);
-      setStatuses(statusRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -114,22 +110,12 @@ export default function AddVisaTermsConditions() {
                   ⚡ Status
                 </label>
                 <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
-                  required
                 >
-                  <option disabled value="">Select Status</option>
-                  {/* {statuses.map(status => (
-                    <option key={status._id} value={status._id}>
-                      {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                    </option>
-                  ))} */}
-                  {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
                 </select>
               </div>
             </div>

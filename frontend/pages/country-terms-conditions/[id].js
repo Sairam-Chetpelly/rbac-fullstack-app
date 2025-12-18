@@ -11,7 +11,8 @@ export default function EditCountryTermsConditions() {
     country: '',
     title: '',
     description: '',
-    content: ''
+    content: '',
+    isActive: true
   });
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,14 +37,15 @@ export default function EditCountryTermsConditions() {
 
   const fetchTerms = async () => {
     try {
-      const response = await api.get('/country-terms-conditions');
-      const terms = response.data.find(t => t._id === id);
+      const response = await api.get(`/country-terms-conditions/${id}`);
+      const terms = response.data;
       if (terms) {
         setFormData({
           country: terms.country._id,
           title: terms.title,
           description: terms.description || '',
-          content: terms.content
+          content: terms.content,
+          isActive: terms.isActive
         });
       }
     } catch (error) {
@@ -138,6 +140,20 @@ export default function EditCountryTermsConditions() {
                   onChange={(content) => setFormData({...formData, content})}
                   placeholder="Enter terms and conditions content"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm lg:text-base font-semibold text-gray-700 mb-2">
+                  🔄 Status
+                </label>
+                <select
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
+                  className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
+                >
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
+                </select>
               </div>
             </div>
 

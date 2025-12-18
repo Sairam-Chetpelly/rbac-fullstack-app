@@ -8,6 +8,12 @@ const role = require('../middleware/role');
 router.use(auth);
 router.use(role(['admin']));
 
+// GET /api/form-fields/country-visa-types/:countryId (must be before /:id)
+router.get('/country-visa-types/:countryId', formFieldController.getCountryVisaTypesByCountry);
+
+// GET /api/form-fields/form-sections/:countryVisaTypeId (must be before /:id)
+router.get('/form-sections/:countryVisaTypeId', formFieldController.getFormSectionsByCountryVisaType);
+
 // GET /api/form-fields
 router.get('/', formFieldController.getFormFields);
 

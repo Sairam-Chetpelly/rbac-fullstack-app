@@ -26,10 +26,9 @@ const countrySchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  status: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Status',
-    required: true
+  isActive: {
+    type: Boolean,
+    default: true
   },
   continent: {
     type: mongoose.Schema.Types.ObjectId,

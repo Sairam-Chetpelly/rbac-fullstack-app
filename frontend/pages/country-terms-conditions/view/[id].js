@@ -19,9 +19,8 @@ export default function ViewCountryTermsConditions() {
 
   const fetchTerms = async () => {
     try {
-      const response = await api.get(`/country-terms-conditions`);
-      const item = response.data.find(t => t._id === id);
-      setTerms(item);
+      const response = await api.get(`/country-terms-conditions/${id}`);
+      setTerms(response.data);
     } catch (error) {
       console.error('Error fetching terms:', error);
     } finally {

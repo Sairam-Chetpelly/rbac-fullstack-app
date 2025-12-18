@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import EnhancedTable from '../components/EnhancedTable';
+import ConfirmationModal from '../components/ConfirmationModal';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -8,21 +9,44 @@ import toast from 'react-hot-toast';
 export default function Countries() {
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+  const [filters, setFilters] = useState({});
+  const [continents, setContinents] = useState([]);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, country: null });
   const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     fetchCountries();
-  }, []);
+    fetchContinents();
+  }, [pagination.page, pagination.limit, filters]);
 
   const fetchCountries = async () => {
     try {
-      const response = await api.get('/countries');
-      setCountries(response.data);
+      setLoading(true);
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        ...filters
+      };
+      const response = await api.get('/countries', { params });
+      setCountries(response.data.data || response.data);
+      if (response.data.pagination) {
+        setPagination(prev => ({ ...prev, ...response.data.pagination }));
+      }
     } catch (error) {
       toast.error('Failed to fetch countries');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchContinents = async () => {
+    try {
+      const response = await api.get('/continents');
+      setContinents(response.data || []);
+    } catch (error) {
+      console.error('Error fetching continents:', error);
     }
   };
 
@@ -34,15 +58,27 @@ export default function Countries() {
     router.push(`/countries/${country._id}`);
   };
 
-  const handleDelete = async (country) => {
-    if (confirm(`Are you sure you want to delete "${country.name}"?`)) {
-      try {
-        await api.delete(`/countries/${country._id}`);
-        toast.success('Country deleted successfully!');
-        fetchCountries();
-      } catch (error) {
-        toast.error('Failed to delete country');
-      }
+  const handleDelete = (country) => {
+    setDeleteModal({ isOpen: true, country });
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handlePageChange = (page) => {
+    setPagination(prev => ({ ...prev, page }));
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/countries/${deleteModal.country._id}`);
+      toast.success('Country deleted successfully!');
+      setDeleteModal({ isOpen: false, country: null });
+      fetchCountries();
+    } catch (error) {
+      toast.error('Failed to delete country');
     }
   };
 
@@ -104,10 +140,16 @@ export default function Countries() {
       )
     },
     {
-      key: 'status.name',
+      key: 'isActive',
       label: 'Status',
-      type: 'status',
-      sortable: true
+      sortable: true,
+      render: (value) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+          value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {value ? 'Active' : 'Inactive'}
+        </span>
+      )
     },
     {
       key: 'createdAt',
@@ -117,51 +159,66 @@ export default function Countries() {
     }
   ];
 
-  const filters = [
+  const filterOptions = [
     {
-      key: 'continent.name',
+      key: 'continent',
       label: 'Continent',
       type: 'select',
-      options: [...new Set(countries.map(c => c.continent?.name).filter(Boolean))].map(name => ({
-        value: name,
-        label: name
-      }))
+      options: continents.map(c => ({ value: c._id, label: c.name }))
     },
     {
-      key: 'status.name',
+      key: 'isActive',
       label: 'Status',
       type: 'select',
       options: [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' },
-        { value: 'pending', label: 'Pending' }
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' }
       ]
     }
   ];
 
   const stats = {
-    total: countries.length,
-    active: countries.filter(c => c.status?.name === 'active').length,
-    continents: [...new Set(countries.map(c => c.continent?.name).filter(Boolean))].length
+    total: pagination.total,
+    active: countries.filter(c => c.isActive).length,
+    inactive: countries.filter(c => !c.isActive).length
   };
 
   return (
-    <EnhancedTable
-      title="🏞️ Countries Management"
-      data={countries}
-      columns={columns}
-      loading={loading}
-      searchPlaceholder="Search countries by name, code, continent, or description..."
-      onView={handleView}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onAdd={handleAdd}
-      addButtonText="Add New Country"
-      emptyMessage="No countries found"
-      emptyIcon="🏞️"
-      showStats={true}
-      stats={stats}
-      filters={filters}
-    />
+    <>
+      <EnhancedTable
+        title="🏞️ Countries Management"
+        data={countries}
+        columns={columns}
+        loading={loading}
+        searchPlaceholder="Search countries by name, code, continent, or description..."
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onAdd={handleAdd}
+        addButtonText="Add New Country"
+        emptyMessage="No countries found"
+        emptyIcon="🏞️"
+        showStats={true}
+        stats={stats}
+        filters={filterOptions}
+        serverSidePagination={true}
+        totalItems={pagination.total}
+        currentPage={pagination.page}
+        itemsPerPage={pagination.limit}
+        onPageChange={handlePageChange}
+        onFilterChange={handleFilterChange}
+      />
+      
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, country: null })}
+        onConfirm={confirmDelete}
+        title="Delete Country"
+        message={`Are you sure you want to delete "${deleteModal.country?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+    </>
   );
 }

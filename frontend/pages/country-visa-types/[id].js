@@ -9,7 +9,7 @@ export default function EditCountryVisaType() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: '',
+    isActive: true,
     visaType: '',
     country: '',
     processingTimeMin: '',
@@ -17,7 +17,7 @@ export default function EditCountryVisaType() {
     totalAmount: '',
     agentDiscount: '0'
   });
-  const [statuses, setStatuses] = useState([]);
+
   const [visaTypes, setVisaTypes] = useState([]);
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,12 +33,10 @@ export default function EditCountryVisaType() {
 
   const fetchData = async () => {
     try {
-      const [statusRes, visaTypeRes, countryRes] = await Promise.all([
-        api.get('/status'),
+      const [visaTypeRes, countryRes] = await Promise.all([
         api.get('/visa-types'),
         api.get('/countries')
       ]);
-      setStatuses(Array.isArray(statusRes.data) ? statusRes.data : statusRes.data?.data || []);
       setVisaTypes(Array.isArray(visaTypeRes.data) ? visaTypeRes.data : visaTypeRes.data?.data || []);
       setCountries(Array.isArray(countryRes.data) ? countryRes.data : countryRes.data?.data || []);
     } catch (error) {
@@ -48,21 +46,19 @@ export default function EditCountryVisaType() {
 
   const fetchCountryVisaType = async () => {
     try {
-      const response = await api.get(`/country-visa-types`);
-      const item = response.data.find(c => c._id === id);
-      if (item) {
-        setFormData({
-          name: item.name,
-          description: item.description || '',
-          status: item.status._id,
-          visaType: item.visaType._id,
-          country: item.country._id,
-          processingTimeMin: item.processingTimeMin,
-          processingTimeMax: item.processingTimeMax,
-          totalAmount: item.totalAmount,
-          agentDiscount: item.agentDiscount || '0'
-        });
-      }
+      const response = await api.get(`/country-visa-types/${id}`);
+      const item = response.data;
+      setFormData({
+        name: item.name,
+        description: item.description || '',
+        isActive: item.isActive !== undefined ? item.isActive : true,
+        visaType: item.visaType?._id || '',
+        country: item.country?._id || '',
+        processingTimeMin: item.processingTimeMin,
+        processingTimeMax: item.processingTimeMax,
+        totalAmount: item.totalAmount,
+        agentDiscount: item.agentDiscount || '0'
+      });
     } catch (error) {
       console.error('Error fetching country visa type:', error);
     }
@@ -219,23 +215,13 @@ export default function EditCountryVisaType() {
                   ⚡ Status
                 </label>
                 <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  {/* <option value="">Select Status</option>
-                  {statuses.map(status => (
-                    <option key={status._id} value={status._id}>
-                      {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                    </option>
-                  ))} */}
-                <option disabled value="">Select Status</option>
-                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </select>
               </div>
             </div>

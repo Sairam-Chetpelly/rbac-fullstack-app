@@ -9,7 +9,7 @@ export default function AddCountryVisaType() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: '',
+    isActive: true,
     visaType: '',
     country: '',
     processingTimeMin: '',
@@ -17,7 +17,6 @@ export default function AddCountryVisaType() {
     totalAmount: '',
     agentDiscount: '0'
   });
-  const [statuses, setStatuses] = useState([]);
   const [visaTypes, setVisaTypes] = useState([]);
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -29,12 +28,10 @@ export default function AddCountryVisaType() {
 
   const fetchData = async () => {
     try {
-      const [statusRes, visaTypeRes, countryRes] = await Promise.all([
-        api.get('/status'),
+      const [visaTypeRes, countryRes] = await Promise.all([
         api.get('/visa-types'),
         api.get('/countries')
       ]);
-      setStatuses(statusRes.data);
       setVisaTypes(visaTypeRes.data);
       setCountries(countryRes.data);
     } catch (error) {
@@ -193,23 +190,13 @@ export default function AddCountryVisaType() {
                   ⚡ Status
                 </label>
                 <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  {/* <option value="">Select Status</option>
-                  {statuses.map(status => (
-                    <option key={status._id} value={status._id}>
-                      {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                    </option>
-                  ))} */}
-                <option disabled value="">Select Status</option>
-                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </select>
               </div>
             </div>

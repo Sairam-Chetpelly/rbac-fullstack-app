@@ -114,8 +114,8 @@ const VisaApplicationForm = () => {
       console.log('Fetching form data for visa type:', visaTypeId);
       
       const [visaTypeResponse, formResponse] = await Promise.all([
-        api.get(`/visa-types/${visaTypeId}`),
-        api.get(`/public/visa-types/${visaTypeId}/form`)
+        api.get(`/visa-type/${visaTypeId}`),
+        api.get(`/visa-form/active/${visaTypeId}`)
       ]);
 
       console.log('Visa type response:', visaTypeResponse.data);
@@ -188,7 +188,7 @@ const VisaApplicationForm = () => {
   };
 
   const getFieldsBySection = (sectionId) => {
-    return formFields.filter(field => field.formSection === sectionId).sort((a, b) => a.order - b.order);
+    return formFields.filter(field => field.formSection?._id === sectionId || field.formSection === sectionId).sort((a, b) => a.order - b.order);
   };
 
   const handleInputChange = (fieldName, value, applicantIndex = currentApplicant) => {

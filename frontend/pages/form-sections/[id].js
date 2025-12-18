@@ -9,10 +9,12 @@ export default function EditFormSection() {
     name: '',
     description: '',
     order: '',
+    country: '',
     countryVisaType: '',
-    status: ''
+    isActive: true
   });
-  const [statuses, setStatuses] = useState([]);
+
+  const [countries, setCountries] = useState([]);
   const [countryVisaTypes, setCountryVisaTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -21,45 +23,54 @@ export default function EditFormSection() {
 
   useEffect(() => {
     if (id) {
+      fetchCountries();
       fetchFormSection();
-      fetchStatuses();
-      fetchCountryVisaTypes();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (formData.country) {
+      fetchCountryVisaTypes(formData.country);
+    }
+  }, [formData.country]);
+
+  const fetchCountries = async () => {
+    try {
+      const response = await api.get('/countries/dropdown');
+      setCountries(response.data || []);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+    }
+  };
+
+  const fetchCountryVisaTypes = async (countryId) => {
+    try {
+      const response = await api.get(`/form-fields/country-visa-types/${countryId}`);
+      setCountryVisaTypes(response.data || []);
+    } catch (error) {
+      console.error('Error fetching country visa types:', error);
+    }
+  };
 
   const fetchFormSection = async () => {
     try {
       const response = await api.get(`/form-sections/${id}`);
       const formSection = response.data;
+      
+      const country = formSection.countryVisaType?.country?._id;
+      
       setFormData({
         name: formSection.name,
         description: formSection.description || '',
         order: formSection.order,
+        country: country || '',
         countryVisaType: formSection.countryVisaType?._id || '',
-        status: formSection.status?._id || ''
+        isActive: formSection.isActive !== undefined ? formSection.isActive : true
       });
     } catch (error) {
       console.error('Error fetching form section:', error);
     } finally {
       setInitialLoading(false);
-    }
-  };
-
-  const fetchStatuses = async () => {
-    try {
-      const response = await api.get('/status');
-      setStatuses(Array.isArray(response.data) ? response.data : response.data?.data || []);
-    } catch (error) {
-      console.error('Error fetching statuses:', error);
-    }
-  };
-
-  const fetchCountryVisaTypes = async () => {
-    try {
-      const response = await api.get('/country-visa-types');
-      setCountryVisaTypes(response.data);
-    } catch (error) {
-      console.error('Error fetching country visa types:', error);
     }
   };
 
@@ -144,21 +155,21 @@ export default function EditFormSection() {
                 />
               </div>
 
-              <div className="lg:col-span-2">
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Visa Type *
+                  Country *
                 </label>
                 <select
-                  name="countryVisaType"
-                  value={formData.countryVisaType}
+                  name="country"
+                  value={formData.country}
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
-                  <option  disabled value="">Select Visa Type</option>
-                  {countryVisaTypes.map((cvt) => (
-                    <option key={cvt._id} value={cvt._id}>
-                      {cvt.name} - {cvt.country?.name}
+                  <option disabled value="">Select Country</option>
+                  {countries.map((country) => (
+                    <option key={country._id} value={country._id}>
+                      {country.name}
                     </option>
                   ))}
                 </select>
@@ -166,26 +177,37 @@ export default function EditFormSection() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Status *
+                  Country Visa Type *
                 </label>
                 <select
-                  name="status"
-                  value={formData.status}
+                  name="countryVisaType"
+                  value={formData.countryVisaType}
                   onChange={handleChange}
                   required
+                  disabled={!formData.country}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100"
+                >
+                  <option disabled value="">Select Country Visa Type</option>
+                  {countryVisaTypes.map((cvt) => (
+                    <option key={cvt._id} value={cvt._id}>
+                      {cvt.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  name="isActive"
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
-                  <option disabled value="">Select Status</option>
-                  {/* {statuses.map((status) => (
-                    <option key={status._id} value={status._id}>
-                      {status.name}
-                    </option>
-                  ))} */}
-                  {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
                 </select>
               </div>
 

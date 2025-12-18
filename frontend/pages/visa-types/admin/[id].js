@@ -4,14 +4,14 @@ import { useRouter } from 'next/router';
 import Button from '../../../components/Button';
 import Card from '../../../components/Card';
 import api from '../../../lib/api';
+import toast from 'react-hot-toast';
 
 export default function EditVisaType() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: ''
+    isActive: true
   });
-  const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { id } = router.query;
@@ -19,32 +19,23 @@ export default function EditVisaType() {
   useEffect(() => {
     if (id) {
       fetchVisaType();
-      fetchStatuses();
     }
   }, [id]);
 
   const fetchVisaType = async () => {
     try {
-      const response = await api.get(`/visa-types`);
-      const visaType = response.data.find(v => v._id === id);
+      const response = await api.get(`/visa-types/${id}`);
+      const visaType = response.data;
       if (visaType) {
         setFormData({
           name: visaType.name,
           description: visaType.description || '',
-          status: visaType.status._id
+          isActive: visaType.isActive !== undefined ? visaType.isActive : true
         });
       }
     } catch (error) {
       console.error('Error fetching visa type:', error);
-    }
-  };
-
-  const fetchStatuses = async () => {
-    try {
-      const response = await api.get('/status');
-      setStatuses(Array.isArray(response.data) ? response.data : response.data?.data || []);
-    } catch (error) {
-      console.error('Error fetching statuses:', error);
+      toast.error('Failed to fetch visa type');
     }
   };
 
@@ -53,9 +44,11 @@ export default function EditVisaType() {
     setLoading(true);
     try {
       await api.put(`/visa-types/${id}`, formData);
+      toast.success('Visa type updated successfully!');
       router.push('/visa-types');
     } catch (error) {
-      console.error('Error updating visa type:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update visa type';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -114,23 +107,13 @@ export default function EditVisaType() {
                   ⚡ Status
                 </label>
                 <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.value === 'true'})}
                   className="w-full px-4 py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm lg:text-base"
                   required
                 >
-                  {/* <option value="">Select Status</option>
-                  {statuses.map(status => (
-                    <option key={status._id} value={status._id}>
-                      {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                    </option>
-                  ))} */}
-                <option disabled value="">Select Status</option>
-                {Array.isArray(statuses) && statuses.filter(status => status.category === "System").map(status => (
-                  <option key={status._id} value={status._id}>
-                    {status.name.charAt(0).toUpperCase() + status.name.slice(1)}
-                  </option>
-                ))}
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </select>
               </div>
             </div>

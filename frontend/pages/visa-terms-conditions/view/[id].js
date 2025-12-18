@@ -18,9 +18,8 @@ export default function ViewVisaTermsConditions() {
 
   const fetchTerms = async () => {
     try {
-      const response = await api.get(`/visa-terms-conditions`);
-      const item = response.data.find(t => t._id === id);
-      setTerms(item);
+      const response = await api.get(`/visa-terms-conditions/${id}`);
+      setTerms(response.data);
     } catch (error) {
       console.error('Error fetching terms:', error);
     } finally {
@@ -92,11 +91,9 @@ export default function ViewVisaTermsConditions() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
                 <div className="px-4 py-3 bg-gray-50 rounded-xl">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    terms.status?.name === 'active' ? 'bg-green-100 text-green-800' :
-                    terms.status?.name === 'inactive' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
+                    terms.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   }`}>
-                    {terms.status?.name?.toUpperCase()}
+                    {terms.isActive ? 'ACTIVE' : 'INACTIVE'}
                   </span>
                 </div>
               </div>

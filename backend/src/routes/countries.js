@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getCountries, createCountry, updateCountry, deleteCountry } = require('../controllers/countryController');
+const { getCountries, getCountriesForDropdown, getCountryById, createCountry, updateCountry, deleteCountry } = require('../controllers/countryController');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
 const compressImage = require('../middleware/imageCompression');
@@ -45,8 +45,12 @@ const upload = multer({
 // Public endpoint for getting countries (for filters)
 router.get('/public', getCountries);
 
+// Dropdown endpoint for countries
+router.get('/dropdown', auth, getCountriesForDropdown);
+
 // Admin endpoint for managing countries
 router.get('/', auth, role(['admin']), getCountries);
+router.get('/:id', auth, role(['admin']), getCountryById);
 router.post('/', auth, role(['admin']), upload.single('placeImage'), compressImage, createCountry);
 router.put('/:id', auth, role(['admin']), upload.single('placeImage'), compressImage, updateCountry);
 router.delete('/:id', auth, role(['admin']), deleteCountry);

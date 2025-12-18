@@ -91,9 +91,20 @@ export default function ViewFormSection() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Visa Type</label>
-                <div className="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
-                  {formSection.countryVisaType?.name || 'No visa type assigned'}
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-xl">
+                  <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full font-medium">
+                    {formSection.countryVisaType?.country?.name || 'No country'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Country Visa Type</label>
+                <div className="px-4 py-3 bg-gray-50 rounded-xl">
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium">
+                    {formSection.countryVisaType?.name || 'No visa type assigned'}
+                  </span>
                 </div>
               </div>
 
@@ -101,11 +112,9 @@ export default function ViewFormSection() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
                 <div className="px-4 py-3 bg-gray-50 rounded-xl">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    formSection.status?.name === 'active' ? 'bg-green-100 text-green-800' :
-                    formSection.status?.name === 'inactive' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
+                    formSection.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                   }`}>
-                    {formSection.status?.name?.toUpperCase()}
+                    {formSection.isActive ? 'ACTIVE' : 'INACTIVE'}
                   </span>
                 </div>
               </div>
